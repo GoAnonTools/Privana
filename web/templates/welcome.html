@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome - Privana</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg1:#f7fafc; --text:#0f172a; --muted:#64748b; --brand1:#0ea5e9; --brand2:#2563eb; --ring:rgba(37,99,235,.25); --shadow:0 10px 30px rgba(2,6,23,.08); }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; min-height:100vh; font-family:'Nunito', system-ui, sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(14,165,233,.08), transparent),
+        radial-gradient(1000px 500px at 110% 20%, rgba(37,99,235,.08), transparent),
+        var(--bg1);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .welcome-card{
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(14px) saturate(120%);
+      border-radius: 18px;
+      padding: 40px 32px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.6s ease-out;
+    }
+    .logo{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:18px; }
+    .logo-icon{
+      display:grid; place-items:center; width:46px; height:46px; border-radius:14px;
+      background: linear-gradient(135deg, var(--brand1), var(--brand2)); color:#fff; font-size:22px;
+      box-shadow: 0 8px 20px var(--ring);
+    }
+    .logo h1{
+      margin:0; letter-spacing:.18em; font-weight:800; font-size:20px;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    h2{
+      font-size: 24px; font-weight: 800; margin-bottom: 12px;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    p{ font-size:15px; color:var(--muted); margin:8px 0; }
+    .plan-badge{
+      display:inline-block; margin-top:10px; padding:6px 14px; border-radius:999px;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2)); color:#fff; font-weight:700; font-size:13px;
+      box-shadow: 0 4px 10px var(--ring);
+    }
+    .actions{ margin-top: 26px; display:grid; gap:12px; }
+    .btn{ display:inline-block; border:0; border-radius:14px; padding:12px 16px; font-weight:800; cursor:pointer; text-decoration:none; transition:.2s transform,.2s box-shadow; }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn-primary{ background: linear-gradient(90deg, var(--brand1), var(--brand2)); color:#fff; box-shadow: 0 8px 18px var(--ring); }
+    .btn-ghost{ background:#eef2ff; color:#1e3a8a; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="welcome-card">
+    <div class="logo">
+      <span class="logo-icon">🛡️</span>
+      <h1>PRIVANA</h1>
+    </div>
+
+    <h2>Welcome to Privana!</h2>
+    <p>Your account has been successfully created and confirmed.</p>
+    <p>You’re now on the</p>
+    <span class="plan-badge">{{ user.subscription_plan|capitalize }} Plan</span>
+
+    <div class="actions">
+      <button id="create-passkey" class="btn btn-primary">Secure with Passkey</button>
+      <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-ghost">Go to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var btn = document.getElementById('create-passkey');
+      if(!btn) return;
+
+      function b64urlToBuf(b64){
+        b64 = b64.replace(/-/g,'+').replace(/_/g,'/');
+        var pad = '='.repeat((4 - (b64.length % 4)) % 4);
+        var str = atob(b64 + pad);
+        var bytes = new Uint8Array(str.length);
+        for (var i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i);
+        return bytes.buffer;
+      }
+      function strToBuf(s){ return new TextEncoder().encode(s); }
+      function bufToB64url(buf){
+        var b = new Uint8Array(buf);
+        var s = '';
+        for (var i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+        return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      }
+
+      btn.addEventListener('click', async function(){
+        try{
+          var res = await fetch('/webauthn/register/options', { method:'POST' });
+          if(!res.ok){ alert('Unable to start passkey creation.'); return; }
+          var options = await res.json();
+
+          // decode challenge and user.id
+          options.challenge = b64urlToBuf(options.challenge);
+          options.user.id  = strToBuf(options.user.id);
+          if(options.excludeCredentials){
+            for(var i=0;i<options.excludeCredentials.length;i++){
+              options.excludeCredentials[i].id = b64urlToBuf(options.excludeCredentials[i].id);
+            }
+          }
+
+          var cred = await navigator.credentials.create({ publicKey: options });
+          if(!cred || !cred.response){ alert('Passkey creation failed.'); return; }
+
+          var payload = {
+            id: cred.id,
+            attestationObject: bufToB64url(cred.response.attestationObject),
+            clientDataJSON:    bufToB64url(cred.response.clientDataJSON)
+          };
+
+          var verify = await fetch('/webauthn/register/verify', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          if(!verify.ok){ alert('Passkey registration failed.'); return; }
+          var out = await verify.json();
+          if(out && out.ok){
+            window.location.href = "{{ url_for('dashboard.dashboard') }}";
+          } else {
+            alert('Passkey registration failed.');
+          }
+        }catch(err){
+          alert('Passkey creation was canceled or failed.');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

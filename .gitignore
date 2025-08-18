@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual env
+venv/
+
+# Env & secrets
+.env
+*.pem
+*.key
+*.crt
+*.der
+
+# SQLite / local data
+*.db
+*.sqlite
+*.sqlite3
+privana.db
+
+# Logs
+*.log
+logs/
+*.pid
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# WireGuard configs
+wireguard/
+*.conf

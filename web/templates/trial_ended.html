@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trial Ended - Privana</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--text:#0f172a;--muted:#64748b;--brand1:#0ea5e9;--brand2:#2563eb;--ring:rgba(37,99,235,.25);--shadow:0 10px 30px rgba(2,6,23,.08);}
+    html,body{margin:0;min-height:100%;font-family:'Nunito',system-ui,sans-serif;color:var(--text);background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(14,165,233,.08), transparent),
+      radial-gradient(1000px 500px at 110% 20%, rgba(37,99,235,.08), transparent),
+      #f7fbff;}
+    .wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{max-width:560px;width:100%;background:rgba(255,255,255,.9);backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%);border:1px solid rgba(2,6,23,.06);border-radius:20px;padding:28px;box-shadow:var(--shadow);text-align:center}
+    .logo{display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:10px}
+    .logo .icon{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--brand1),var(--brand2));color:#fff;box-shadow:0 10px 24px var(--ring)}
+    .logo h1{margin:0;letter-spacing:.2em;font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--brand1),var(--brand2));background-clip:text;-webkit-background-clip:text;color:transparent}
+    h2{margin:6px 0 6px;font-weight:800}
+    p{color:var(--muted)}
+    .plans{display:grid;gap:12px;margin:16px 0}
+    .plan{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(2,6,23,.06);background:#fff;border-radius:14px;padding:12px 14px}
+    .plan .name{font-weight:800}
+    .btn{display:inline-block;border:0;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;text-decoration:none}
+    .btn-primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#fff;box-shadow:0 10px 20px var(--ring)}
+    .btn-secondary{background:#eef2ff;color:#1e3a8a}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">
+        <div class="icon">🛡️</div>
+        <h1>PRIVANA</h1>
+      </div>
+      <h2>Your trial on this device has ended</h2>
+      <p>Trials are limited to one per device to keep things fair and private.</p>
+      {% if email %}<p><strong>{{ email }}</strong></p>{% endif %}
+
+      <div class="plans">
+        <div class="plan">
+          <div><div class="name">Individual</div><div class="muted">Up to 3 devices</div></div>
+          <a class="btn btn-secondary" href="/?select=individual">Choose</a>
+        </div>
+        <div class="plan">
+          <div><div class="name">Family</div><div class="muted">Up to 6 devices</div></div>
+          <a class="btn btn-secondary" href="/?select=family">Choose</a>
+        </div>
+        <div class="plan">
+          <div><div class="name">Small Team</div><div class="muted">Up to 10 devices</div></div>
+          <a class="btn btn-secondary" href="/?select=small%20team">Choose</a>
+        </div>
+      </div>
+
+      <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Log in</a>
+    </div>
+  </div>
+</body>
+</html>

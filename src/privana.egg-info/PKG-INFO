@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: privana
+Version: 0.1.0
+Summary: Your Private Road on the Internet
+Home-page: https://privana.pro
+Author: Privana Team
+Requires-Dist: click>=8.1.7
+Requires-Dist: requests>=2.31.0
+Dynamic: author
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: summary

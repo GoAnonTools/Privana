@@ -1,0 +1,2 @@
+[console_scripts]
+privana = main:cli

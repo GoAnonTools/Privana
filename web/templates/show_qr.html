@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Privana QR – {{ device["name"] }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --border:#e5e7eb; --text:#0f172a; --muted:#64748b;
+      --brand1:#0ea5e9; --brand2:#2563eb;
+      --shadow:0 10px 24px rgba(2,6,23,.06);
+    }
+    html,body{margin:0;background:#fff;color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+    .wrap{max-width:420px;margin:32px auto;padding:0 16px;}
+    .card{border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+    h1{margin:0 0 8px;font-size:20px}
+    .muted{color:var(--muted);font-size:13px;margin-bottom:12px}
+    .qr{display:grid;place-items:center;margin:10px 0 6px}
+    .qr svg{width:300px;height:300px}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}
+    .btn{display:inline-block;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:800;border:1px solid var(--border)}
+    .btn-primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#fff;border:0}
+    .tips{margin-top:14px;font-size:13px;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Scan in WireGuard</h1>
+      <div class="muted">
+        Device: <strong>{{ device["name"] }}</strong>
+        · Platform: <strong>{{ device["platform"]|capitalize }}</strong>
+      </div>
+
+      <div class="qr">
+        {{ qr_svg | safe }}
+      </div>
+
+      <div class="row">
+        <a class="btn" href="{{ url_for('dashboard.dashboard') }}">Back</a>
+        <a class="btn btn-primary" href="{{ url_for('dashboard.download_config', device_id=device_id) }}">Download .conf</a>
+      </div>
+
+      <div class="tips">
+        In the WireGuard app, tap <span class="mono">+</span> → <em>Scan from QR code</em>, then name it “{{ device["name"] }}”.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Privana — Own Your VPN</title>
+  <meta name="description" content="Take back your privacy. Fast WireGuard® VPN with a simple dashboard and strict no-log architecture." />
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',
+                     500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a' },
+            sky:   { 50:'#f0f9ff',100:'#e0f2fe',200:'#bae6fd',300:'#7dd3fc',400:'#38bdf8',
+                     500:'#0ea5e9',600:'#0284c7',700:'#0369a1' },
+            blue:  { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',
+                     500:'#3b82f6',600:'#2563eb',700:'#1d4ed8' },
+            emerald: {500:'#10b981',700:'#047857'},
+            red:   {50:'#fef2f2',500:'#ef4444'},
+            yellow:{400:'#facc15'}
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* smooth scroll for in-page anchors */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 overflow-x-hidden">
+
+  <!-- Ambient blobs -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-sky-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute top-1/2 -left-40 w-96 h-96 bg-gradient-to-br from-emerald-400/10 to-cyan-600/10 rounded-full blur-3xl animate-pulse" style="animation-delay:2s"></div>
+    <div class="absolute -bottom-40 right-1/3 w-72 h-72 bg-gradient-to-br from-purple-400/10 to-pink-600/10 rounded-full blur-3xl animate-pulse" style="animation-delay:4s"></div>
+  </div>
+
+  <!-- Header -->
+  <header id="site-header" class="sticky top-0 z-50 border-b backdrop-blur-xl bg-white/80 transition-all">
+    <div class="mx-auto container px-4 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3 group">
+        <div class="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:scale-110 transition">
+          <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</h1>
+      </div>
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="#how-it-works" class="text-slate-600 hover:text-sky-600 transition hover:scale-105">How It Works</a>
+        <a href="#pricing" class="text-slate-600 hover:text-sky-600 transition hover:scale-105">Pricing</a>
+        <a href="#affiliates" class="text-slate-600 hover:text-sky-600 transition hover:scale-105">Affiliates</a>
+        <a href="#faq" class="text-slate-600 hover:text-sky-600 transition hover:scale-105">FAQ</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="/checkout/payop" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold shadow-sm">Pay with Payop</a>
+        <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg shadow-sky-500/30">
+          <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative py-24 md:py-32 text-center bg-gradient-to-br from-white via-sky-50/30 to-blue-50/30">
+    <div class="container mx-auto px-4 relative z-10">
+      <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold mb-6 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-800 border-sky-200 shadow-lg animate-pulse">
+        <i data-lucide="shield" class="w-4 h-4 mr-2"></i> A Truly Private Connection
+      </span>
+      <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="bg-gradient-to-r from-slate-900 via-sky-800 to-slate-900 bg-clip-text text-transparent">Take Back Your Privacy — Own Your VPN.</span><br>
+        <span class="bg-gradient-to-r from-sky-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent">Your Data, Your Server, Your Rules.</span>
+      </h2>
+      <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-3xl mx-auto">Built for absolute privacy, Privana’s architecture lets you connect in minutes — no logs, no backdoors, and no third parties touching your data.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/auth/signup" class="group inline-flex items-center justify-center rounded-xl px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-sky-500 via-blue-500 to-sky-600 hover:from-sky-600 hover:via-blue-600 hover:to-sky-700 shadow-xl shadow-sky-500/30">
+          <i data-lucide="trending-up" class="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform"></i>
+          Start 7-Day Free Trial
+          <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform"></i>
+        </a>
+      </div>
+      <div class="mt-8 flex items-center justify-center gap-6 text-slate-500 text-sm">
+        <span class="flex items-center"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-500 mr-2"></i>No credit card required</span>
+        <span class="flex items-center"><i data-lucide="zap" class="w-4 h-4 text-yellow-500 mr-2"></i>Instant setup</span>
+      </div>
+    </div>
+    <div class="absolute top-20 left-10 w-16 h-16 bg-gradient-to-br from-sky-400/20 to-blue-600/20 rounded-full blur-sm animate-bounce" style="animation-delay:1s"></div>
+    <div class="absolute top-40 right-20 w-12 h-12 bg-gradient-to-br from-emerald-400/20 to-cyan-600/20 rounded-full blur-sm animate-bounce" style="animation-delay:3s"></div>
+  </section>
+
+  <!-- Social proof -->
+  <section class="py-12 bg-white/50">
+    <div class="container mx-auto px-4">
+      <p class="text-center text-slate-600 font-medium mb-8">Trusted by privacy-conscious users worldwide</p>
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <!-- Testimonial card -->
+        <div class="rounded-2xl border border-slate-200/50 bg-white/80 hover:shadow-lg transition hover:-translate-y-2 p-6">
+          <div class="flex items-center mb-3">
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+          </div>
+          <p class="text-slate-700 mb-4 italic">“Finally, a VPN that puts control back in my hands. The performance is incredible!”</p>
+          <div>
+            <p class="font-semibold text-slate-900">Sarah M.</p>
+            <p class="text-sm text-slate-500">Cybersecurity Analyst</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200/50 bg-white/80 hover:shadow-lg transition hover:-translate-y-2 p-6">
+          <div class="flex items-center mb-3">
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+          </div>
+          <p class="text-slate-700 mb-4 italic">“Perfect for our remote team. Easy setup and blazing fast speeds.”</p>
+          <div>
+            <p class="font-semibold text-slate-900">David K.</p>
+            <p class="text-sm text-slate-500">Startup Founder</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200/50 bg-white/80 hover:shadow-lg transition hover:-translate-y-2 p-6">
+          <div class="flex items-center mb-3">
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+            <i data-lucide="star" class="w-4 h-4 text-yellow-400 ml-1" style="fill: #facc15"></i>
+          </div>
+          <p class="text-slate-700 mb-4 italic">“True privacy by design. This is how VPNs should work.”</p>
+          <div>
+            <p class="font-semibold text-slate-900">Emma L.</p>
+            <p class="text-sm text-slate-500">Privacy Advocate</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section id="how-it-works" class="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h3 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">The Privana Difference</h3>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto mt-4">See why our approach is fundamentally more secure than renting a typical VPN.</p>
+      </div>
+      <div class="max-w-4xl mx-auto rounded-2xl border border-slate-200/50 bg-white/80 shadow-2xl overflow-hidden">
+        <div class="grid grid-cols-3 font-bold text-left p-6 bg-gradient-to-r from-slate-100/80 to-sky-50/80">
+          <div class="text-slate-800">Feature</div>
+          <div class="text-center text-sky-600 flex items-center justify-center"><i data-lucide="shield" class="w-5 h-5 mr-2"></i>Privana</div>
+          <div class="text-center text-slate-600">Other VPNs</div>
+        </div>
+        <!-- rows -->
+        <div class="divide-y divide-slate-200/60">
+          <!-- Row helper -->
+          <div class="grid grid-cols-3 items-center text-left p-6 bg-white/50">
+            <div class="font-semibold text-slate-800">Who Controls the Server?</div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-emerald-50 rounded-full px-3 py-2"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-2"></i><span class="font-medium text-emerald-700">You (via Privana)</span></span></div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-red-50 rounded-full px-3 py-2"><i data-lucide="x-circle" class="w-5 h-5 text-red-500 mr-2"></i><span class="text-red-600">The VPN Company</span></span></div>
+          </div>
+          <div class="grid grid-cols-3 items-center text-left p-6 bg-slate-50/30">
+            <div class="font-semibold text-slate-800">Can Your Data Be Seen?</div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-emerald-50 rounded-full px-3 py-2"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-2"></i><span class="font-medium text-emerald-700">Never</span></span></div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-red-50 rounded-full px-3 py-2"><i data-lucide="x-circle" class="w-5 h-5 text-red-500 mr-2"></i><span class="text-red-600">Yes, Technically</span></span></div>
+          </div>
+          <div class="grid grid-cols-3 items-center text-left p-6 bg-white/50">
+            <div class="font-semibold text-slate-800">Risk of Company Data Breaches?</div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-emerald-50 rounded-full px-3 py-2"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-2"></i><span class="font-medium text-emerald-700">Minimal</span></span></div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-red-50 rounded-full px-3 py-2"><i data-lucide="x-circle" class="w-5 h-5 text-red-500 mr-2"></i><span class="text-red-600">High</span></span></div>
+          </div>
+          <div class="grid grid-cols-3 items-center text-left p-6 bg-slate-50/30">
+            <div class="font-semibold text-slate-800">Guaranteed No-Logs?</div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-emerald-50 rounded-full px-3 py-2"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-2"></i><span class="font-medium text-emerald-700">Yes, by design</span></span></div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-red-50 rounded-full px-3 py-2"><i data-lucide="x-circle" class="w-5 h-5 text-red-500 mr-2"></i><span class="text-red-600">Requires Trust</span></span></div>
+          </div>
+          <div class="grid grid-cols-3 items-center text-left p-6 bg-white/50">
+            <div class="font-semibold text-slate-800">Connection Speed</div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-emerald-50 rounded-full px-3 py-2"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-2"></i><span class="font-medium text-emerald-700">High & Consistent</span></span></div>
+            <div class="flex justify-center"><span class="inline-flex items-center bg-red-50 rounded-full px-3 py-2"><i data-lucide="x-circle" class="w-5 h-5 text-red-500 mr-2"></i><span class="text-red-600">Often Throttled</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-20 bg-white/70">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h3 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Everything You Need, Nothing You Don’t</h3>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto mt-4">Core privacy features, executed perfectly.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- 6 feature cards -->
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="zap" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Optimized for Performance</h4>
+          </div>
+          <p class="text-slate-600">Premium Hetzner servers + WireGuard® for fast, stable, buffer-free connections.</p>
+        </div>
+
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Verifiable No-Log Policy</h4>
+          </div>
+          <p class="text-slate-600">Architecture built to prevent logging. Only the minimal account data is stored.</p>
+        </div>
+
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="server" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Reliable Infrastructure</h4>
+          </div>
+          <p class="text-slate-600">World-class Hetzner network & peering for smooth, consistent performance.</p>
+        </div>
+
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="users" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Flexible Device Management</h4>
+          </div>
+          <p class="text-slate-600">Add or remove devices right from your dashboard. Plans scale with you.</p>
+        </div>
+
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="globe" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Use the Official Apps</h4>
+          </div>
+          <p class="text-slate-600">Connect with the official, open-source WireGuard clients on every platform.</p>
+        </div>
+
+        <div class="group p-6 bg-white/80 rounded-2xl border border-slate-200/50 hover:shadow-2xl transition hover:-translate-y-3">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+              <i data-lucide="heart" class="w-7 h-7 text-white"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 group-hover:text-sky-700">Simple & Transparent</h4>
+          </div>
+          <p class="text-slate-600">No bloat. Just a fast, private, reliable VPN that works.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h3 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Compare VPN plans & pricing</h3>
+        <p class="text-lg text-slate-600 max-w-2xl mx-auto mt-4">Choose your plan and start your 7-day free trial.</p>
+
+        <!-- Billing switch -->
+        <div class="mt-10 inline-flex items-center bg-white/80 rounded-2xl p-1 shadow-lg border border-slate-200/50">
+          <button data-cycle="monthly" class="plan-toggle px-6 py-3 text-sm font-semibold rounded-xl text-slate-600 hover:text-slate-800 hover:bg-slate-50">Monthly</button>
+          <button data-cycle="yearly" class="plan-toggle px-6 py-3 text-sm font-semibold rounded-xl text-slate-600 hover:text-slate-800 hover:bg-slate-50 relative">12 months
+            <span class="hidden tag-year absolute -top-2 -right-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-500 text-white">Save 55%</span>
+          </button>
+          <button data-cycle="two_yearly" class="plan-toggle px-6 py-3 text-sm font-semibold rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg scale-105 relative">24 months
+            <span class="tag-2y absolute -top-2 -right-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-500 text-white">Save 72%</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto items-end" id="plans">
+        <!-- Free Trial -->
+        <div class="w-full border-2 border-dashed border-sky-300/50 bg-gradient-to-br from-sky-50/50 to-blue-50/50 rounded-2xl shadow-lg flex flex-col hover:scale-105 transition">
+          <div class="p-8">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-2xl font-bold text-slate-900">Free Trial</h4>
+              <i data-lucide="sparkles" class="w-6 h-6 text-sky-500"></i>
+            </div>
+            <p class="text-slate-600">Test everything for 7 days.</p>
+            <div class="flex items-baseline gap-2 pt-4">
+              <span class="text-4xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">€0</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 h-8">No credit card required.</p>
+          </div>
+          <div class="p-8 pt-0 flex-grow flex flex-col">
+            <div class="flex-grow">
+              <p class="font-semibold text-slate-700 mb-4">For 1 device, includes:</p>
+              <ul class="space-y-3 mb-8">
+                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>7-Day Duration</li>
+                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Strict No-Log Policy</li>
+                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>High-Speed Connection</li>
+              </ul>
+            </div>
+            <a href="/auth/signup" class="w-full text-center text-lg py-3 mt-auto rounded-xl text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg">Start for Free</a>
+          </div>
+        </div>
+
+        <!-- Paid plan cards -->
+        <!-- Personal -->
+        <div class="plan-card w-full border border-slate-200/50 bg-white/80 rounded-2xl shadow-lg flex flex-col hover:scale-105 transition" data-name="Personal" data-m="9.99" data-y="4.49" data-y2="2.79" data-devices="1–3">
+          <div class="p-8">
+            <h4 class="text-2xl font-bold text-slate-900">Personal</h4>
+            <p class="text-slate-600">For individuals and power users.</p>
+            <div class="flex items-baseline gap-2 pt-4">
+              <span class="price text-4xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">€2.79</span>
+              <span class="text-slate-500 font-medium">/mo</span>
+            </div>
+            <p class="bill-note text-xs text-slate-500 mt-1 h-8">Billed €66.96 for the first two years.</p>
+          </div>
+          <div class="p-8 pt-0 flex-grow flex flex-col">
+            <p class="font-semibold text-slate-700 mb-4">For 1–3 devices, includes:</p>
+            <ul class="space-y-3 mb-8">
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Strict No-Log Policy</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>High-Speed Hetzner Servers</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Official WireGuard® Apps</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Simple Dashboard</li>
+            </ul>
+            <a href="/auth/signup" class="w-full text-center text-lg py-3 mt-auto rounded-xl border-2 border-sky-500 text-sky-600 hover:bg-sky-50">Choose Plan</a>
+          </div>
+        </div>
+
+        <!-- Family (highlight) -->
+        <div class="plan-card relative w-full border-2 border-sky-500/50 bg-gradient-to-br from-sky-50/80 to-blue-50/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col hover:scale-105 transition" data-name="Family" data-m="13.99" data-y="4.09" data-y2="2.59" data-devices="4–6">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-sky-500 to-blue-600 text-white border-2 border-white shadow-lg">Most Popular</span>
+          <div class="p-8 relative z-10">
+            <h4 class="text-2xl font-bold text-slate-900">Family</h4>
+            <p class="text-slate-600">Perfect to protect your whole family.</p>
+            <div class="flex items-baseline gap-2 pt-4">
+              <span class="price text-4xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">€2.59</span>
+              <span class="text-slate-500 font-medium">/mo</span>
+            </div>
+            <p class="bill-note text-xs text-slate-500 mt-1 h-8">Billed €62.16 for the first two years.</p>
+          </div>
+          <div class="p-8 pt-0 flex-grow flex flex-col relative z-10">
+            <p class="font-semibold text-slate-700 mb-4">For 4–6 devices, includes:</p>
+            <ul class="space-y-3 mb-8">
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Strict No-Log Policy</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>High-Speed Hetzner Servers</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Official WireGuard® Apps</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Simple Dashboard</li>
+            </ul>
+            <a href="/auth/signup" class="w-full text-center text-lg py-3 mt-auto rounded-xl text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg">Choose Plan</a>
+          </div>
+        </div>
+
+        <!-- Small Team -->
+        <div class="plan-card w-full border border-slate-200/50 bg-white/80 rounded-2xl shadow-lg flex flex-col hover:scale-105 transition" data-name="Small Team" data-m="17.99" data-y="5.99" data-y2="3.99" data-devices="7–10">
+          <div class="p-8">
+            <h4 class="text-2xl font-bold text-slate-900">Small Team</h4>
+            <p class="text-slate-600">Ideal for small businesses & teams.</p>
+            <div class="flex items-baseline gap-2 pt-4">
+              <span class="price text-4xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">€3.99</span>
+              <span class="text-slate-500 font-medium">/mo</span>
+            </div>
+            <p class="bill-note text-xs text-slate-500 mt-1 h-8">Billed €95.76 for the first two years.</p>
+          </div>
+          <div class="p-8 pt-0 flex-grow flex flex-col">
+            <p class="font-semibold text-slate-700 mb-4">For 7–10 devices, includes:</p>
+            <ul class="space-y-3 mb-8">
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Strict No-Log Policy</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>High-Speed Hetzner Servers</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Official WireGuard® Apps</li>
+              <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-500 mr-3"></i>Simple Dashboard</li>
+            </ul>
+            <a href="/auth/signup" class="w-full text-center text-lg py-3 mt-auto rounded-xl border-2 border-sky-500 text-sky-600 hover:bg-sky-50">Choose Plan</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="affiliates" class="border-t bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 py-16">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <div class="flex items-center justify-center space-x-3 mb-6">
+          <div class="w-12 h-12 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+          </div>
+          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</h3>
+        </div>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-8">Take control of your privacy with a VPN that’s truly yours. No logs, no compromises, just pure privacy.</p>
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-8 mb-12">
+        <div>
+          <h4 class="font-semibold text-slate-800 mb-4">Product</h4>
+          <ul class="space-y-2 text-slate-600">
+            <li><a href="#features" class="hover:text-sky-600">Features</a></li>
+            <li><a href="#pricing" class="hover:text-sky-600">Pricing</a></li>
+            <li><a href="#" class="hover:text-sky-600">Download</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-slate-800 mb-4">Company</h4>
+          <ul class="space-y-2 text-slate-600">
+            <li><a href="#" class="hover:text-sky-600">About Us</a></li>
+            <li><a href="#" class="hover:text-sky-600">Blog</a></li>
+            <li><a href="#" class="hover:text-sky-600">Careers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-slate-800 mb-4">Support</h4>
+          <ul class="space-y-2 text-slate-600">
+            <li><a href="#" class="hover:text-sky-600">Help Center</a></li>
+            <li><a href="#" class="hover:text-sky-600">Contact Us</a></li>
+            <li><a href="#faq" class="hover:text-sky-600">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-slate-800 mb-4">Partners</h4>
+          <ul class="space-y-2 text-slate-600">
+            <li><a href="#affiliates" class="hover:text-sky-600 font-semibold">Affiliate Program</a></li>
+            <li><a href="#" class="hover:text-sky-600">Resellers</a></li>
+            <li><a href="#" class="hover:text-sky-600">API</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200/50 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex space-x-6 text-sm text-slate-500">
+          <a href="#" class="hover:text-sky-600">Privacy Policy</a>
+          <a href="#" class="hover:text-sky-600">Terms of Service</a>
+          <a href="#" class="hover:text-sky-600">Cookie Policy</a>
+        </div>
+        <p class="text-sm text-slate-500">© <span id="year"></span> Privana. All Rights Reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // header shadow on scroll
+    const hdr = document.getElementById('site-header');
+    window.addEventListener('scroll', () => {
+      hdr.classList.toggle('shadow-lg', window.scrollY > 50);
+      hdr.classList.toggle('bg-white/95', window.scrollY > 50);
+    });
+
+    // pricing toggle
+    const toggles = document.querySelectorAll('.plan-toggle');
+    const cards = document.querySelectorAll('.plan-card');
+    let cycle = 'two_yearly'; // default
+
+    function fmt(n){ return n.toFixed(2); }
+    function updatePlans() {
+      toggles.forEach(btn => {
+        const active = btn.dataset.cycle === cycle;
+        btn.className = "plan-toggle px-6 py-3 text-sm font-semibold rounded-xl transition relative " +
+          (active ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg scale-105" : "text-slate-600 hover:text-slate-800 hover:bg-slate-50");
+        document.querySelector('.tag-year')?.classList.toggle('hidden', !(cycle==='yearly'));
+        document.querySelector('.tag-2y')?.classList.toggle('hidden', !(cycle==='two_yearly'));
+      });
+      cards.forEach(card => {
+        const m  = parseFloat(card.dataset.m);
+        const y  = parseFloat(card.dataset.y);
+        const y2 = parseFloat(card.dataset.y2);
+        const priceEl = card.querySelector('.price');
+        const noteEl  = card.querySelector('.bill-note');
+        if (cycle === 'monthly') {
+          priceEl.textContent = `€${fmt(m)}`;
+          noteEl.textContent = "Billed monthly. Cancel anytime.";
+        } else if (cycle === 'yearly') {
+          priceEl.textContent = `€${fmt(y)}`;
+          noteEl.textContent = `Billed €${fmt(y*12)} for the first year.`;
+        } else {
+          priceEl.textContent = `€${fmt(y2)}`;
+          noteEl.textContent = `Billed €${fmt(y2*24)} for the first two years.`;
+        }
+      });
+    }
+    toggles.forEach(btn => btn.addEventListener('click', () => { cycle = btn.dataset.cycle; updatePlans(); }));
+    updatePlans();
+
+    // year in footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // mount lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
