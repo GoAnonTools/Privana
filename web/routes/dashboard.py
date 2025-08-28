@@ -876,7 +876,7 @@ def update_device_status(device_id, status):
     return jsonify({"success": True, "message": "Device status updated"})
 
 # ----------------------------
-# Singapore API passthroughs (signed HMAC)
+# Panama API passthroughs (signed HMAC)
 # These are under /dashboard because app.py registers: url_prefix="/dashboard"
 # ----------------------------
 

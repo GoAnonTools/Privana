@@ -9,11 +9,13 @@ import sys
 os.environ['ENVIRONMENT'] = 'development'
 os.environ['WG_HOST'] = '91.163.90.105'  # Your current French IP
 
-# Add the current directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the project root to Python path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
 
 from main import WireGuardServer
 import config
+from web.routes.auth import DB_PATH # Import DB_PATH
 
 if __name__ == '__main__':
     print("🇫🇷 Starting WireGuard Server - DEVELOPMENT MODE (France)")
@@ -21,6 +23,12 @@ if __name__ == '__main__':
     
     # Show configuration
     config.Config.print_info()
+
+    # --- Start: Added for testing new user workflow ---
+    if os.path.exists(DB_PATH):
+        print(f"🗑️ Deleting existing database: {DB_PATH}")
+        os.remove(DB_PATH)
+    # --- End: Added for testing new user workflow ---
     
     # Start the server
     server = WireGuardServer()

@@ -6,22 +6,52 @@
     <title>Privana - {% block title %}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Favicons (keep) -->
+<link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+<link rel="shortcut icon" href="/site/assets/favicon.ico">
+
+<!-- Single PWA manifest (root scope) -->
+<link rel="manifest" href="/manifest.webmanifest">
+
+<!-- Colors -->
+<meta name="msapplication-TileColor" content="#06b6d4">
+<meta name="theme-color" content="#06b6d4">
+
 </head>
+<!-- PWA bootstrap (registers /sw.js and handles updates) -->
+<script defer src="/site/assets/pwa.js"></script>
+
+
 <body>
     <header>
-        <div class="container">
-            <a href="{{ url_for('dashboard.dashboard') }}" class="logo">🛡️ PRIVANA</a>
-            <nav>
-                {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('auth.logout') }}">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('auth.signup') }}">Sign Up</a>
-                    <a href="{{ url_for('auth.login') }}">Login</a>
-                {% endif %}
-            </nav>
-        </div>
-    </header>
+    <div class="container">
+      <a href="{{ url_for('dashboard.dashboard') }}" class="logo">🛡️ PRIVANA</a>
+      <nav>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+          <a href="{{ url_for('auth.login') }}">Login</a>
+
+          <!-- PWA install button (hidden until beforeinstallprompt) -->
+          <button id="pwa-install"
+                  class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                  aria-label="Install app">
+            <!-- inline SVG download icon using currentColor -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg" class="mr-2" aria-hidden="true">
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="hidden sm:inline">Install app</span>
+          </button>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
     
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -39,7 +69,33 @@
     
     <footer>
         <div class="container">
-            <p>&copy; 2023 Privana. All rights reserved. | privana.pro</p>
+            <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+
+  <!-- Left Side: Navigational Links (Unchanged) -->
+  <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+    <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+    <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+    <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+    <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+  </div>
+
+  <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
+  <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
+  <div class="text-center md:text-right">
+    
+    <!-- Line 1: Establishes the brand-to-company relationship -->
+    <p>Privana is Powered by GoAnon LLC.</p>
+    
+    <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
+    <p class="mt-1">
+      <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+      <span class="mx-1">|</span>
+      <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+    </p>
+
+  </div>
+
+</div>
         </div>
     </footer>
 </body>

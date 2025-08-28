@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en" class="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Privana Affiliate Program — Earn 20% on Every Sale</title>
+  <meta name="description" content="Become a Privana affiliate and earn 20% commission on every sale. Real-time tracking and payouts via Refersion. Free to join." />
+
+  <!-- Favicons (keep) -->
+<link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+<link rel="shortcut icon" href="/site/assets/favicon.ico">
+
+<!-- Single PWA manifest (root scope) -->
+<link rel="manifest" href="/manifest.webmanifest">
+
+<!-- Colors -->
+<meta name="msapplication-TileColor" content="#06b6d4">
+<meta name="theme-color" content="#06b6d4">
+
+
+  <!-- Set theme ASAP (default: light). If user chose dark before, honor it. -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme'); // 'light'|'dark'|null
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+      // else default is light → no 'dark' class
+    })();
+  </script>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/site/assets/privana.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950:'#020617' },
+            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
+            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
+            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    html { scroll-behavior: smooth; }
+    :root { --spin: 4s; }
+    .logo-scene { perspective: 1000px; }
+    .logo-obj   { transform-style: preserve-3d; transform: rotateX(-10deg) rotateY(15deg); }
+    .logo-cube  { position: relative; width: 200px; height: 200px; transform-style: preserve-3d; animation: spin var(--spin) linear infinite; }
+    .logo-face  { position:absolute; top:20px; left:20px; width:160px; height:160px; border-radius:25px; border:3px solid transparent; display:flex; align-items:center; justify-content:center; }
+    .f-front  { transform: translateZ(40px);  background: linear-gradient(135deg,#06b6d4 0%,#0891b2 100%); border-color:#06b6d4; box-shadow:0 0 40px rgba(6,182,212,.4); }
+    .f-back   { transform: translateZ(-40px) rotateY(180deg); background: linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%); border-color:#7c3aed; box-shadow:0 0 40px rgba(124,58,237,.35); }
+    .f-right  { transform: rotateY(90deg) translateZ(40px);  background: linear-gradient(135deg,#8b5cf6 0%,#06b6d4 100%); border-color:#8b5cf6; box-shadow:0 0 30px rgba(139,92,246,.25); }
+    .f-left   { transform: rotateY(-90deg) translateZ(40px); background: linear-gradient(135deg,#e2e8f0 0%,#06b6d4 100%); border-color:#06b6d4; box-shadow:0 0 30px rgba(6,182,212,.25); }
+    .f-top    { transform: rotateX(90deg) translateZ(40px); background: radial-gradient(circle,#f8fafc 0%,#06b6d4 100%); border-color:#f8fafc; box-shadow:0 0 40px rgba(248,250,252,.35); }
+    .f-bottom { transform: rotateX(-90deg) translateZ(40px);background: radial-gradient(circle,#0f172a 0%,#8b5cf6 100%); border-color:#8b5cf6; box-shadow:0 0 35px rgba(124,58,237,.3); }
+    .logo-shadow { width:140px; height:140px; background:radial-gradient(ellipse, rgba(6,182,212,.35) 0%, transparent 80%); position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotateX(90deg) translateZ(-60px); border-radius:50%; filter:blur(40px); opacity:.8; }
+    @keyframes spin {
+      0%   { transform: rotateY(0deg)   rotateX(0deg); }
+      25%  { transform: rotateY(90deg)  rotateX(10deg); }
+      50%  { transform: rotateY(180deg) rotateX(0deg); }
+      75%  { transform: rotateY(270deg) rotateX(-10deg); }
+      100% { transform: rotateY(360deg) rotateX(0deg); }
+    }
+  </style>
+  <script defer src="/site/assets/pwa.js"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 overflow-x-hidden">
+
+  <!-- Header -->
+  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+    <div class="mx-auto container px-4 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-3 group">
+        <img src="/site/assets/privana-mark.png"
+          alt="Privana"
+          class="h-12 w-12 md:h-12 md:w-12 select-none drop-shadow-sm"
+          loading="eager" decoding="async">
+
+        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</span>
+      </a>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
+        <a href="#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <!-- Theme toggle -->
+        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+          <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
+          <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+        </button>
+        <a href="/auth/login" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log in</a>
+        <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
+          <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
+        </a>
+        <button
+          id="pwa-install"
+          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+                 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Install app">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+          <span class="hidden sm:inline">Install app</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative py-16 md:py-20 text-center bg-gradient-to-br from-white via-sky-50/40 to-blue-50/40 dark:from-slate-900 dark:via-sky-950/40 dark:to-blue-950/40">
+    <div class="container mx-auto px-4">
+      <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold mb-5 bg-gradient-to-r from-sky-100 to-blue-100 text-sky-800 border-sky-200 shadow dark:from-sky-900/30 dark:to-blue-900/30 dark:text-sky-300 dark:border-sky-700/50">
+        <i data-lucide="wallet" class="w-4 h-4 mr-2"></i> 20% Commission on Every Sale
+      </span>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-slate-900 via-sky-800 to-slate-900 bg-clip-text text-transparent dark:from-white dark:via-sky-300 dark:to-white">
+        Privana Affiliate Program
+      </h1>
+      <p class="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto dark:text-slate-300">
+        Earn recurring revenue by promoting a privacy-first VPN your audience will love.
+        Tracking and payouts are powered by <strong>Refersion</strong>.
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <a id="cta-join-hero" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-lg btn-qp">
+          <i data-lucide="link-2" class="w-5 h-5"></i>
+          Join on Refersion
+        </a>
+        <a href="#how-it-works" class="btn inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10 btn-lg">How it works</a>
+    </div>
+    </div>
+    <div class="absolute -top-8 left-8 w-16 h-16 bg-gradient-to-br from-sky-400/20 to-blue-600/20 rounded-full blur-sm animate-bounce" style="animation-delay:1s"></div>
+    <div class="absolute top-28 right-20 w-12 h-12 bg-gradient-to-br from-emerald-400/20 to-cyan-600/20 rounded-full blur-sm animate-bounce" style="animation-delay:3s"></div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how-it-works" class="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/30">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">How It Works</h2>
+        <p class="text-slate-600 mt-3 dark:text-slate-300">Start earning in minutes—your Refersion dashboard keeps everything transparent.</p>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
+        <div class="p-6 bg-white/80 rounded-2xl border border-slate-200/60 shadow hover:shadow-xl transition dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="step-icon w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="user-plus" class="w-6 h-6 text-sky-700 dark:text-sky-200"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100">Sign up free</h3>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Create your account on Refersion and get your unique tracking link.</p>
+        </div>
+
+        <div class="p-6 bg-white/80 rounded-2xl border border-slate-200/60 shadow hover:shadow-xl transition dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="step-icon w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="megaphone" class="w-6 h-6 text-sky-700 dark:text-sky-200"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100">Share everywhere</h3>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Promote Privana via social, blogs, YouTube, newsletters, or communities—use your link.</p>
+        </div>
+
+        <div class="p-6 bg-white/80 rounded-2xl border border-slate-200/60 shadow hover:shadow-xl transition dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="step-icon w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-400/30 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="wallet-cards" class="w-6 h-6 text-sky-700 dark:text-sky-200"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100">Earn 20% per sale</h3>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Earn 20% on every paid subscription. Refersion pays out automatically.</p>
+        </div>
+      </div>
+
+      <div class="mt-10 grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
+        <div class="p-6 bg-white/90 rounded-2xl border border-slate-200/60 shadow dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Real-time tracking</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Track clicks, conversions, and commissions from your Refersion dashboard.</p>
+        </div>
+        <div class="p-6 bg-white/90 rounded-2xl border border-slate-200/60 shadow dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="dollar-sign" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Simple payouts</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Get paid via Refersion—options include PayPal, bank transfer, or check (where supported).</p>
+        </div>
+        <div class="p-6 bg-white/90 rounded-2xl border border-slate-200/60 shadow dark:bg-white/5 dark:border-white/10">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="repeat" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Recurring revenue</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Earn each time your referrals renew their subscription.*</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 max-w-6xl mx-auto mt-2 dark:text-slate-400">*Subject to program terms configured in Refersion.</p>
+    </div>
+  </section>
+
+  <!-- Why join -->
+  <section class="py-16 bg-white/70 dark:bg-slate-900/40">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">Why Join Privana Affiliates?</h2>
+        <p class="text-slate-600 mt-3 dark:text-slate-300">High-converting product, clear positioning, and privacy your audience can trust.</p>
+      </div>
+
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="percent" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">20% commissions</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Competitive, simple rate on every sale—no cap on earnings.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="lock" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Privacy-first VPN</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Compelling story: post-quantum hardening, Panama jurisdiction, verifiable no-logs.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="star" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">High trust = conversions</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Easy to recommend: simple setup, strong differentiators, clear value.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="image" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Assets on request</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Need banners, logos, or copy? Email <a href="mailto:affiliates@privana.pro" class="text-sky-700 underline dark:text-sky-300">affiliates@privana.pro</a>.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="headphones" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">Partner support</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">We’ll help you optimize placements and increase EPC.</p>
+        </div>
+        <div class="p-6 rounded-2xl border border-slate-200/60 bg-white/80 shadow dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-center gap-3 mb-2">
+            <i data-lucide="infinity" class="w-5 h-5 text-sky-600 dark:text-sky-300"></i>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-100">No limits</h4>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300">Promote at any scale. The more you drive, the more you earn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Earnings calculator -->
+  <section class="py-16 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/30">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto rounded-2xl border border-slate-200/60 bg-white/80 p-8 shadow-2xl dark:border-white/10 dark:bg-white/5">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Earnings Estimator</h3>
+            <p class="text-slate-600 dark:text-slate-300">Estimate monthly earnings with a 20% commission.</p>
+          </div>
+          <a id="cta-join-estimator" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-qp btn-compact">
+            <i data-lucide="link-2" class="w-4 h-4"></i>
+            Join the program
+          </a>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 mt-6">
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Sales per month</label>
+            <input id="calc-sales" type="number" min="0" value="25"
+                   class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white/90 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-100 dark:focus:ring-sky-500" />
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Avg. order value ($)</label>
+            <input id="calc-aov" type="number" min="0" step="0.01" value="60"
+                   class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white/90 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-100 dark:focus:ring-sky-500" />
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Retention (renew %)</label>
+            <input id="calc-ret" type="number" min="0" max="100" value="60"
+                   class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 bg-white/90 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-100 dark:focus:ring-sky-500" />
+          </div>
+        </div>
+
+        <div class="mt-6 grid md:grid-cols-3 gap-6">
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 dark:bg-slate-800/50 dark:border-white/10">
+            <div class="text-xs uppercase text-slate-500 dark:text-slate-400">Commission rate</div>
+            <div class="text-2xl font-extrabold text-slate-900 dark:text-white">20%</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 dark:bg-slate-800/50 dark:border-white/10">
+            <div class="text-xs uppercase text-slate-500 dark:text-slate-400">Est. monthly</div>
+            <div id="calc-monthly" class="text-2xl font-extrabold text-slate-900 dark:text-white">$300.00</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/60 dark:bg-slate-800/50 dark:border-white/10">
+            <div class="text-xs uppercase text-slate-500 dark:text-slate-400">With renewals*</div>
+            <div id="calc-renew" class="text-2xl font-extrabold text-slate-900 dark:text-white">$480.00</div>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-2 dark:text-slate-400">*Rough illustration assuming the given renewal percentage for existing customers. Actual results may vary based on program settings in Refersion.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16 text-center bg-gradient-to-br from-white via-sky-50/40 to-blue-50/40 dark:from-slate-900 dark:via-sky-950/40 dark:to-blue-950/40">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">Ready to Start Earning?</h2>
+      <p class="text-lg text-slate-600 mt-3 max-w-2xl mx-auto dark:text-slate-300">Join the Privana Affiliate Program—help your audience protect their privacy and turn your influence into income.</p>
+      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+        <a id="cta-join-bottom" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-lg btn-qp">
+          <i data-lucide="link-2" class="w-5 h-5"></i>
+          Sign Up Now
+        </a>
+        <a href="/site/affiliatespolicy.html"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 shadow-sm
+                  dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+          <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+          Program Policy
+        </a>
+      </div>
+      <p class="text-sm text-slate-500 mt-4 dark:text-slate-400">Questions? Email <a href="mailto:affiliates@privana.pro" class="text-sky-700 underline dark:text-sky-300">affiliates@privana.pro</a>.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <div class="flex items-center justify-center space-x-3 mb-6">
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy" decoding="async">
+          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
+        </div>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that’s truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+        <div class="flex items-center justify-center gap-3">
+          <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">← Back to Home</a>
+       </div>
+      </div>
+      <!-- Footer Container -->
+<div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+
+  <!-- Left Side: Navigational Links (Unchanged) -->
+  <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+    <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+    <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+    <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+    <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+  </div>
+
+  <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
+  <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
+  <div class="text-center md:text-right">
+    
+    <!-- Line 1: Establishes the brand-to-company relationship -->
+    <p>Privana is Powered by GoAnon LLC.</p>
+    
+    <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
+    <p class="mt-1">
+      <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+      <span class="mx-1">|</span>
+      <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+    </p>
+
+  </div>
+
+</div>
+    </div>
+  </footer>
+
+  <!-- Load Lucide LAST, then render icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    // Real Refersion signup URL here
+    const REFERSION_SIGNUP_URL = "https://YOUR-REFERSION-DOMAIN/affiliates/sign_up"; // TODO
+
+    // Wire CTAs
+    ["cta-join-hero","cta-join-estimator","cta-join-bottom"].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.href = REFERSION_SIGNUP_URL;
+    });
+
+    // Earnings calculator
+    (function(){
+      const sales=document.getElementById('calc-sales');
+      const aov=document.getElementById('calc-aov');
+      const ret=document.getElementById('calc-ret');
+      const monthly=document.getElementById('calc-monthly');
+      const renew=document.getElementById('calc-renew');
+      function update(){
+        const s=Math.max(0,parseFloat(sales?.value||0));
+        const v=Math.max(0,parseFloat(aov?.value||0));
+        const r=Math.min(100,Math.max(0,parseFloat(ret?.value||0)));
+        const base=s*v*0.20, recur=s*(r/100)*v*0.20;
+        if(monthly) monthly.textContent=`$${base.toFixed(2)}`;
+        if(renew)   renew.textContent  =`$${(base+recur).toFixed(2)}`;
+      }
+      ['input','change'].forEach(evt=>{
+        sales?.addEventListener(evt,update);
+        aov?.addEventListener(evt,update);
+        ret?.addEventListener(evt,update);
+      });
+      update();
+    })();
+
+    // Year + Lucide icons
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();             // run now (Lucide is loaded above)
+      // and run again after onload as a safety
+      window.addEventListener('load', ()=> { try { lucide.createIcons(); } catch(e){} });
+    }
+  </script>
+
+  <!-- Theme toggle logic -->
+  <script>
+    (function(){
+      const toggle = document.getElementById('themeToggle');
+      const iconSun = document.getElementById('iconSun');
+      const iconMoon = document.getElementById('iconMoon');
+      function syncIcons(){
+        const dark = document.documentElement.classList.contains('dark');
+        iconSun?.classList.toggle('hidden', dark);
+        iconMoon?.classList.toggle('hidden', !dark);
+      }
+      toggle?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const isDark = root.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        syncIcons();
+      });
+      syncIcons();
+    })();
+  </script>
+
+  <!-- Cookie banner -->
+<div id="cookie-banner" class="fixed inset-x-0 bottom-0 z-50 hidden">
+  <div class="mx-auto max-w-4xl m-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg text-slate-800 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100">
+    <div class="md:flex md:items-center md:justify-between gap-4">
+      <p class="text-sm dark:text-slate-300">
+        We use <strong>essential cookies</strong> to run the site securely. With your consent, we’ll use
+        <strong>anonymous analytics</strong> to improve Privana. You can change your choice anytime in our
+        <a href="/site/cookie.html" class="underline text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-400">Cookie Policy</a>.
+      </p>
+      <div class="mt-3 md:mt-0 flex gap-2">
+        <!-- Outline (matches site outline CTA) -->
+        <button id="cookies-reject"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 text-sm font-semibold shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+          Reject all
+        </button>
+        <!-- Gradient (matches site primary CTA) -->
+        <button id="cookies-accept"
+                class="group inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white
+                       bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700
+                       shadow-lg shadow-sky-500/30">
+          Accept all
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const KEY = "cookieConsent";
+  const banner = document.getElementById("cookie-banner");
+  if (!banner) return;
+
+  // Respect Do Not Track by defaulting to reject
+  const dnt = (navigator.doNotTrack === "1" || window.doNotTrack === "1");
+
+  function loadAnalytics() {
+    // Load your analytics only after consent
+    // const s = document.createElement('script');
+    // s.async = true;
+    // s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX';
+    // document.head.appendChild(s);
+    // window.dataLayer = window.dataLayer || [];
+    // function gtag(){dataLayer.push(arguments);}
+    // gtag('js', new Date());
+    // gtag('config', 'G-XXXXXXX', { anonymize_ip: true });
+  }
+
+  // Initial state
+  const saved = localStorage.getItem(KEY);
+  if (!saved) {
+    // If DNT, silently store a reject and keep banner hidden
+    if (dnt) {
+      localStorage.setItem(KEY, JSON.stringify({ essential: true, analytics: false, ts: Date.now(), dnt: true }));
+    } else {
+      banner.classList.remove("hidden");
+    }
+  } else {
+    try {
+      const choice = JSON.parse(saved);
+      if (choice.analytics === true) loadAnalytics();
+    } catch {}
+  }
+
+  // Actions
+  const acceptBtn = document.getElementById("cookies-accept");
+  const rejectBtn = document.getElementById("cookies-reject");
+
+  acceptBtn?.addEventListener("click", () => {
+    localStorage.setItem(KEY, JSON.stringify({ essential: true, analytics: true, ts: Date.now() }));
+    banner.classList.add("hidden");
+    loadAnalytics();
+  });
+
+  rejectBtn?.addEventListener("click", () => {
+    localStorage.setItem(KEY, JSON.stringify({ essential: true, analytics: false, ts: Date.now() }));
+    banner.classList.add("hidden");
+  });
+})();
+</script>
+
+</body>
+</html>

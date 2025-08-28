@@ -5,34 +5,258 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Trial Ended - Privana</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Favicons (keep) -->
+  <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/site/assets/favicon.ico">
+
+  <!-- Single PWA manifest (root scope) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+
+  <!-- Colors -->
+  <meta name="msapplication-TileColor" content="#06b6d4">
+  <meta name="theme-color" content="#06b6d4">
+  
+  <script>
+    (function(){
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  
+  <!-- Tailwind + site CSS + Lucide -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950:'#020617' },
+            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
+            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
+            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/site/assets/privana.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="/site/assets/pwa.js"></script>
+
   <style>
-    :root{--text:#0f172a;--muted:#64748b;--brand1:#0ea5e9;--brand2:#2563eb;--ring:rgba(37,99,235,.25);--shadow:0 10px 30px rgba(2,6,23,.08);}
-    html,body{margin:0;min-height:100%;font-family:'Nunito',system-ui,sans-serif;color:var(--text);background:
-      radial-gradient(1200px 600px at 10% -10%, rgba(14,165,233,.08), transparent),
-      radial-gradient(1000px 500px at 110% 20%, rgba(37,99,235,.08), transparent),
-      #f7fbff;}
-    .wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
-    .card{max-width:560px;width:100%;background:rgba(255,255,255,.9);backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%);border:1px solid rgba(2,6,23,.06);border-radius:20px;padding:28px;box-shadow:var(--shadow);text-align:center}
-    .logo{display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:10px}
-    .logo .icon{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--brand1),var(--brand2));color:#fff;box-shadow:0 10px 24px var(--ring)}
-    .logo h1{margin:0;letter-spacing:.2em;font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--brand1),var(--brand2));background-clip:text;-webkit-background-clip:text;color:transparent}
-    h2{margin:6px 0 6px;font-weight:800}
-    p{color:var(--muted)}
-    .plans{display:grid;gap:12px;margin:16px 0}
-    .plan{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(2,6,23,.06);background:#fff;border-radius:14px;padding:12px 14px}
-    .plan .name{font-weight:800}
-    .btn{display:inline-block;border:0;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;text-decoration:none}
-    .btn-primary{background:linear-gradient(90deg,var(--brand1),var(--brand2));color:#fff;box-shadow:0 10px 20px var(--ring)}
-    .btn-secondary{background:#eef2ff;color:#1e3a8a}
+    /* CSS Variables for both light and dark modes */
+    :root {
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand1: #0ea5e9;
+      --brand2: #2563eb;
+      --ring: rgba(37,99,235,.25);
+      --shadow: 0 10px 30px rgba(2,6,23,.08);
+      --qp1: #06b6d4; 
+      --qp2: #8b5cf6; 
+      --slate900: #0f172a; 
+      --sky700: #0369a1;
+      --card-bg: rgba(255,255,255,.9);
+      --card-border: rgba(2,6,23,.06);
+      --plan-bg: #fff;
+      --plan-border: rgba(2,6,23,.06);
+    }
+
+    /* Dark mode variables */
+    html.dark {
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --brand1: #0ea5e9;
+      --brand2: #2563eb;
+      --ring: rgba(37,99,235,.4);
+      --shadow: 0 10px 30px rgba(0,0,0,.2);
+      --qp1: #06b6d4; 
+      --qp2: #8b5cf6; 
+      --slate900: #f1f5f9; 
+      --sky700: #67e8f9;
+      --card-bg: rgba(15,23,42,.9);
+      --card-border: rgba(255,255,255,.1);
+      --plan-bg: rgba(30,41,59,.6);
+      --plan-border: rgba(255,255,255,.1);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Nunito', system-ui, sans-serif;
+      color: var(--text);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .wrap {
+      min-height: calc(100vh - 64px); /* Account for header height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      max-width: 560px;
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .logo {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .logo .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      filter: drop-shadow(0 8px 16px rgba(2,6,23,.10));
+    }
+
+    html.dark .logo .logo-mark {
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,.3));
+    }
+
+    .logo .wordmark {
+      margin: 0;
+      font-weight: 800;
+      font-size: 1.5rem;
+      background: linear-gradient(90deg, var(--slate900), var(--sky700));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: .01em;
+    }
+
+    h2 {
+      margin: 6px 0 6px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    p {
+      color: var(--muted);
+    }
+
+    .plans {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .plan {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--plan-border);
+      background: var(--plan-bg);
+      border-radius: 14px;
+      padding: 12px 14px;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .plan .name {
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .plan .muted {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: .2s transform, .2s box-shadow;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-qp {
+      color: #fff;
+      background-image: linear-gradient(90deg, var(--qp1), var(--qp2));
+      box-shadow: 0 16px 36px rgba(6,182,212,.25);
+    }
+
+    .btn-qp:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 20px 44px rgba(6,182,212,.35);
+    }
+
+    .btn-secondary {
+      background: #eef2ff;
+      color: #1e3a8a;
+    }
+
+    html.dark .btn-secondary {
+      background: rgba(30,41,59,.8);
+      color: #93c5fd;
+    }
   </style>
 </head>
-<body>
+
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
+  <!-- Header (matches public site, without Login/Start Trial) -->
+  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+    <div class="mx-auto container px-4 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-3 group">
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 md:h-12 md:w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
+        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
+      </a>
+      
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
+        <a href="/site/index.html#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+      </nav>
+      
+      <div class="flex items-center gap-2">
+        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+          <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
+          <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+        </button>
+        <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Install app">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+          <span class="hidden sm:inline">Install app</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  
   <div class="wrap">
     <div class="card">
       <div class="logo">
-        <div class="icon">🛡️</div>
-        <h1>PRIVANA</h1>
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="logo-mark" loading="eager" decoding="async">
+        <h1 class="wordmark">Privana</h1>
       </div>
+
       <h2>Your trial on this device has ended</h2>
       <p>Trials are limited to one per device to keep things fair and private.</p>
       {% if email %}<p><strong>{{ email }}</strong></p>{% endif %}
@@ -52,8 +276,75 @@
         </div>
       </div>
 
-      <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Log in</a>
+      <a class="btn btn-qp" href="{{ url_for('auth.login') }}">Log in</a>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <div class="flex items-center justify-center space-x-3 mb-6">
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="lazy" decoding="async">
+          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
+        </div>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+      </div>
+
+      <div class="w-full text-center text-xs text-slate-500 dark:text-slate-400 mb-3">
+        Translated for convenience only. English is the authoritative version.
+        <a href="/site/terms.html" class="underline decoration-slate-300 hover:decoration-transparent hover:text-cyan-700 dark:hover:text-cyan-300">Learn more</a>
+      </div>
+
+      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+        <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+          <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+          <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+          <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+          <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        </div>
+        <div class="text-center md:text-right">
+          <p>Privana is Powered by GoAnon LLC.</p>
+          <p class="mt-1">
+            <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+            <span class="mx-1">|</span>
+            <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Header scroll shadow
+    const hdr = document.getElementById('site-header');
+    window.addEventListener('scroll', () => {
+      hdr.classList.toggle('shadow-lg', window.scrollY > 50);
+      hdr.classList.toggle('bg-white/90', window.scrollY > 50 && !document.documentElement.classList.contains('dark'));
+      hdr.classList.toggle('dark:bg-slate-950/80', window.scrollY > 50 && document.documentElement.classList.contains('dark'));
+    });
+
+    // Theme toggle logic
+    const toggle = document.getElementById('themeToggle');
+    function syncIcons() {
+      const sun = document.getElementById('iconSun');
+      const moon = document.getElementById('iconMoon');
+      if (!sun || !moon) return;
+      const dark = document.documentElement.classList.contains('dark');
+      sun.classList.toggle('hidden', dark);
+      moon.classList.toggle('hidden', !dark);
+    }
+    toggle?.addEventListener('click', () => {
+      const root = document.documentElement;
+      const isDark = root.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      syncIcons();
+    });
+    syncIcons();
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    lucide.createIcons();
+    syncIcons();
+  </script>
 </body>
 </html>

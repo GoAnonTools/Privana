@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production server startup script for Singapore deployment
+Production server startup script for Panama deployment
 """
 import os
 import sys
@@ -32,7 +32,7 @@ def check_production_requirements():
     return missing
 
 if __name__ == '__main__':
-    print("🇸🇬 Starting WireGuard Server - PRODUCTION MODE (Singapore)")
+    print("🇸🇬 Starting WireGuard Server - PRODUCTION MODE (Panama)")
     
     # Check requirements
     issues = check_production_requirements()

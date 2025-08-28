@@ -123,7 +123,7 @@ class Config:
             print("\n📝 Development Notes:")
             print("- This is for local testing only")
             print("- External clients may not connect without port forwarding")
-            print("- Use 'ENVIRONMENT=production' on your Singapore server")
+            print("- Use 'ENVIRONMENT=production' on your Panama server")
         elif cls.ENVIRONMENT == 'production':
             print("\n🚀 Production Environment:")
             print("- Ensure firewall allows UDP port 51820")
@@ -146,18 +146,18 @@ class DevelopmentConfig(Config):
     API_SECRET = 'dev_secret_key_123456'
 
 class ProductionConfig(Config):
-    """Configuration for Singapore production server"""
+    """Configuration for Panama production server"""
     # More restrictive settings for production
     API_HOST = '127.0.0.1'  # API only accessible locally
     
     @classmethod
     def get_deployment_guide(cls):
-        """Return deployment instructions for Singapore"""
+        """Return deployment instructions for Panama"""
         return """
-🇸🇬 SINGAPORE SERVER DEPLOYMENT GUIDE:
+🇸🇬 Panama SERVER DEPLOYMENT GUIDE:
 
 1. VPS Setup:
-   - Choose a Singapore VPS (DigitalOcean SGP1, Vultr Singapore, etc.)
+   - Choose a Panama VPS (DigitalOcean SGP1, Vultr Panama, etc.)
    - Minimum: 1GB RAM, 1 CPU, Ubuntu 20.04/22.04 LTS
    
 2. Server Preparation:
@@ -166,7 +166,7 @@ class ProductionConfig(Config):
    
 3. Environment Setup:
    export ENVIRONMENT=production
-   export WG_HOST=YOUR_SINGAPORE_SERVER_IP
+   export WG_HOST=YOUR_Panama_SERVER_IP
    export API_SECRET=your-super-secure-secret-key
    export WG_PRIVATE_KEY=your-generated-private-key
    export WG_PUBLIC_KEY=your-generated-public-key

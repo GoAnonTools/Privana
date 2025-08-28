@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en" class="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quantum Security — Privana VPN</title>
+  <meta name="description" content="How Privana adds a post-quantum hardening layer on top of WireGuard to protect you against harvest-now, decrypt-later attacks." />
+
+  <!-- Favicons (keep) -->
+<link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="shortcut icon" href="/site/assets/favicon.ico">
+<meta name="msapplication-TileColor" content="#06b6d4">
+<meta name="theme-color" content="#06b6d4">
+
+
+  <!-- Set theme ASAP (default: light). If user chose dark before, honor it. -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme'); // 'light'|'dark'|null
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+      // else default is light → no 'dark' class
+    })();
+  </script>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/site/assets/privana.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950:'#020617' },
+            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
+            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
+            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="/site/assets/pwa.js"></script>
+
+
+
+  <style>
+    html { scroll-behavior: smooth; }
+    :root { --spin: 4s; }
+    .logo-scene { perspective: 1000px; }
+    .logo-obj   { transform-style: preserve-3d; transform: rotateX(-10deg) rotateY(15deg); }
+    .logo-cube  { position: relative; width: 200px; height: 200px; transform-style: preserve-3d; animation: spin var(--spin) linear infinite; }
+    .logo-face  { position:absolute; top:20px; left:20px; width:160px; height:160px; border-radius:25px; border:3px solid transparent; display:flex; align-items:center; justify-content:center; }
+    .f-front  { transform: translateZ(40px);  background: linear-gradient(135deg,#06b6d4 0%,#0891b2 100%); border-color:#06b6d4; box-shadow:0 0 40px rgba(6,182,212,.4); }
+    .f-back   { transform: translateZ(-40px) rotateY(180deg); background: linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%); border-color:#7c3aed; box-shadow:0 0 40px rgba(124,58,237,.35); }
+    .f-right  { transform: rotateY(90deg) translateZ(40px);  background: linear-gradient(135deg,#8b5cf6 0%,#06b6d4 100%); border-color:#8b5cf6; box-shadow:0 0 30px rgba(139,92,246,.25); }
+    .f-left   { transform: rotateY(-90deg) translateZ(40px); background: linear-gradient(135deg,#e2e8f0 0%,#06b6d4 100%); border-color:#06b6d4; box-shadow:0 0 30px rgba(6,182,212,.25); }
+    .f-top    { transform: rotateX(90deg) translateZ(40px); background: radial-gradient(circle,#f8fafc 0%,#06b6d4 100%); border-color:#f8fafc; box-shadow:0 0 40px rgba(248,250,252,.35); }
+    .f-bottom { transform: rotateX(-90deg) translateZ(40px);background: radial-gradient(circle,#0f172a 0%,#8b5cf6 100%); border-color:#8b5cf6; box-shadow:0 0 35px rgba(124,58,237,.3); }
+    .logo-shadow { width:140px; height:140px; background:radial-gradient(ellipse, rgba(6,182,212,.35) 0%, transparent 80%); position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotateX(90deg) translateZ(-60px); border-radius:50%; filter:blur(40px); opacity:.8; }
+    @keyframes spin {
+      0%   { transform: rotateY(0deg)   rotateX(0deg); }
+      25%  { transform: rotateY(90deg)  rotateX(10deg); }
+      50%  { transform: rotateY(180deg) rotateX(0deg); }
+      75%  { transform: rotateY(270deg) rotateX(-10deg); }
+      100% { transform: rotateY(360deg) rotateX(0deg); }
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 overflow-x-hidden">
+
+  <!-- Header -->
+  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+    <div class="mx-auto container px-4 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-3 group">
+        <img src="/site/assets/privana-mark.png"
+          alt="Privana"
+          class="h-12 w-12 md:h-12 md:w-12 select-none drop-shadow-sm"
+          loading="eager" decoding="async">
+
+        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</span>
+      </a>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
+        <a href="/#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <!-- Theme toggle -->
+        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+          <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
+          <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+        </button>
+        <a href="/auth/login" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log in</a>
+        <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
+          <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
+        </a>
+        <button
+          id="pwa-install"
+          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+                 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Install app">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+          <span class="hidden sm:inline">Install app</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative pt-16 pb-12 text-center">
+    <div class="container mx-auto px-4">
+      <div class="w-20 h-20 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 flex items-center justify-center">
+        <i data-lucide="cpu" class="w-10 h-10 text-cyan-700 dark:text-cyan-200"></i>
+      </div>
+
+      <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight">
+        <span class="bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">Quantum Security</span>
+      </h1>
+      <p class="text-lg md:text-xl text-slate-600 mt-4 max-w-3xl mx-auto dark:text-slate-300">
+        What quantum risk means for encryption—and how Privana adds a defense-in-depth layer today.
+      </p>
+    </div>
+  </section>
+
+  <!-- What is Quantum -->
+  <section class="py-16 bg-white/80 dark:bg-slate-900/40">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-slate-900 to-cyan-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">What Are Quantum Computers?</h2>
+
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h3 class="text-2xl font-semibold mb-4 text-slate-800 dark:text-slate-100">Classical vs. Quantum</h3>
+            <p class="text-slate-600 mb-6 dark:text-slate-300">
+              Classical computers use <strong>bits</strong> (0 or 1) and step through problems. Quantum computers use <strong>qubits</strong> that can be 0 and 1 at once, letting them explore many possibilities in parallel.
+            </p>
+            <p class="text-slate-600 dark:text-slate-300">
+              Translation: certain math problems that protect today’s encryption could become easier for sufficiently powerful quantum machines.
+            </p>
+          </div>
+
+          <div class="p-6 rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+            <div class="space-y-6">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center dark:bg-white/5 dark:border-white/10">
+                  <i data-lucide="monitor" class="w-6 h-6 text-slate-600 dark:text-slate-300"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-800 dark:text-slate-100">Classical Computer</h4>
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Tries candidates one-by-one.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center">
+                  <i data-lucide="cpu" class="w-6 h-6 text-cyan-700 dark:text-cyan-200"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-slate-800 dark:text-slate-100">Quantum Computer</h4>
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Explores many possibilities at once.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- The Threat -->
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">Why It Matters</h2>
+
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
+          <div class="p-6 rounded-2xl border border-cyan-300/50 bg-cyan-50/60 dark:border-cyan-400/30 dark:bg-cyan-900/10">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mb-4">
+              <i data-lucide="shield-off" class="w-6 h-6 text-cyan-700 dark:text-cyan-200"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">Classical Crypto At Risk</h3>
+            <p class="text-slate-600 text-sm dark:text-slate-300">RSA/ECDH-based schemes may become vulnerable to sufficiently powerful quantum computers.</p>
+          </div>
+
+          <div class="p-6 rounded-2xl border border-blue-300/50 bg-blue-50/60 dark:border-blue-400/30 dark:bg-blue-900/10">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-400/30 flex items-center justify-center mb-4">
+              <i data-lucide="archive" class="w-6 h-6 text-blue-700 dark:text-blue-200"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">Harvest-Now, Decrypt-Later</h3>
+            <p class="text-slate-600 text-sm dark:text-slate-300">Data captured today could be stored and decrypted in the future. Long-lived secrets are most exposed.</p>
+          </div>
+
+          <div class="p-6 rounded-2xl border border-purple-300/50 bg-purple-50/60 dark:border-purple-400/30 dark:bg-purple-900/10">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-400/30 flex items-center justify-center mb-4">
+              <i data-lucide="clock" class="w-6 h-6 text-purple-700 dark:text-purple-200"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">Timeline Is Uncertain</h3>
+            <p class="text-slate-600 text-sm dark:text-slate-300">Whether years or longer, the safe approach is to harden traffic now so it stays private later.</p>
+          </div>
+        </div>
+
+        <div class="p-8 rounded-2xl border border-slate-200/70 bg-white shadow-xl dark:border-white/10 dark:bg-white/5">
+          <h3 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">VPN Takeaway</h3>
+          <div class="space-y-4 text-slate-600 dark:text-slate-300">
+            <p><strong>Confidentiality shouldn’t expire.</strong> If encrypted traffic is stored today, it shouldn’t become readable tomorrow.</p>
+            <p>That’s why Privana adds an extra key layer on top of WireGuard—so even if the base key exchange were weakened in the future, your captured packets still face a second, independent barrier.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privana's Solution -->
+  <section class="py-16 bg-white/80 dark:bg-slate-900/40">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-slate-900 to-cyan-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">How Privana Protects You</h2>
+
+        <div class="space-y-8">
+
+          <!-- Layer 1 -->
+          <div class="p-8 rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+            <div class="flex items-start gap-6">
+              <div class="w-16 h-16 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+                <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-200">1</span>
+              </div>
+              <div>
+                <h3 class="text-2xl font-semibold mb-3 text-slate-800 dark:text-slate-100">Modern Base: WireGuard®</h3>
+                <p class="text-slate-600 mb-4 dark:text-slate-300">
+                  We use WireGuard—lean, audited, and fast—built on the Noise framework with X25519 and ChaCha20-Poly1305.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="px-3 py-1 text-sm bg-cyan-100 text-cyan-800 rounded-full dark:bg-cyan-900/30 dark:text-cyan-200">Noise</span>
+                  <span class="px-3 py-1 text-sm bg-cyan-100 text-cyan-800 rounded-full dark:bg-cyan-900/30 dark:text-cyan-200">X25519</span>
+                  <span class="px-3 py-1 text-sm bg-cyan-100 text-cyan-800 rounded-full dark:bg-cyan-900/30 dark:text-cyan-200">ChaCha20-Poly1305</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer 2 -->
+          <div class="p-8 rounded-2xl border-2 border-cyan-400/50 bg-gradient-to-br from-white to-cyan-50 shadow-xl dark:from-white/5 dark:to-cyan-950/20 dark:border-cyan-400/40">
+            <div class="flex items-start gap-6">
+              <div class="w-16 h-16 rounded-xl bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center flex-shrink-0">
+                <span class="text-2xl font-bold text-cyan-700 dark:text-cyan-200">2</span>
+              </div>
+              <div>
+                <h3 class="text-2xl font-semibold mb-3 text-slate-800 dark:text-slate-100">Post-Quantum Hardening (Today)</h3>
+                <p class="text-slate-600 mb-4 dark:text-slate-300">
+                  Every device gets a unique, random <strong>256-bit PreSharedKey</strong> layered on top of WireGuard. This adds an independent, symmetric secret that must also be recovered to read stored traffic later.
+                </p>
+                <ul class="p-4 bg-cyan-50 border border-cyan-200 rounded-xl text-sm text-cyan-800 space-y-1 dark:bg-cyan-950/30 dark:border-cyan-800/50 dark:text-cyan-200">
+                  <li>• Works with the official WireGuard apps (standard <code>PresharedKey</code> field).</li>
+                  <li>• Unique per device; regenerated on configuration refresh.</li>
+                  <li>• Negligible performance overhead; no extra steps for you.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer 3 -->
+         <!-- Design principle (no promises) -->
+            <div class="p-8 rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+            <div class="flex items-start gap-6">
+                <div class="w-16 h-16 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center flex-shrink-0 dark:bg-white/5 dark:border-white/10">
+                <i data-lucide="settings" class="w-7 h-7 text-slate-700 dark:text-slate-300"></i>
+                </div>
+                <div>
+                <h3 class="text-2xl font-semibold mb-3 text-slate-800 dark:text-slate-100">Cryptographic agility</h3>
+                <p class="text-slate-600 dark:text-slate-300">
+                    Privana is engineered to evolve as standards do. We track NIST PQC work and community guidance and will adopt
+                    additional mechanisms when they’re mature and compatible with our security model and the WireGuard ecosystem.
+                </p>
+                <p class="text-slate-600 mt-3 dark:text-slate-300">
+                    Today’s protection: modern WireGuard® plus an always-on, per-device 256-bit <code>PresharedKey</code> for a
+                    defense-in-depth layer against “harvest-now, decrypt-later.”
+                </p>
+                </div>
+            </div>
+            </div>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            * The additional PSK is independent of WireGuard’s base key exchange. Even if classical primitives were weakened in the future, traffic captured today must still defeat the per-device PSK.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why It Matters / CTA -->
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">Simple for You. Strong for the Long Term.</h2>
+
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+          <div class="p-6 rounded-2xl border border-slate-200/70 bg-white shadow-sm text-left dark:border-white/10 dark:bg-white/5">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mb-4">
+              <i data-lucide="check-circle" class="w-6 h-6 text-cyan-700 dark:text-cyan-200"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">What You Experience</h3>
+            <ul class="text-slate-600 space-y-2 text-sm dark:text-slate-300">
+              <li>• Same easy setup with official WireGuard apps</li>
+              <li>• Fast performance</li>
+              <li>• Simple dashboard</li>
+              <li>• No extra steps required</li>
+            </ul>
+          </div>
+
+          <div class="p-6 rounded-2xl border border-slate-200/70 bg-white shadow-sm text-left dark:border-white/10 dark:bg-white/5">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mb-4">
+              <i data-lucide="shield-check" class="w-6 h-6 text-cyan-700 dark:text-cyan-200"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2 text-slate-800 dark:text-slate-100">What You Get</h3>
+            <ul class="text-slate-600 space-y-2 text-sm dark:text-slate-300">
+              <li>• Protection against current threats</li>
+              <li>• Added resilience against future quantum decryption</li>
+              <li>• Future-ready path to PQ key exchange</li>
+              <li>• Peace of mind</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="p-8 rounded-2xl border-2 border-cyan-400/50 bg-gradient-to-br from-white to-cyan-50 shadow-xl dark:from-white/5 dark:to-cyan-950/20 dark:border-cyan-400/40">
+          <h3 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">The Bottom Line</h3>
+          <p class="text-slate-600 text-lg leading-relaxed dark:text-slate-300">
+            Many providers will add quantum defenses later. Privana already layers a per-device symmetric key over WireGuard—so traffic you send today is better protected against tomorrow’s breakthroughs.
+          </p>
+          <div class="mt-6">
+            <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-8 py-4 text-lg font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
+              <i data-lucide="shield" class="w-5 h-5 mr-2"></i>
+              Start Protected Today
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <div class="flex items-center justify-center space-x-3 mb-6">
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy" decoding="async">
+          <h3 class="text-2xl font-bold text-slate-900 dark:bg-gradient-to-r dark:from-white dark:to-cyan-300 dark:bg-clip-text dark:text-transparent">Privana</h3>
+        </div>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that’s truly yours. No logs, post-quantum hardening, Panama jurisdiction.</p>
+        <div class="flex items-center justify-center gap-3">
+          <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">← Back to Home</a>
+       </div>
+      </div>
+
+      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+
+  <!-- Left Side: Navigational Links (Unchanged) -->
+  <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+    <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+    <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+    <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+    <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+  </div>
+
+  <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
+  <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
+  <div class="text-center md:text-right">
+    
+    <!-- Line 1: Establishes the brand-to-company relationship -->
+    <p>Privana is Powered by GoAnon LLC.</p>
+    
+    <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
+    <p class="mt-1">
+      <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+      <span class="mx-1">|</span>
+      <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+    </p>
+
+  </div>
+
+</div>
+    </div>
+  </footer>
+
+  <script>
+    // header shadow on scroll
+    const hdr = document.getElementById('site-header');
+    window.addEventListener('scroll', () => {
+      const dark = document.documentElement.classList.contains('dark');
+      hdr.classList.toggle('shadow-lg', window.scrollY > 50);
+      hdr.classList.toggle('bg-white/90', window.scrollY > 50 && !dark);
+      hdr.classList.toggle('dark:bg-slate-950/80', window.scrollY > 50 && dark);
+    });
+
+    // footer year + icons + theme toggle
+    document.getElementById('year').textContent = new Date().getFullYear();
+    lucide.createIcons();
+
+    const toggle = document.getElementById('themeToggle');
+    const iconSun = document.getElementById('iconSun');
+    const iconMoon = document.getElementById('iconMoon');
+    function syncIcons(){
+      const dark = document.documentElement.classList.contains('dark');
+      iconSun.classList.toggle('hidden', dark);
+      iconMoon.classList.toggle('hidden', !dark);
+    }
+    toggle?.addEventListener('click', () => {
+      const root = document.documentElement;
+      const isDark = root.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      syncIcons();
+    });
+    syncIcons();
+  </script>
+</body>
+</html>

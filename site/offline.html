@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en" class="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>You're Offline — Privana</title>
+
+  <!-- Ensure all relative paths resolve from the web root while offline -->
+  <base href="/" />
+
+  <!-- Respect saved theme -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme'); // 'light'|'dark'|null
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+
+  <!-- Use your site CSS (pre-cached by SW) -->
+  <link rel="stylesheet" href="/site/assets/privana.css">
+
+  <style>
+    :root{
+      --bg1:#f7fafc; --text:#0f172a; --muted:#64748b;
+      --brand1:#06b6d4; --brand2:#8b5cf6;
+      --panel: rgba(255,255,255,.9);
+      --ring: rgba(6,182,212,.25);
+    }
+    .dark:root{
+      --bg1:#020617; --text:#e5e7eb; --muted:#94a3b8;
+      --panel: rgba(2,6,23,.6);
+      --ring: rgba(168,85,247,.25);
+    }
+    html,body{
+      margin:0; min-height:100%;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(6,182,212,.10), transparent),
+        radial-gradient(1000px 500px at 110% 20%, rgba(139,92,246,.10), transparent),
+        var(--bg1);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Nunito, sans-serif;
+    }
+    .wrap{min-height:100vh; display:grid; place-items:center; padding:20px;}
+    .card{
+      width:100%; max-width:860px;
+      background:var(--panel);
+      backdrop-filter: blur(12px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+      border:1px solid rgba(2,6,23,.08);
+      border-radius:20px; padding:18px; box-shadow: 0 10px 30px rgba(2,6,23,.12);
+    }
+
+    /* Header */
+    .hdr{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 8px 12px;}
+    .brand{display:flex; align-items:center; gap:10px;}
+    .brand img{
+      width:42px; height:42px; display:block;
+      border-radius:12px; padding:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.8));
+      border:1px solid rgba(2,6,23,.1);
+      box-shadow: 0 6px 18px rgba(2,6,23,.12);
+    }
+    .dark .brand img{
+      background:linear-gradient(180deg, rgba(148,163,184,.35), rgba(148,163,184,.2));
+      border-color: rgba(255,255,255,.16);
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    }
+    .brand .name{
+      font-weight:900; letter-spacing:.16em;
+      background: linear-gradient(90deg, #0f172a, #0ea5e9);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .status{
+      display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:14px; color:var(--muted);
+    }
+    .dot{width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 0 4px rgba(239,68,68,.15);}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:14px; padding:10px 14px; font-weight:800; gap:8px; cursor:pointer;
+      transition:transform .2s ease, box-shadow .2s ease, filter .2s ease; border:0;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn-primary{
+      color:#fff;
+      background-image:linear-gradient(90deg,var(--brand1), #3b82f6, var(--brand2));
+      box-shadow:0 18px 36px var(--ring);
+    }
+    .btn-ghost{
+      color:var(--text); background:rgba(255,255,255,.7); border:1px solid rgba(2,6,23,.08);
+    }
+    .dark .btn-ghost{ background:rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); color:#e2e8f0; }
+
+    /* Hero */
+    h1{
+      margin:6px 0 2px; text-align:center; font-size:28px; font-weight:900;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .sub{ text-align:center; color:var(--muted); margin:0 0 12px; }
+
+    /* Game area */
+    .game{
+      display:grid; grid-template-columns: 1fr 320px; gap:14px;
+    }
+    @media (max-width: 900px){ .game{ grid-template-columns: 1fr; } }
+
+    .board{
+      border-radius:16px; overflow:hidden; position:relative;
+      border:1px solid rgba(2,6,23,.08); background:#0a1018;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,.3);
+    }
+    .board canvas{ display:block; width:100%; height:auto; image-rendering: pixelated; }
+    .overlay{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(80% 60% at 50% 40%, rgba(14,165,233,.08), transparent);
+      pointer-events:none;
+    }
+
+    .side{
+      border-radius:16px; border:1px solid rgba(2,6,23,.08);
+      background:linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.6));
+      padding:12px;
+    }
+    .dark .side{ background:linear-gradient(180deg, rgba(2,6,23,.5), rgba(2,6,23,.4)); }
+    .side h3{ margin:0 0 8px; font-size:18px; }
+    .pill{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; padding:6px 10px; border-radius:999px;
+      background:rgba(6,182,212,.12); border:1px solid rgba(6,182,212,.35); color:#06b6d4; }
+    .list{ margin:10px 0; padding-left:16px; color:var(--muted); font-size:14px; }
+    .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+
+    /* On-screen D-pad for touch */
+    .pad{ display:grid; grid-template-columns:repeat(3,52px); grid-template-rows:repeat(3,52px); gap:6px; margin-top:10px; }
+    .pad button{
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.25);
+      background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.65)); /* Much brighter for contrast */
+      color:#0b1220;
+      font-weight:900; font-size:22px; line-height:1;
+      text-shadow: 0 1px 0 rgba(255,255,255,.7), 0 0 6px rgba(2,6,23,.15);
+      box-shadow:
+        inset 0 10px 18px rgba(255,255,255,.35),
+        0 4px 14px rgba(2,6,23,.25);
+      transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    }
+    .dark .pad button{
+      background:linear-gradient(180deg, rgba(148,163,184,.85), rgba(148,163,184,.55)); /* Brighter in dark mode */
+      color:#ffffff;
+      border-color:rgba(148,163,184,.9);
+      text-shadow: 0 1px 0 rgba(0,0,0,.55), 0 0 8px rgba(0,0,0,.3);
+      box-shadow:
+        inset 0 10px 18px rgba(255,255,255,.2),
+        0 4px 14px rgba(0,0,0,.45);
+    }
+
+    .pad button:hover{
+      filter:brightness(1.06);
+      box-shadow:
+        inset 0 10px 16px rgba(255,255,255,.18),
+        0 6px 16px rgba(6,182,212,.25);
+    }
+    .pad button:active{ transform:scale(.98); }
+
+    .pad .sp{ visibility:hidden; }
+
+    /* Win ribbon */
+    .ribbon{
+      position:absolute; top:12px; left:50%; transform:translateX(-50%);
+      background:linear-gradient(90deg,var(--brand1),var(--brand2)); color:#fff;
+      padding:6px 12px; border-radius:999px; font-weight:900; box-shadow:0 10px 24px var(--ring);
+      display:none; animation: ribbonPop 0.5s ease-out;
+    }
+
+    @keyframes ribbonPop {
+      0% { transform: translateX(-50%) scale(0.8) translateY(-10px); opacity: 0; }
+      50% { transform: translateX(-50%) scale(1.05) translateY(0px); }
+      100% { transform: translateX(-50%) scale(1) translateY(0px); opacity: 1; }
+    }
+
+    /* Footer links */
+    .foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:12px; }
+    a.clean{ color:#0ea5e9; text-decoration:none; font-weight:800; }
+
+    /* Player trail effect */
+    .trail-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(6,182,212,.4);
+      pointer-events: none;
+      animation: trailFade 1s ease-out forwards;
+    }
+
+    @keyframes trailFade {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.3); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="hdr">
+        <div class="brand">
+          <img src="/site/assets/privana-mark.png" alt="Privana logo" width="42" height="42" decoding="async">
+          <div>
+            <div class="name">PRIVANA</div>
+            <div class="status"><span class="dot" aria-hidden="true"></span> You're offline</div>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost" onclick="location.href='/'">Home</button>
+          <button class="btn btn-primary" onclick="location.reload()">Try again</button>
+        </div>
+      </div>
+
+      <h1>Lost Signal Maze</h1>
+      <p class="sub">Guide the tiny explorer to the antenna 📡 to "regain signal". Arrow keys / WASD or tap the arrows.</p>
+
+      <div class="game">
+        <!-- Board -->
+        <div class="board">
+          <canvas id="maze" width="720" height="480" aria-label="Maze game"></canvas>
+          <div class="overlay"></div>
+          <div class="ribbon" id="ribbon">Signal found! 🎉</div>
+        </div>
+
+        <!-- Side panel -->
+        <aside class="side">
+          <div class="row" style="justify-content:space-between;">
+            <h3>How to play</h3>
+            <span class="pill">Offline mode</span>
+          </div>
+          <ul class="list">
+            <li>Use <strong>↑ ↓ ← →</strong> or <strong>W A S D</strong> to move.</li>
+            <li>Reach the <strong>📡 antenna</strong> to win.</li>
+            <li>Press <strong>R</strong> to generate a new maze.</li>
+            <li>Watch for the glowing trail as you explore!</li>
+          </ul>
+
+          <div class="row" style="margin-top:8px">
+            <label for="size" style="font-weight:800; font-size:14px;">Difficulty</label>
+            <select id="size" style="padding:8px 10px; border-radius:10px; border:1px solid rgba(2,6,23,.12); font-weight:700;">
+              <option value="13">Easy</option>
+              <option value="19" selected>Medium</option>
+              <option value="25">Hard</option>
+            </select>
+            <button class="btn btn-ghost" id="newMaze">New maze</button>
+          </div>
+
+          <!-- Touch D-pad -->
+          <div class="pad" aria-hidden="true">
+            <span class="sp"></span>
+            <button data-move="up">↑</button>
+            <span class="sp"></span>
+
+            <button data-move="left">←</button>
+            <button data-move="down">↓</button>
+            <button data-move="right">→</button>
+          </div>
+
+          <div class="foot">
+            Comes back online? We'll auto-refresh.<br>
+            Or tap <a class="clean" href="/" onclick="location.reload(); return false;">Try again</a>.
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-reload when back online
+    window.addEventListener('online', () => setTimeout(() => location.reload(), 400));
+
+    // --- Enhanced maze game -------------------------------------------------
+(function () {
+  'use strict';
+
+  const canvas  = document.getElementById('maze');
+  const ctx     = canvas.getContext('2d');
+  const ribbon  = document.getElementById('ribbon');
+  const sizeSel = document.getElementById('size');
+  const newBtn  = document.getElementById('newMaze');
+
+  // On-screen D-pad (touch)
+  document.querySelectorAll('.pad [data-move]')
+    .forEach(btn => btn.addEventListener('click', () => move(btn.dataset.move)));
+
+  // Render settings
+  ctx.imageSmoothingEnabled = false;
+
+  // Emoji sprites
+  const EMOJI_PLAYER = '🧍';
+  const EMOJI_GOAL   = '📡';
+
+  // State
+  let COLS = 19, ROWS = 13;
+  let cell = 24;
+  let grid, player, goal;
+  let visitedCells = new Set();
+  let won = false;
+  let rafId = null;
+
+  // Utils
+  const randInt = (n) => Math.floor(Math.random() * n);
+
+  // Perfect maze via recursive backtracker on odd grid
+  function generateMaze(w, h) {
+    if (w % 2 === 0) w++;
+    if (h % 2 === 0) h++;
+    const m = Array.from({ length: h }, () => Array(w).fill(1)); // 1=wall, 0=path
+
+    (function carve(x, y) {
+      m[y][x] = 0;
+      const dirs = [[2,0], [-2,0], [0,2], [0,-2]].sort(() => Math.random() - 0.5);
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (ny > 0 && ny < h - 1 && nx > 0 && nx < w - 1 && m[ny][nx] === 1) {
+          m[y + dy / 2][x + dx / 2] = 0;
+          carve(nx, ny);
+        }
+      }
+    })(1, 1);
+
+    // Place goal toward far edge (right/bottom corridors), fallback bottom-right
+    const candidates = [];
+    for (let y = 1; y < h - 1; y++) if (m[y][w - 2] === 0) candidates.push([w - 2, y]);
+    for (let x = 1; x < w - 1; x++) if (m[h - 2][x] === 0) candidates.push([x, h - 2]);
+    const [gx, gy] = candidates.length ? candidates[randInt(candidates.length)] : [w - 2, h - 2];
+
+    return { maze: m, start: [1, 1], goal: [gx, gy] };
+  }
+
+  function resizeCanvas() {
+    const board = canvas.parentElement.getBoundingClientRect();
+    const scale = Math.floor(Math.max(16, Math.min(36, Math.floor(board.width / COLS))));
+    cell = scale;
+    canvas.width  = COLS * cell;
+    canvas.height = ROWS * cell;
+  }
+
+  function canMove(nx, ny) {
+    return nx >= 0 && ny >= 0 && nx < COLS && ny < ROWS && grid[ny][nx] === 0;
+  }
+
+  function move(dir) {
+    if (won) return;
+    const d = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] }[dir];
+    if (!d) return;
+    const nx = player[0] + d[0], ny = player[1] + d[1];
+    if (canMove(nx, ny)) {
+      // mark the tile we're leaving as visited
+      visitedCells.add(`${player[0]},${player[1]}`);
+      player = [nx, ny];
+      checkWin();
+    }
+  }
+
+  function checkWin() {
+    if (player[0] === goal[0] && player[1] === goal[1]) {
+      won = true;
+      try { navigator.vibrate && navigator.vibrate([20, 30, 20]); } catch {}
+      ribbon.style.display = 'inline-flex';
+      setTimeout(() => { ribbon.style.display = 'none'; newGame(); }, 1600);
+    }
+  }
+
+  function draw(t = 0) {
+    // ensure no accidental darkening from previous ops
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Background
+    ctx.fillStyle = '#0a1018';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Cells
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const px = x * cell, py = y * cell;
+        const cellKey = `${x},${y}`;
+
+        if (grid[y][x] === 1) {
+          // Walls — dark slab with a faint highlight
+          const g = ctx.createLinearGradient(px, py, px + cell, py + cell);
+          g.addColorStop(0.00, '#0f172a');
+          g.addColorStop(0.60, '#1e293b');
+          g.addColorStop(1.00, '#111827');
+          ctx.fillStyle = g;
+          ctx.fillRect(px, py, cell, cell);
+
+          ctx.fillStyle = 'rgba(71,85,105,.28)';
+          ctx.fillRect(px, py, cell, 2);
+          ctx.fillRect(px, py, 2, cell);
+        } else {
+          // Paths — brighter base for strong contrast vs walls
+          const isVisited   = visitedCells.has(cellKey);
+          const isPlayerPos = (x === player[0] && y === player[1]);
+          const isGoalPos   = (x === goal[0]   && y === goal[1]);
+
+          // Base path: much brighter cyan/purple wash
+          const base = ctx.createLinearGradient(px, py, px + cell, py + cell);
+          base.addColorStop(0.00, 'rgba(6,182,212,.60)');
+          base.addColorStop(0.50, 'rgba(139,92,246,.50)');
+          base.addColorStop(1.00, 'rgba(6,182,212,.55)');
+          ctx.fillStyle = base;
+          ctx.fillRect(px, py, cell, cell);
+
+          // Edge to separate from walls
+          ctx.strokeStyle = 'rgba(255,255,255,.40)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(px + 0.5, py + 0.5, cell - 1, cell - 1);
+
+          // Visited overlay: very bright cyan glow + central dot
+          if (isVisited && !isPlayerPos && !isGoalPos) {
+            const glow = ctx.createRadialGradient(
+              px + cell / 2, py + cell / 2, 0,
+              px + cell / 2, py + cell / 2, cell * 0.8
+            );
+            glow.addColorStop(0.0, 'rgba(103,232,249,1)');
+            glow.addColorStop(1.0, 'rgba(103,232,249,.60)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(px, py, cell, cell);
+
+            // inner rim
+            ctx.strokeStyle = 'rgba(103,232,249,.9)';
+            ctx.strokeRect(px + 1.2, py + 1.2, cell - 2.4, cell - 2.4);
+
+            // central dot for extra clarity
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(34,211,238,.95)'; // #22d3ee
+            ctx.arc(px + cell/2, py + cell/2, Math.max(2, Math.floor(cell * 0.12)), 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    // Goal — purple glow + antenna
+    {
+      const gx = goal[0] * cell + cell / 2;
+      const gy = goal[1] * cell + cell / 2;
+
+      const goalGlow = ctx.createRadialGradient(gx, gy, 0, gx, gy, cell * 1.25);
+      goalGlow.addColorStop(0.0, 'rgba(139,92,246,.55)'); /* Increased glow */
+      goalGlow.addColorStop(0.6, 'rgba(139,92,246,.35)'); /* Increased glow */
+      goalGlow.addColorStop(1.0, 'rgba(139,92,246,0)');
+      ctx.fillStyle = goalGlow;
+      ctx.beginPath();
+      ctx.arc(gx, gy, cell * 1.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = Math.floor(cell * 0.9) + 'px system-ui,emoji';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(139,92,246,.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(EMOJI_GOAL, gx, gy);
+      ctx.shadowBlur = 0;
+    }
+
+    // Player — cyan glow + pulse + sprite
+    {
+      const px = player[0] * cell + cell / 2;
+      const py = player[1] * cell + cell / 2;
+
+      // main glow
+      const glow = ctx.createRadialGradient(px, py, 0, px, py, cell * 1.1);
+      glow.addColorStop(0.0, 'rgba(6,182,212,.70)'); /* Increased glow */
+      glow.addColorStop(0.3, 'rgba(6,182,212,.40)'); /* Increased glow */
+      glow.addColorStop(1.0, 'rgba(6,182,212,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(px, py, cell * 1.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // pulse
+      const pr = cell * (0.6 + 0.2 * Math.sin((t || 0) * 0.005));
+      const pulse = ctx.createRadialGradient(px, py, 0, px, py, pr);
+      pulse.addColorStop(0.0, 'rgba(6,182,212,.55)'); /* Increased pulse */
+      pulse.addColorStop(1.0, 'rgba(6,182,212,0)');
+      ctx.fillStyle = pulse;
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI * 2);
+      ctx.fill();
+
+      // sprite
+      ctx.font = Math.floor(cell * 0.9) + 'px system-ui,emoji';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(6,182,212,.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(EMOJI_PLAYER, px, py);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function newGame() {
+    const dims = parseInt(sizeSel.value, 10) || 19;
+    COLS = dims;
+    ROWS = Math.max(13, dims - 6); // slight rectangle for variety
+
+    const g = generateMaze(COLS, ROWS);
+    grid   = g.maze;
+    player = g.start;
+    goal   = g.goal;
+    won    = false;
+
+    visitedCells.clear();
+    // mark the starting tile so the trail is obvious from move #1
+    visitedCells.add(`${player[0]},${player[1]}`);
+
+    resizeCanvas();
+    draw();
+  }
+
+  function animate(now) {
+    draw(now || 0);
+    rafId = requestAnimationFrame(animate);
+  }
+
+  // Events
+  newBtn.addEventListener('click', newGame);
+  sizeSel.addEventListener('change', newGame);
+  window.addEventListener('resize', () => { resizeCanvas(); draw(); });
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','r'].includes(k)) e.preventDefault();
+    if (k === 'arrowup' || k === 'w') move('up');
+    else if (k === 'arrowdown' || k === 's') move('down');
+    else if (k === 'arrowleft' || k === 'a') move('left');
+    else if (k === 'arrowright' || k === 'd') move('right');
+    else if (k === 'r') newGame();
+  });
+
+  // Boot
+  newGame();
+  animate();
+})();
+
+  </script>
+</body>
+</html>

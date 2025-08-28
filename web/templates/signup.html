@@ -1,217 +1,274 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign Up - Privana</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/static/css/style.css"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign Up — Privana</title>
+
+  <!-- Honor saved theme ASAP -->
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+
+  <!-- Tailwind + site CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/site/assets/privana.css">
+
+  <!-- Tailwind config (same as Terms) -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950:'#020617' },
+            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
+            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
+            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Favicons / PWA -->
+  <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/site/assets/favicon.ico">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="msapplication-TileColor" content="#06b6d4">
+  <meta name="theme-color" content="#06b6d4">
+
+  <!-- Icons + PWA helper -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="/site/assets/pwa.js"></script>
 
   <style>
-    :root{
-      --bg:#f7fafc; --muted:#64748b; --text:#0f172a;
-      --brand1:#0ea5e9; --brand2:#2563eb; --ring:rgba(37,99,235,.25);
-      --danger:#ef4444; --ok:#10b981; --shadow:0 10px 30px rgba(2,6,23,.06);
+    /* Add custom button styles with dark mode support */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      transition: .2s transform, .2s box-shadow;
+      line-height: 1;
+      gap: .5rem;
+      text-align: center;
     }
-    html,body{
-      margin:0; min-height:100%;
-      background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(14,165,233,.08), transparent),
-        radial-gradient(1000px 500px at 110% 20%, rgba(37,99,235,.08), transparent),
-        #f7fbff;
-      color:var(--text);
-      font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+
+    .btn:hover {
+      transform: translateY(-1px);
     }
-    .auth-container{ min-height:100vh; display:grid; place-items:center; padding:24px; }
-    .auth-card{
-      width:100%; max-width:480px;
-      background:rgba(255,255,255,.88);
-      backdrop-filter: blur(12px) saturate(120%);
-      -webkit-backdrop-filter: blur(12px) saturate(120%);
-      border:1px solid rgba(2,6,23,.06);
-      border-radius:20px; padding:28px; box-shadow: var(--shadow);
+
+    .btn-qp {
+      color: #fff;
+      background-image: linear-gradient(90deg, #06b6d4, #8b5cf6);
+      box-shadow: 0 16px 36px rgba(6,182,212,.25);
     }
-    .logo{display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:12px}
-    .logo .logo-icon{
-      display:grid; place-items:center; width:44px; height:44px; border-radius:14px;
-      background:linear-gradient(135deg,var(--brand1),var(--brand2)); color:#fff; font-size:22px;
-      box-shadow: 0 10px 24px rgba(37,99,235,.25);
+
+    .btn-qp:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 20px 44px rgba(6,182,212,.35);
     }
-    .logo h1{
-      margin:0; letter-spacing:.20em; font-weight:800; font-size:18px;
-      background:linear-gradient(90deg,#0f172a,#1e3a8a);
-      background-clip:text; -webkit-background-clip:text; color:transparent;
+
+    .btn-outline {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border: 1px solid rgba(30,58,138,.2);
     }
-    h2{margin:6px 0 6px; text-align:center; font-size:24px; font-weight:800;}
-    .plan-info{margin:0 0 18px; text-align:center; color:var(--muted);}
-    form{display:grid; gap:14px}
-    .form-group{display:grid; gap:8px}
-    label{font-weight:800; font-size:13px; color:#0f172a; letter-spacing:.02em;}
-    input[type="email"]{
-      border:1px solid rgba(2,6,23,.08); border-radius:14px; padding:12px 14px; font-size:15px;
-      outline:none; background:#fff;
+
+    html.dark .btn-outline {
+      background: rgba(30,41,59,.8);
+      color: #93c5fd;
+      border: 1px solid rgba(147,197,253,.2);
     }
-    input[type="email"]:focus{ box-shadow: 0 0 0 4px var(--ring); border-color:#2563eb; }
-    .btn{
-      border:0; border-radius:14px; padding:12px 16px; font-weight:800; cursor:pointer;
-      transition:.2s transform,.2s box-shadow;
+
+    .btn-sm {
+      padding: 8px 12px;
+      font-size: 14px;
     }
-    .btn:hover{transform: translateY(-1px)}
-    .btn-primary{background:linear-gradient(90deg,var(--brand1),var(--brand2)); color:#fff; box-shadow: 0 10px 20px var(--ring);}
-    .btn-secondary{background:#eef2ff; color:#1e3a8a;}
-    .auth-links{margin-top:12px; text-align:center; color:var(--muted)}
-    .auth-links a{color:#2563eb; text-decoration:none; font-weight:800}
-    .alert{border-radius:12px; padding:10px 12px; font-weight:700; margin-bottom:8px}
-    .alert-success{background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0}
-    .alert-error{background:#fef2f2; color:#991b1b; border:1px solid #fecaca}
-    .alert-info{background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe}
-    .success-panel{ background:#ecfdf5; border:1px solid #a7f3d0; padding:16px; border-radius:14px; }
-    .success-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+
+    .btn.w-full {
+      width: 100%;
+    }
+
+    /* Fix layout to prevent footer spacing issues */
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
   </style>
 </head>
-<body>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="logo">
-        <span class="logo-icon">🛡️</span>
-        <h1>PRIVANA</h1>
-      </div>
 
-      <h2>Sign Up for Privana</h2>
-      <p class="plan-info">You've selected the <strong>{{ plan|capitalize }}</strong> plan</p>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
+  <!-- Header (same look/behavior as Terms page) -->
+  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+    <div class="mx-auto container px-4 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-3 group">
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
+        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
+      </a>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
+        <a href="/site/index.html#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+          <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
+          <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+        </button>
+        <button
+          id="pwa-install"
+          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+                 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Install app">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+          <span class="hidden sm:inline">Install app</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content - flex-grow to push footer down -->
+  <main class="flex-grow container mx-auto px-4 py-14 max-w-md">
+    <div class="rounded-2xl border border-slate-200/70 bg-white/80 shadow-xl p-6 dark:border-white/10 dark:bg-white/5">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="eager" decoding="async">
+        <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">Sign Up</h1>
+      </div>
+      <p class="text-center text-slate-600 mb-6 dark:text-slate-300">
+        You've selected the <strong>{{ plan|capitalize }}</strong> plan.
+      </p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">{{ message }}</div>
-          {% endfor %}
+          <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+              <div class="rounded-xl px-3 py-2 text-sm font-semibold
+                          {% if category == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-800/40
+                          {% elif category == 'error' %} bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800/40
+                          {% else %} bg-slate-50 text-slate-700 border border-slate-200 dark:bg-white/5 dark:text-slate-200 dark:border-white/10
+                          {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
       {% endwith %}
 
       {% if request.args.get('sent') %}
-        <div class="success-panel">
-          <h3 style="margin:0 0 6px;">Check your email</h3>
-          <p style="margin:0 0 12px;">
+        <div class="rounded-xl p-4 border border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-900/20">
+          <h3 class="font-bold mb-1 text-emerald-800 dark:text-emerald-200">Check your email</h3>
+          <p class="text-sm mb-4 text-emerald-700 dark:text-emerald-300">
             We sent a confirmation link to
             <strong>{{ request.args.get('email') }}</strong>. Click it to activate your account.
           </p>
-          <div class="success-actions">
-            <a class="btn btn-secondary" href="{{ url_for('auth.signup', plan=plan) }}">Use a different email</a>
-            <a class="btn btn-primary" href="{{ url_for('auth.resend_confirmation', email=request.args.get('email')) }}">Resend link</a>
-            <a class="btn btn-secondary" href="{{ url_for('auth.login') }}">Go to Login</a>
+          <div class="flex flex-wrap gap-2">
+            <a class="btn-outline btn-sm" href="{{ url_for('auth.signup', plan=plan) }}">Use a different email</a>
+            <a class="btn-qp btn-sm" href="{{ url_for('auth.resend_confirmation', email=request.args.get('email')) }}">Resend link</a>
+            <a class="btn-outline btn-sm" href="{{ url_for('auth.login') }}">Go to Login</a>
           </div>
         </div>
       {% else %}
-        <form id="signup-form" method="POST" action="{{ url_for('auth.signup') }}">
+        <form id="signup-form" method="POST" action="{{ url_for('auth.signup') }}" class="space-y-4">
           <input type="hidden" name="plan" value="{{ plan }}">
-          <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" autocomplete="email" required>
-            <small class="hint" style="display:block;color:#64748b;margin-top:-8px">We’ll send you a verification link.</small>
+          <div>
+            <label for="email" class="block text-sm font-bold text-slate-800 mb-1 dark:text-slate-100">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" required
+                   class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500
+                          dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
+            <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">We'll send you a verification link.</p>
           </div>
-          <button type="submit" class="btn btn-primary">Sign Up</button>
+          <button type="submit" class="btn-qp btn w-full">Sign Up</button>
         </form>
 
-        <div class="auth-links">
-          Already have an account? <a href="{{ url_for('auth.login') }}">Log In</a>
-        </div>
+        <p class="text-center text-sm text-slate-600 mt-4 dark:text-slate-300">
+          Already have an account?
+          <a href="{{ url_for('auth.login') }}" class="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Log in</a>
+        </p>
       {% endif %}
     </div>
-  </div>
+
+    <div class="mt-6 text-center">
+      <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+        ← Back to Home
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer (same structure/colors as Terms page) -->
+  <footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <div class="flex items-center justify-center space-x-3 mb-6">
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy" decoding="async">
+          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
+        </div>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+      </div>
+
+      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+        <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+          <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+          <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+          <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+          <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        </div>
+        <div class="text-center md:text-right">
+          <p>Privana is Powered by GoAnon LLC.</p>
+          <p class="mt-1">
+            <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+            <span class="mx-1">|</span>
+            <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
 
   <script>
-    (function(){
-      const form = document.getElementById('signup-form');
-      if(!form) return;
+    // Header shadow on scroll (same behavior as Terms page)
+    const hdr = document.getElementById('site-header');
+    window.addEventListener('scroll', () => {
+      hdr.classList.toggle('shadow-lg', window.scrollY > 50);
+      hdr.classList.toggle('bg-white/90', window.scrollY > 50 && !document.documentElement.classList.contains('dark'));
+      hdr.classList.toggle('dark:bg-slate-950/80', window.scrollY > 50 && document.documentElement.classList.contains('dark'));
+    });
 
-      function b64urlToBuf(b64){
-        b64 = b64.replace(/-/g,'+').replace(/_/g,'/');
-        const pad = '='.repeat((4 - (b64.length % 4)) % 4);
-        const str = atob(b64 + pad);
-        const bytes = new Uint8Array(str.length);
-        for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i);
-        return bytes.buffer;
-      }
-      function bufToB64url(buf){
-        const b = new Uint8Array(buf);
-        let s = '';
-        for (let i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
-        return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-      }
+    // Theme toggle (icon sync works even after Lucide renders)
+    const toggle = document.getElementById('themeToggle');
+    function syncIcons() {
+      const sun = document.getElementById('iconSun');
+      const moon = document.getElementById('iconMoon');
+      if (!sun || !moon) return;
+      const dark = document.documentElement.classList.contains('dark');
+      sun.classList.toggle('hidden', dark);
+      moon.classList.toggle('hidden', !dark);
+    }
+    toggle?.addEventListener('click', () => {
+      const root = document.documentElement;
+      const isDark = root.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      syncIcons();
+    });
+    syncIcons();
 
-      async function precheckAuthenticator(){
-        if(!window.PublicKeyCredential) return {recognized:false, blocked:false};
-
-        let oRes;
-        try {
-          oRes = await fetch('/webauthn/assert/options-precheck', { method:'POST' });
-        } catch (e) {
-          return {recognized:false, blocked:false};
-        }
-        if(!oRes.ok) return {recognized:false, blocked:false};
-
-        const options = await oRes.json();
-        try {
-          options.challenge = b64urlToBuf(options.challenge);
-          if (options.allowCredentials) {
-            for (var i=0;i<options.allowCredentials.length;i++){
-              options.allowCredentials[i].id = b64urlToBuf(options.allowCredentials[i].id);
-            }
-          }
-        } catch (e) {
-          return {recognized:false, blocked:false};
-        }
-
-        let cred;
-        try {
-          cred = await navigator.credentials.get({ publicKey: options });
-        } catch (e) {
-          return {recognized:false, blocked:false};
-        }
-        if(!cred || !cred.response) return {recognized:false, blocked:false};
-
-        const payload = {
-          id: cred.id,
-          rawId: bufToB64url(cred.rawId),
-          type: cred.type,
-          clientDataJSON: bufToB64url(cred.response.clientDataJSON),
-          authenticatorData: bufToB64url(cred.response.authenticatorData),
-          signature: bufToB64url(cred.response.signature)
-        };
-
-        let vRes;
-        try {
-          vRes = await fetch('/webauthn/assert/verify-precheck', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify(payload)
-          });
-        } catch (e) {
-          return {recognized:false, blocked:false};
-        }
-        if(!vRes.ok) return {recognized:false, blocked:false};
-        return vRes.json();
-      }
-
-      form.addEventListener('submit', async function(e){
-        e.preventDefault();
-        try {
-          const result = await precheckAuthenticator();
-          if(result && result.blocked){
-            const email = document.getElementById('email').value.trim();
-            const plan  = "{{ plan }}";
-            const url = new URL("{{ url_for('auth.trial_ended') }}", window.location.origin);
-            if(email) url.searchParams.set('email', email);
-            if(plan)  url.searchParams.set('plan', plan);
-            window.location.href = url.toString();
-            return;
-          }
-        } catch (e) {
-          /* fail open */
-        }
-        form.submit();
-      });
-    })();
+    // Icons & year
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if (window.lucide) { try { lucide.createIcons(); } catch(e){} syncIcons(); }
   </script>
 </body>
 </html>

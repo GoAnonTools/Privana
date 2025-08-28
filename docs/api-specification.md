@@ -271,7 +271,7 @@ Gets a configuration setting value.
 **Example:**
 ```python
 settings = get_settings()
-api_url = settings.get('api_base_url', 'https://api.privana.com')
+api_url = settings.get('api_base_url', 'https://api.privana.pro')
 ```
 
 #### `set(key: str, value: Any) -> None`

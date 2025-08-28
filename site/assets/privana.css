@@ -1,0 +1,248 @@
+/* Buttons — same gradient as landing page */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:0.75rem;font-weight:600;line-height:1;gap:.5rem;
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease
+}
+.btn-lg{padding:1rem 2rem;font-size:1.125rem}
+.btn-md{padding:.75rem 1.25rem;font-size:.95rem}
+.btn-sm{padding:.5rem 1rem;font-size:.875rem}
+
+.btn-primary{
+  color:#fff;
+  background-image:linear-gradient(90deg,#0ea5e9,#3b82f6,#0284c7);
+  box-shadow:0 20px 40px rgba(14,165,233,.25);
+}
+.btn-primary:hover{
+  filter:brightness(1.05);
+  transform:translateY(-1px);
+  box-shadow:0 24px 48px rgba(14,165,233,.35);
+}
+
+.btn-outline{color:#0f172a;background:rgba(255,255,255,.7);border:1px solid #cbd5e1;}
+.btn-outline:hover{background:#fff}
+
+.btn-qp{
+  color:#fff;
+  background-image:linear-gradient(90deg,#06b6d4,#8b5cf6);
+  box-shadow:0 20px 40px rgba(6,182,212,.25);
+}
+.btn-qp:hover{
+  filter:brightness(1.05);
+  transform:translateY(-1px);
+  box-shadow:0 24px 48px rgba(6,182,212,.35);
+}
+
+
+/* ---- Spinning logo cube: embed the Privana mark on each face ---- */
+:root{
+  --brand-c1:#06b6d4;  /* cyan-500 */
+  --brand-c2:#8b5cf6;  /* purple-500 */
+}
+
+/* Faces */
+#logoBox .logo-face{
+  position:absolute; top:20px; left:20px; width:160px; height:160px;
+  border-radius:25px; border:3px solid transparent;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  box-shadow:0 0 20px rgba(2,6,23,.08) inset;
+}
+
+/* Glow behind the logo */
+#logoBox .logo-face::before{
+  content:"";
+  position:absolute; inset:0;
+  background:radial-gradient(60% 60% at 50% 40%,
+              rgba(6,182,212,.40) 0%,
+              rgba(139,92,246,.30) 55%,
+              transparent 75%);
+  filter:blur(18px);
+  opacity:.9;
+  pointer-events:none;
+}
+
+/* The Privana glyph, filled with the gradient via mask */
+#logoBox .logo-face::after{
+  content:"";
+  position:absolute; inset:20px;
+  background:linear-gradient(135deg,var(--brand-c1),var(--brand-c2));
+  -webkit-mask-image:url("/site/assets/privana-mark.png");
+          mask-image:url("/site/assets/privana-mark.png");
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-position:center;   mask-position:center;
+  -webkit-mask-size:contain;       mask-size:contain;
+  filter:
+    drop-shadow(0 10px 24px rgba(6,182,212,.28))
+    drop-shadow(0 6px 18px rgba(139,92,246,.20));
+  opacity:.98;
+  pointer-events:none;
+}
+
+/* Dark mode: stronger glow */
+.dark #logoBox .logo-face::before{
+  background:radial-gradient(60% 60% at 50% 40%,
+              rgba(103,232,249,.50) 0%,
+              rgba(168,85,247,.38) 55%,
+              transparent 75%);
+}
+
+/* Fallback for browsers without mask-image */
+@supports not ((-webkit-mask-image: url("")) or (mask-image: url(""))){
+  #logoBox .logo-face::after{
+    background:transparent;
+    content:"";
+    position:absolute; inset:20px;
+    background-image:url("/site/assets/privana-mark.png");
+    background-repeat:no-repeat; background-position:center; background-size:contain;
+    filter:drop-shadow(0 10px 24px rgba(6,182,212,.22));
+  }
+}
+
+
+/* === CRISP FRONT TILE (solid), subtle sides ====================== */
+#logoBox .logo-face{                  /* undo the faint look */
+  opacity: 1;                         /* was .08 in the tweak */
+  background: rgba(255,255,255,.14);  /* light card so glow pops */
+  box-shadow: 0 10px 24px rgba(2,6,23,.12);
+}
+
+/* front face extra strong */
+#logoBox .f-front{
+  background: rgba(255,255,255,.18);
+}
+
+/* make side/rear faces visible but not ghostly */
+#logoBox .f-back,
+#logoBox .f-right,
+#logoBox .f-left,
+#logoBox .f-top,
+#logoBox .f-bottom{
+  opacity: .65;                       /* was hidden/faint; bump up */
+}
+
+/* soften the aura (less haze) */
+#logoBox .logo-face::before{
+  opacity: .35;
+  filter: blur(10px);
+}
+
+/* keep the glyph fully opaque & punchy */
+#logoBox .logo-face::after{
+  opacity: 1;
+  filter:
+    drop-shadow(0 10px 22px rgba(6,182,212,.28))
+    drop-shadow(0 6px 16px rgba(139,92,246,.18));
+}
+
+/* slightly slower, smoother spin */
+#logoBox .logo-cube{ animation: spin 6s linear infinite; }
+
+/* === Color tints per face – adds persistence while spinning ===== */
+#logoBox .logo-face{
+  backdrop-filter: blur(8px) saturate(120%); /* punchier color on modern browsers */
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+/* strongest, readable front */
+#logoBox .f-front{
+  opacity: 1;
+  background: linear-gradient(135deg,
+              rgba(6,182,212,.28),   /* cyan */
+              rgba(139,92,246,.16)); /* purple */
+  border-color: rgba(6,182,212,.35);
+}
+
+/* visible sides — slightly dimmer so the front still leads */
+#logoBox .f-right{
+  opacity: .82;
+  background: linear-gradient(135deg,
+              rgba(139,92,246,.26),
+              rgba(6,182,212,.12));
+  border-color: rgba(139,92,246,.30);
+}
+#logoBox .f-left{
+  opacity: .82;
+  background: linear-gradient(135deg,
+              rgba(59,130,246,.22),  /* blue */
+              rgba(6,182,212,.12));
+  border-color: rgba(59,130,246,.28);
+}
+#logoBox .f-top{
+  opacity: .82;
+  background: linear-gradient(135deg,
+              rgba(103,232,249,.28), /* light cyan */
+              rgba(255,255,255,.12));
+  border-color: rgba(103,232,249,.30);
+}
+#logoBox .f-bottom{
+  opacity: .82;
+  background: linear-gradient(135deg,
+              rgba(124,58,237,.26),  /* deep purple */
+              rgba(2,6,23,.10));
+  border-color: rgba(124,58,237,.32);
+}
+#logoBox .f-back{
+  opacity: .80; /* a touch dimmer than the sides */
+  background: linear-gradient(135deg,
+              rgba(6,182,212,.16),
+              rgba(124,58,237,.22));
+  border-color: rgba(124,58,237,.28);
+}
+
+/* --- Responsive polish for dashboard --- */
+
+/* Typography that scales slightly on small screens */
+.card h2 { font-size: clamp(16px, 2.5vw, 18px); }
+.small   { font-size: clamp(12px, 1.8vw, 13px); }
+
+/* Layout: stack earlier, keep air on desktop */
+.container { padding-inline: clamp(12px, 2.5vw, 20px); }
+.content-grid { display:grid; grid-template-columns: 1fr; gap:16px; }
+@media (min-width: 960px){ .content-grid{ grid-template-columns: 1.2fr 1fr; } }
+
+/* Cards: tighter padding on phones */
+.card .head, .card .body { padding: clamp(12px, 2.5vw, 16px); }
+
+/* Key/Value rows become single column on narrow widths */
+.kv { grid-template-columns: 1fr; row-gap: 6px; }
+@media (min-width: 520px){ .kv { grid-template-columns: 120px 1fr; } }
+
+/* Device cards: buttons wrap nicely */
+.device-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+
+/* Downloads grid: 1 → 2 → 3 columns */
+.dl-grid { display:grid; grid-template-columns: 1fr; gap:10px; }
+@media (min-width: 520px){ .dl-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px){ .dl-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Tabs: wrap on mobile */
+.tab-buttons { flex-wrap: wrap; gap:6px; }
+
+/* Sticky header: reduce blur on tiny screens for perf */
+@media (max-width: 480px){
+  header { backdrop-filter: blur(6px); }
+}
+
+/* Respect reduced motion (spinning cube etc.) */
+@media (prefers-reduced-motion: reduce){
+  .logo-cube { animation: none !important; }
+  .btn:hover { transform:none; }
+}
+
+/* Buttons: ensure tap targets stay large on mobile */
+.btn { min-height: 40px; }
+
+/* PWA install FAB */
+.pwa-fab{
+  position:fixed; right:16px; bottom:16px; z-index:10000;
+  width:52px; height:52px; border-radius:9999px;
+  background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,.08);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 12px 24px rgba(2,6,23,.25);
+  cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, opacity .2s;
+}
+.pwa-fab:hover{ transform:translateY(-2px); box-shadow:0 16px 30px rgba(2,6,23,.32); }
+.pwa-fab.hidden{ display:none; }
+@media (display-mode: standalone){ .pwa-fab{ display:none; } } /* hide if already installed */
+@media (max-width: 480px){ .pwa-fab{ right:12px; bottom:12px; width:48px; height:48px; } }

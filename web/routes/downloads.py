@@ -1,59 +1,266 @@
 # web/routes/downloads.py
-from flask import Blueprint, Response, stream_with_context, redirect, jsonify, request
-import requests
-from urllib.parse import urlparse
-import os
+from __future__ import annotations
 
+import os
+import io
+import sqlite3
+import secrets
+import base64
+import ipaddress
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from urllib.parse import urlparse
+
+import requests
+from flask import (
+    Blueprint, request, jsonify, session, send_file,
+    redirect, Response, stream_with_context, url_for, abort, flash, current_app
+)
+
+# Local or remote depending on your API_MODE wiring
+from web.utils.api_client import sg_issue_config
+
+# -----------------------------------------------------------------------------
+# Blueprint
+# -----------------------------------------------------------------------------
 downloads_bp = Blueprint("downloads", __name__)
 
-# Upstream sources (update if vendors change paths)
+# -----------------------------------------------------------------------------
+# Constants (vendor links, timeouts)
+# -----------------------------------------------------------------------------
 UPSTREAMS = {
     "windows": "https://download.wireguard.com/windows-client/wireguard-installer.exe",
     "macos":   "https://download.wireguard.com/macos/WireGuard.dmg",
-    "linux":   "https://www.wireguard.com/install/",  # docs (varies by distro)
+    "linux":   "https://www.wireguard.com/install/",  # docs per distro
     "android": "https://play.google.com/store/apps/details?id=com.wireguard.android",
     "ios":     "https://apps.apple.com/app/wireguard/id1441195209",
 }
-
-TIMEOUT = (10, 60)  # (connect, read) seconds
+TIMEOUT = (10, 60)  # (connect, read)
 CHUNK = 8192
 
+# Stub mode: generate a dummy-looking config so the UI flow works before the core is deployed
+ISSUE_CONFIG_STUB = os.getenv("ISSUE_CONFIG_STUB", "0") == "1"
+# Values used to shape the stub config (purely cosmetic)
+WG_HOST    = os.getenv("WG_HOST", "127.0.0.1")
+WG_PORT    = int(os.getenv("WG_PORT", "51820"))
+WG_CIDR    = os.getenv("WG_CIDR", "10.7.0.0/24")
+WG_DNS     = os.getenv("WG_DNS", "1.1.1.1")
+WG_ALLOWED = os.getenv("WG_ALLOWED_IPS", "0.0.0.0/0,::/0")
 
+# -----------------------------------------------------------------------------
+# DB helpers (resolve DB from project root)
+# -----------------------------------------------------------------------------
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DB_PATH = str(ROOT_DIR / "privana.db")
+TRIAL_DAYS = 7
+
+
+def _db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _ensure_device_configs_table(conn: sqlite3.Connection) -> None:
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS device_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id INTEGER UNIQUE,
+            public_key TEXT,
+            config TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (device_id) REFERENCES devices (id)
+        )
+    """)
+
+
+def _get_user(user_id: int):
+    with _db() as conn:
+        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+
+def _device_belongs(user_id: int, device_id: int) -> bool:
+    with _db() as conn:
+        row = conn.execute(
+            "SELECT id FROM devices WHERE id = ? AND user_id = ?",
+            (device_id, user_id)
+        ).fetchone()
+        return row is not None
+
+
+def _is_subscription_ok(u: sqlite3.Row) -> bool:
+    """
+    Allow if user has an active subscription OR is within a trial window.
+    """
+    status = (u["subscription_status"] or "").lower()
+    if status == "active":
+        return True
+
+    plan = (u["subscription_plan"] or "").lower()
+    if plan != "trial":
+        return False
+
+    raw = u["created_at"]  # "YYYY-MM-DD HH:MM:SS"
+    try:
+        created = datetime.fromisoformat(raw)
+    except Exception:
+        created = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+
+    return datetime.now(timezone.utc) < created + timedelta(days=TRIAL_DAYS)
+
+# -----------------------------------------------------------------------------
+# Utility for upstream filename detection
+# -----------------------------------------------------------------------------
 def _filename_from_upstream(url: str, upstream_headers: dict) -> str:
-    # Prefer upstream Content-Disposition filename if present
     cd = upstream_headers.get("Content-Disposition")
     if cd and "filename=" in cd:
         return cd.split("filename=")[-1].strip('"; ')
-    # Fallback to URL path
     path = urlparse(url).path
     base = os.path.basename(path)
     return base or "download.bin"
 
+# -----------------------------------------------------------------------------
+# Stub config generator (DEV ONLY)
+# -----------------------------------------------------------------------------
+def _stub_issue_config(user_id: int, device_id: int) -> dict:
+    """
+    Generate a placeholder client config. This will NOT connect anywhere,
+    it’s only for exercising the UI before the real server exists.
+    """
+    # fake 32-byte key (base64) so it "looks" like a WG key
+    priv_b64 = base64.b64encode(os.urandom(32)).decode("ascii")
 
-@downloads_bp.route("/download/wireguard/<platform>")
+    # pick a stable-ish IP from WG_CIDR based on device_id
+    try:
+        net = ipaddress.ip_network(WG_CIDR, strict=False)
+        hosts = list(net.hosts())
+        # reserve first host for server → start from index 1 with an offset
+        idx = min(len(hosts) - 1, max(1, device_id % max(2, len(hosts))))
+        ip = str(hosts[idx])
+    except Exception:
+        ip = "10.7.0.42"  # fallback
+
+    conf = f"""# STUB CONFIG — for UI testing only. Will not connect until server is deployed.
+[Interface]
+PrivateKey = {priv_b64}
+Address = {ip}/32
+DNS = {WG_DNS}
+
+[Peer]
+PublicKey = PLACEHOLDER_SERVER_PUBLIC_KEY
+Endpoint = {WG_HOST}:{WG_PORT}
+AllowedIPs = {WG_ALLOWED}
+PersistentKeepalive = 25
+"""
+    return {"success": True, "public_key": "STUBPUBLICKEY", "config": conf}
+
+# -----------------------------------------------------------------------------
+# 1) One-click config (generates + downloads client .conf)
+# -----------------------------------------------------------------------------
+@downloads_bp.get("/download/config/<int:device_id>")
+def download_config(device_id: int):
+    if "user_id" not in session:
+        flash("Please log in first.", "error")
+        return redirect(url_for("auth.login"))
+
+    user_id = int(session["user_id"])
+
+    # Verify device belongs to user and grab its name for filename
+    with _db() as conn:
+        d = conn.execute(
+            "SELECT id, user_id, name FROM devices WHERE id = ?",
+            (device_id,)
+        ).fetchone()
+        if not d or d["user_id"] != user_id:
+            flash("Device not found.", "error")
+            return redirect(url_for("dashboard.dashboard"))
+        device_name = d["name"] or "device"
+
+    # Issue config via stub (dev) or SG (real)
+    try:
+        if ISSUE_CONFIG_STUB:
+            payload = _stub_issue_config(user_id=user_id, device_id=device_id)
+            resp = None
+        else:
+            resp = sg_issue_config(user_id=user_id, device_id=device_id)
+            if getattr(resp, "status_code", 500) != 200:
+                current_app.logger.error(
+                    "sg_issue_config HTTP %s: %s",
+                    getattr(resp, "status_code", "??"),
+                    getattr(resp, "text", ""),
+                )
+                flash("Server error while issuing config.", "error")
+                return redirect(url_for("dashboard.dashboard"))
+            payload = resp.json() if hasattr(resp, "json") else {}
+    except Exception:
+        current_app.logger.exception("sg_issue_config call failed")
+        flash("Server error while issuing config.", "error")
+        return redirect(url_for("dashboard.dashboard"))
+
+    if not payload.get("success"):
+        flash(payload.get("message", "Failed to issue config."), "error")
+        return redirect(url_for("dashboard.dashboard"))
+
+    cfg_text = payload.get("config") or ""
+    pub_key  = payload.get("public_key")
+    if not cfg_text:
+        current_app.logger.error("Empty config returned for device %s", device_id)
+        flash("Empty config from server.", "error")
+        return redirect(url_for("dashboard.dashboard"))
+
+    # Upsert into device_configs for UI
+    with _db() as conn:
+        _ensure_device_configs_table(conn)
+        existing = conn.execute(
+            "SELECT id FROM device_configs WHERE device_id = ?",
+            (device_id,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
+                (pub_key, cfg_text, device_id)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
+                (device_id, pub_key, cfg_text)
+            )
+        conn.commit()
+
+    fname = f"Privana-{device_name}-{device_id}.conf"
+    return send_file(
+        io.BytesIO(cfg_text.encode("utf-8")),
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name=fname,
+        max_age=0
+    )
+
+# -----------------------------------------------------------------------------
+# 2) Vendor installers (proxy/redirect)
+# -----------------------------------------------------------------------------
+@downloads_bp.get("/download/wireguard/<platform>")
 def download_wireguard(platform: str):
-    """Stream/proxy official downloads through your domain.
-       For mobile and Linux, we redirect (stores/docs)."""
     platform = platform.lower()
-
     if platform not in UPSTREAMS:
-        return ("Not found", 404)
+        return "Not found", 404
 
     upstream = UPSTREAMS[platform]
 
-    # Stores/docs must open externally (cannot be proxied as binaries)
+    # Stores/docs must open externally
     if platform in ("android", "ios", "linux"):
-        # You can swap to a lightweight info page if you prefer not to 302.
         return redirect(upstream, code=302)
 
     # Proxy the binary (Windows/macOS)
     try:
         r = requests.get(upstream, stream=True, timeout=TIMEOUT, allow_redirects=True)
     except requests.RequestException:
-        return ("Upstream unavailable. Please try again later.", 502)
+        return "Upstream unavailable. Please try again later.", 502
 
     if r.status_code >= 400:
-        return (f"Upstream error ({r.status_code}).", 502)
+        return f"Upstream error ({r.status_code}).", 502
 
     filename = _filename_from_upstream(r.url, r.headers)
     content_type = r.headers.get("Content-Type", "application/octet-stream")
@@ -69,37 +276,246 @@ def download_wireguard(platform: str):
     return Response(stream_with_context(r.iter_content(CHUNK)), headers=headers)
 
 
-@downloads_bp.route("/download/wireguard/meta/<platform>")
+@downloads_bp.get("/download/wireguard/meta/<platform>")
 def download_meta(platform: str):
-    """Optional: expose size/last-modified so the UI can show file size."""
     platform = platform.lower()
     url = UPSTREAMS.get(platform)
     if not url:
         return jsonify({"ok": False, "error": "unknown platform"}), 404
 
-    # For store/docs, just redirect info
+    # For store/docs, just say it's a redirect target
     if platform in ("android", "ios", "linux"):
-        return jsonify({
-            "ok": True,
-            "type": "redirect",
-            "url": url
-        })
+        return jsonify({"ok": True, "type": "redirect", "url": url})
 
+    # HEAD first; fall back to GET if needed
     try:
         r = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
+        if r.status_code >= 400:
+            r = requests.get(url, allow_redirects=True, timeout=TIMEOUT, stream=False)
     except requests.RequestException:
-        return jsonify({"ok": False, "error": "upstream unavailable"}), 502
+        filename = _filename_from_upstream(url, {})
+        return jsonify({
+            "ok": True,
+            "type": "binary",
+            "filename": filename,
+            "content_type": None,
+            "size_bytes": None,
+            "last_modified": None,
+        })
 
     size = r.headers.get("Content-Length")
     lm = r.headers.get("Last-Modified")
     ct = r.headers.get("Content-Type")
     filename = _filename_from_upstream(r.url, r.headers)
-
     return jsonify({
         "ok": True,
         "type": "binary",
         "filename": filename,
         "content_type": ct,
         "size_bytes": int(size) if size and size.isdigit() else None,
-        "last_modified": lm
+        "last_modified": lm,
     })
+
+# -----------------------------------------------------------------------------
+# 3) Optional tokenized bootstrap (Windows/Linux)
+# -----------------------------------------------------------------------------
+def _mint_config_token(user_id: int, device_id: int, minutes: int = 10) -> str:
+    token = secrets.token_urlsafe(32)
+    exp = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+    with _db() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS config_download_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                device_id INTEGER NOT NULL,
+                token TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """)
+        conn.execute(
+            "INSERT INTO config_download_tokens (user_id, device_id, token, expires_at) VALUES (?,?,?,?)",
+            (user_id, device_id, token, exp),
+        )
+        conn.commit()
+    return token
+
+
+@downloads_bp.get("/download/config/by-token/<token>")
+def download_config_by_token(token: str):
+    # Validate token & get user/device
+    with _db() as conn:
+        row = conn.execute(
+            "SELECT * FROM config_download_tokens WHERE token = ? AND used = 0",
+            (token,),
+        ).fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "invalid or used token"}), 400
+
+        try:
+            exp = datetime.fromisoformat(row["expires_at"])
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+        except Exception:
+            exp = datetime.now(timezone.utc)
+        if datetime.now(timezone.utc) > exp:
+            return jsonify({"success": False, "message": "token expired"}), 400
+
+        user_id = int(row["user_id"])
+        device_id = int(row["device_id"])
+
+    # Issue config via stub (dev) or SG (real)
+    if ISSUE_CONFIG_STUB:
+        payload = _stub_issue_config(user_id=user_id, device_id=device_id)
+    else:
+        try:
+            resp = sg_issue_config(user_id=user_id, device_id=device_id)
+        except Exception:
+            return jsonify({"success": False, "message": "server error issuing config"}), 502
+
+        if getattr(resp, "status_code", 500) != 200:
+            return jsonify({"success": False, "message": "server error issuing config"}), 502
+        payload = resp.json() if hasattr(resp, "json") else {}
+
+    if not payload.get("success"):
+        return jsonify({"success": False, "message": payload.get("message", "failed to issue config")}), 502
+
+    cfg_text = payload.get("config") or ""
+    if not cfg_text:
+        return jsonify({"success": False, "message": "empty config"}), 502
+
+    # Upsert locally and mark token used
+    with _db() as conn:
+        _ensure_device_configs_table(conn)
+        existing = conn.execute(
+            "SELECT id FROM device_configs WHERE device_id = ?",
+            (device_id,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
+                (payload.get("public_key"), cfg_text, device_id)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
+                (device_id, payload.get("public_key"), cfg_text)
+            )
+        conn.execute("UPDATE config_download_tokens SET used = 1 WHERE id = ?", (row["id"],))
+        conn.commit()
+
+    fname = f"Privana-{device_id}.conf"
+    return send_file(
+        io.BytesIO(cfg_text.encode("utf-8")),
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name=fname,
+        max_age=0
+    )
+
+
+@downloads_bp.get("/download/bootstrap/windows/<int:device_id>")
+def bootstrap_windows(device_id: int):
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+    user_id = int(session["user_id"])
+
+    u = _get_user(user_id)
+    if not u or not _is_subscription_ok(u):
+        abort(403)
+    if not _device_belongs(user_id, device_id):
+        abort(404)
+
+    token = _mint_config_token(user_id, device_id, minutes=10)
+    cfg_url = request.host_url.rstrip("/") + url_for("downloads.download_config_by_token", token=token)
+    tunnel_name = f"Privana-{device_id}"
+
+    ps = f"""#Requires -Version 5
+$ErrorActionPreference = 'Stop'
+$identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = New-Object Security.Principal.WindowsPrincipal($identity)
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {{
+  Start-Process -FilePath "powershell" -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
+  exit
+}}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$tunnelName = "{tunnel_name}"
+$tmp = Join-Path $env:TEMP "$tunnelName.conf"
+$wgExe = Join-Path $env:ProgramFiles "WireGuard\\wireguard.exe"
+Write-Host "Downloading Privana settings..." -ForegroundColor Cyan
+Invoke-WebRequest -Uri "{cfg_url}" -OutFile $tmp
+if (!(Test-Path $wgExe)) {{
+  Start-Process "https://download.wireguard.com/windows-client/wireguard-installer.exe"
+  Write-Host "Install WireGuard, then re-run this script."
+  exit 1
+}}
+& $wgExe /installtunnelservice $tmp
+Start-Sleep -Seconds 2
+Write-Host "Installed. The tunnel will run in the background and auto-start on boot." -ForegroundColor Green
+"""
+    return Response(
+        ps,
+        mimetype="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="Privana-Setup-Windows-{device_id}.ps1"'}
+    )
+
+
+@downloads_bp.get("/download/bootstrap/linux/<int:device_id>")
+def bootstrap_linux(device_id: int):
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+    user_id = int(session["user_id"])
+
+    u = _get_user(user_id)
+    if not u or not _is_subscription_ok(u):
+        abort(403)
+    if not _device_belongs(user_id, device_id):
+        abort(404)
+
+    token = _mint_config_token(user_id, device_id, minutes=10)
+    cfg_url = request.host_url.rstrip("/") + url_for("downloads.download_config_by_token", token=token)
+    name = f"privana-{device_id}"
+
+    sh = f"""#!/usr/bin/env bash
+set -euo pipefail
+NAME="{name}"
+URL="{cfg_url}"
+echo "[Privana] Downloading settings..."
+TMP="$(mktemp)"
+curl -fsSL "$URL" -o "$TMP"
+if ! command -v wg-quick >/dev/null 2>&1; then
+  echo "[Privana] Installing wireguard-tools..."
+  if command -v apt >/dev/null 2>&1; then
+    sudo apt update && sudo apt install -y wireguard wireguard-tools
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y wireguard-tools
+  elif command -v yum >/dev/null 2>&1; then
+    sudo yum install -y epel-release || true
+    sudo yum install -y wireguard-tools
+  elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm wireguard-tools
+  else
+    echo "[Privana] Please install wireguard-tools manually." >&2
+    exit 1
+  fi
+fi
+echo "[Privana] Installing to /etc/wireguard/$NAME.conf"
+sudo mkdir -p /etc/wireguard
+sudo mv "$TMP" "/etc/wireguard/$NAME.conf"
+sudo chmod 600 "/etc/wireguard/$NAME.conf"
+echo "[Privana] Enabling & starting..."
+if command -v systemctl >/dev/null 2>&1; then
+  sudo systemctl enable --now "wg-quick@${{NAME}}"
+else
+  sudo wg-quick up "$NAME"
+  echo "[Privana] Note: will not auto-start on boot (no systemd)."
+fi
+echo "[Privana] Done."
+"""
+    return Response(
+        sh,
+        mimetype="text/x-shellscript",
+        headers={"Content-Disposition": f'attachment; filename="privana-setup-linux-{device_id}.sh"'}
+    )

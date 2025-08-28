@@ -51,7 +51,7 @@ class LogLevel(Enum):
 
 class APIEndpoints:
     """API endpoint constants."""
-    BASE_URL = "https://api.privana.com"
+    BASE_URL = "https://api.privana.pro"
     AUTH_VERIFY = "/auth/verify"
     CONFIG_PROTECTION = "/config/protection"
     TELEMETRY = "/telemetry"
@@ -242,7 +242,7 @@ APP_METADATA = {
     "description": "Privacy-focused application with quantum security features",
     "author": "Privana Team",
     "license": "MIT",
-    "homepage": "https://privana.com",
+    "homepage": "https://privana.pro",
     "repository": "https://github.com/privana/privana",
-    "documentation": "https://docs.privana.com"
+    "documentation": "https://docs.privana.pro"
 }

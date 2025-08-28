@@ -1,19 +1,19 @@
-# WireGuard Server Deployment to Singapore
+# WireGuard Server Deployment to Panama
 
 ## 🏠 Current Setup (Development - France)
 - **Your IP**: 91.163.90.105 (Saint-Grégoire, Brittany)
 - **Purpose**: Local development and testing
 - **Usage**: Run `python start_dev.py`
 
-## 🇸🇬 Production Deployment (Singapore)
+## 🇸🇬 Production Deployment (Panama)
 
-### Step 1: Choose a Singapore VPS Provider
+### Step 1: Choose a Panama VPS Provider
 
 **Recommended Providers:**
-- **DigitalOcean Singapore** (SGP1) - $6/month for 1GB RAM
-- **Vultr Singapore** - $6/month for 1GB RAM  
-- **Linode Singapore** - $5/month for 1GB RAM
-- **AWS Singapore** (ap-southeast-1) - Pay per usage
+- **DigitalOcean Panama** (SGP1) - $6/month for 1GB RAM
+- **Vultr Panama** - $6/month for 1GB RAM  
+- **Linode Panama** - $5/month for 1GB RAM
+- **AWS Panama** (ap-southeast-1) - Pay per usage
 
 ### Step 2: Server Specifications
 **Minimum Requirements:**
@@ -25,8 +25,8 @@
 ### Step 3: Initial Server Setup
 
 ```bash
-# Connect to your Singapore server
-ssh root@YOUR_SINGAPORE_IP
+# Connect to your Panama server
+ssh root@YOUR_Panama_IP
 
 # Update system
 apt update && apt upgrade -y
@@ -58,7 +58,7 @@ pip install flask requests
 
 # Set environment variables
 export ENVIRONMENT=production
-export WG_HOST=$(curl -s https://api.ipify.org)  # Auto-detect Singapore IP
+export WG_HOST=$(curl -s https://api.ipify.org)  # Auto-detect Panama IP
 export API_SECRET="your-super-secure-secret-key-here"
 
 # Generate and set WireGuard keys (optional - can auto-generate)
@@ -91,8 +91,8 @@ ufw status
 python start_prod.py
 
 # You should see:
-# 🇸🇬 Starting WireGuard Server - PRODUCTION MODE (Singapore)
-# Auto-detected public IP: YOUR_SINGAPORE_IP
+# 🇸🇬 Starting WireGuard Server - PRODUCTION MODE (Panama)
+# Auto-detected public IP: YOUR_Panama_IP
 # ✅ Configuration looks good!
 ```
 
@@ -114,7 +114,7 @@ Type=simple
 User=wireguard
 WorkingDirectory=/home/wireguard/privana-server
 Environment=ENVIRONMENT=production
-Environment=WG_HOST=YOUR_SINGAPORE_IP
+Environment=WG_HOST=YOUR_Panama_IP
 Environment=API_SECRET=your-super-secure-secret-key
 ExecStart=/home/wireguard/privana-server/venv/bin/python start_prod.py
 Restart=always
@@ -139,7 +139,7 @@ sudo systemctl status wireguard-server
 | Variable | Development | Production | Description |
 |----------|-------------|------------|-------------|
 | `ENVIRONMENT` | `development` | `production` | Environment mode |
-| `WG_HOST` | `91.163.90.105` | Singapore IP | Public IP for clients |
+| `WG_HOST` | `91.163.90.105` | Panama IP | Public IP for clients |
 | `WG_PORT` | `51820` | `51820` | WireGuard port |
 | `API_HOST` | `127.0.0.1` | `127.0.0.1` | API bind address |
 | `API_PORT` | `8080` | `8080` | API port |
@@ -147,8 +147,8 @@ sudo systemctl status wireguard-server
 
 ## 📱 Client Configuration
 
-Once your Singapore server is running, clients will connect to:
-- **Endpoint**: `YOUR_SINGAPORE_IP:51820`
+Once your Panama server is running, clients will connect to:
+- **Endpoint**: `YOUR_Panama_IP:51820`
 - **DNS**: `1.1.1.1,1.0.0.1`
 - **AllowedIPs**: `0.0.0.0/0, ::/0` (route all traffic)
 

@@ -32,7 +32,7 @@ class Settings:
             'log_level': 'INFO',
             
             # API settings
-            'api_base_url': 'https://api.privana.com',
+            'api_base_url': 'https://api.privana.pro',
             'api_timeout': 30,
             'api_retries': 3,
             
