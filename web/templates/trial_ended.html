@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trial Ended - Privana</title>
 
 
@@ -17,14 +18,14 @@
   <!-- Colors -->
   <meta name="msapplication-TileColor" content="#06b6d4">
   <meta name="theme-color" content="#06b6d4">
-  
+
   <script>
-    (function(){
+    (function () {
       const saved = localStorage.getItem('theme');
       if (saved === 'dark') document.documentElement.classList.add('dark');
     })();
   </script>
-  
+
   <!-- Tailwind + site CSS + Lucide -->
   <script src="{{ url_for('static', filename='vendor/tailwindcss.js') }}"></script>
   <script>
@@ -33,10 +34,10 @@
       theme: {
         extend: {
           colors: {
-            slate: { 950:'#020617' },
-            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
-            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
-            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+            slate: { 950: '#020617' },
+            cyan: { 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4' },
+            purple: { 400: '#a78bfa', 500: '#8b5cf6' },
+            blue: { 50: '#eff6ff', 900: '#0b1b3b', 950: '#020a1a' }
           }
         }
       }
@@ -53,16 +54,16 @@
       --muted: #64748b;
       --brand1: #0ea5e9;
       --brand2: #2563eb;
-      --ring: rgba(37,99,235,.25);
-      --shadow: 0 10px 30px rgba(2,6,23,.08);
-      --qp1: #06b6d4; 
-      --qp2: #8b5cf6; 
-      --slate900: #0f172a; 
+      --ring: rgba(37, 99, 235, .25);
+      --shadow: 0 10px 30px rgba(2, 6, 23, .08);
+      --qp1: #06b6d4;
+      --qp2: #8b5cf6;
+      --slate900: #0f172a;
       --sky700: #0369a1;
-      --card-bg: rgba(255,255,255,.9);
-      --card-border: rgba(2,6,23,.06);
+      --card-bg: rgba(255, 255, 255, .9);
+      --card-border: rgba(2, 6, 23, .06);
       --plan-bg: #fff;
-      --plan-border: rgba(2,6,23,.06);
+      --plan-border: rgba(2, 6, 23, .06);
     }
 
     /* Dark mode variables */
@@ -71,19 +72,20 @@
       --muted: #94a3b8;
       --brand1: #0ea5e9;
       --brand2: #2563eb;
-      --ring: rgba(37,99,235,.4);
-      --shadow: 0 10px 30px rgba(0,0,0,.2);
-      --qp1: #06b6d4; 
-      --qp2: #8b5cf6; 
-      --slate900: #f1f5f9; 
+      --ring: rgba(37, 99, 235, .4);
+      --shadow: 0 10px 30px rgba(0, 0, 0, .2);
+      --qp1: #06b6d4;
+      --qp2: #8b5cf6;
+      --slate900: #f1f5f9;
       --sky700: #67e8f9;
-      --card-bg: rgba(15,23,42,.9);
-      --card-border: rgba(255,255,255,.1);
-      --plan-bg: rgba(30,41,59,.6);
-      --plan-border: rgba(255,255,255,.1);
+      --card-bg: rgba(15, 23, 42, .9);
+      --card-border: rgba(255, 255, 255, .1);
+      --plan-bg: rgba(30, 41, 59, .6);
+      --plan-border: rgba(255, 255, 255, .1);
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       min-height: 100vh;
@@ -93,7 +95,8 @@
     }
 
     .wrap {
-      min-height: calc(100vh - 64px); /* Account for header height */
+      min-height: calc(100vh - 64px);
+      /* Account for header height */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -126,11 +129,11 @@
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      filter: drop-shadow(0 8px 16px rgba(2,6,23,.10));
+      filter: drop-shadow(0 8px 16px rgba(2, 6, 23, .10));
     }
 
     html.dark .logo .logo-mark {
-      filter: drop-shadow(0 8px 16px rgba(0,0,0,.3));
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .3));
     }
 
     .logo .wordmark {
@@ -201,12 +204,12 @@
     .btn-qp {
       color: #fff;
       background-image: linear-gradient(90deg, var(--qp1), var(--qp2));
-      box-shadow: 0 16px 36px rgba(6,182,212,.25);
+      box-shadow: 0 16px 36px rgba(6, 182, 212, .25);
     }
 
     .btn-qp:hover {
       filter: brightness(1.05);
-      box-shadow: 0 20px 44px rgba(6,182,212,.35);
+      box-shadow: 0 20px 44px rgba(6, 182, 212, .35);
     }
 
     .btn-secondary {
@@ -215,41 +218,53 @@
     }
 
     html.dark .btn-secondary {
-      background: rgba(30,41,59,.8);
+      background: rgba(30, 41, 59, .8);
       color: #93c5fd;
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
+<body
+  class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
   <!-- Header (matches public site, without Login/Start Trial) -->
-  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+  <header id="site-header"
+    class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
     <div class="mx-auto container px-4 h-16 flex items-center justify-between">
       <a href="/" class="flex items-center space-x-3 group">
-        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 md:h-12 md:w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
-        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
+        <img src="/site/assets/privana-mark.png" alt="Privana"
+          class="h-10 w-10 md:h-12 md:w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
+        <span
+          class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
       </a>
-      
+
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
-        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
-        <a href="/site/index.html#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/quantum.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum
+          Security</a>
+        <a href="/site/index.html#pricing"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
         <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+        <a href="/site/faq.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
       </nav>
-      
+
       <div class="flex items-center gap-2">
-        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+        <button id="themeToggle"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Toggle theme">
           <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
           <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
         </button>
-        <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Install app">
+        <button id="pwa-install"
+          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Install app">
           <i data-lucide="download" class="w-4 h-4 mr-2"></i>
           <span class="hidden sm:inline">Install app</span>
         </button>
       </div>
     </div>
   </header>
-  
+
   <div class="wrap">
     <div class="card">
       <div class="logo">
@@ -262,15 +277,24 @@
 
       <div class="plans">
         <div class="plan">
-          <div><div class="name">Individual</div><div class="muted">Up to 3 devices</div></div>
+          <div>
+            <div class="name">Individual</div>
+            <div class="muted">Up to 3 devices</div>
+          </div>
           <a class="btn btn-secondary" href="/?select=individual">Choose</a>
         </div>
         <div class="plan">
-          <div><div class="name">Family</div><div class="muted">Up to 6 devices</div></div>
+          <div>
+            <div class="name">Family</div>
+            <div class="muted">Up to 6 devices</div>
+          </div>
           <a class="btn btn-secondary" href="/?select=family">Choose</a>
         </div>
         <div class="plan">
-          <div><div class="name">Small Team</div><div class="muted">Up to 10 devices</div></div>
+          <div>
+            <div class="name">Small Team</div>
+            <div class="muted">Up to 10 devices</div>
+          </div>
           <a class="btn btn-secondary" href="/?select=small%20team">Choose</a>
         </div>
       </div>
@@ -284,28 +308,35 @@
     <div class="container mx-auto px-4">
       <div class="text-center mb-10">
         <div class="flex items-center justify-center space-x-3 mb-6">
-          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="lazy" decoding="async">
-          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="lazy"
+            decoding="async">
+          <h3
+            class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">
+            Privana</h3>
         </div>
-        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs,
+          quantum-ready hardening, Panama jurisdiction.</p>
       </div>
 
       <div class="w-full text-center text-xs text-slate-500 dark:text-slate-400 mb-3">
         Translated for convenience only. English is the authoritative version.
-        <a href="/site/terms.html" class="underline decoration-slate-300 hover:decoration-transparent hover:text-cyan-700 dark:hover:text-cyan-300">Learn more</a>
+        <a href="/site/terms.html"
+          class="underline decoration-slate-300 hover:decoration-transparent hover:text-cyan-700 dark:hover:text-cyan-300">Learn
+          more</a>
       </div>
 
-      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+      <div
+        class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
         <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
           <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
-          <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+          <a href="/site/terms.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
           <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
           <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
         </div>
         <div class="text-center md:text-right">
-          <p>Privana is Powered by GoAnon LLC.</p>
+          <p>Privana is Powered by GoAnon.</p>
           <p class="mt-1">
-            <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+            <span>© <span id="year"></span> GoAnon. All Rights Reserved.</span>
             <span class="mx-1">|</span>
             <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
           </p>
@@ -346,4 +377,5 @@
     syncIcons();
   </script>
 </body>
+
 </html>

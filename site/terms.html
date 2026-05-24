@@ -4,239 +4,221 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Terms of Service — Privana</title>
-  <meta name="description" content="Terms of Service for Privana." />
-  <!-- Set theme ASAP (default: light). If user chose dark before, honor it. -->
+  <meta name="description" content="Terms of Service for Privana, an anonymous VPN access service by GoAnon." />
   <script>
-    (function () {
-      const saved = localStorage.getItem('theme'); // 'light'|'dark'|null
-      if (saved === 'dark') document.documentElement.classList.add('dark');
-      // else default is light → no 'dark' class
-    })();
-  </script>
-  <script src="/static/vendor/tailwindcss.js"></script>
-  <link rel="stylesheet" href="/site/assets/privana.css">
-
-  <!-- Favicons (keep) -->
+  (function () {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') document.documentElement.classList.add('dark');
+  })();
+</script>
+<script src="/static/vendor/tailwindcss.js"></script>
+<link rel="stylesheet" href="/site/assets/privana.css">
 <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
 <link rel="shortcut icon" href="/site/assets/favicon.ico">
-
-<!-- Single PWA manifest (root scope) -->
 <link rel="manifest" href="/manifest.webmanifest">
-
-<!-- Colors -->
 <meta name="msapplication-TileColor" content="#06b6d4">
 <meta name="theme-color" content="#06b6d4">
-
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            slate: { 950:'#020617' },
-            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
-            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
-            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
-          }
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          slate: { 950: '#020617' },
+          cyan: { 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4' },
+          purple: { 400: '#a78bfa', 500: '#8b5cf6' },
+          blue: { 50: '#eff6ff', 900: '#0b1b3b', 950: '#020a1a' }
         }
       }
     }
-  </script>
-  <!-- Lucide icons (CDN) -->
-  <script src="/static/vendor/lucide.min.js"></script>
-  <script defer src="/site/assets/pwa.js"></script>
-
-  <style>
-    html { scroll-behavior: smooth; }
-    :root { --spin: 4s; }
-    .logo-scene { perspective: 1000px; }
-    .logo-obj   { transform-style: preserve-3d; transform: rotateX(-10deg) rotateY(15deg); }
-    .logo-cube  { position: relative; width: 200px; height: 200px; transform-style: preserve-3d; animation: spin var(--spin) linear infinite; }
-    .logo-face  { position:absolute; top:20px; left:20px; width:160px; height:160px; border-radius:25px; border:3px solid transparent; display:flex; align-items:center; justify-content:center; }
-    .f-front  { transform: translateZ(40px);  background: linear-gradient(135deg,#06b6d4 0%,#0891b2 100%); border-color:#06b6d4; box-shadow:0 0 40px rgba(6,182,212,.4); }
-    .f-back   { transform: translateZ(-40px) rotateY(180deg); background: linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%); border-color:#7c3aed; box-shadow:0 0 40px rgba(124,58,237,.35); }
-    .f-right  { transform: rotateY(90deg) translateZ(40px);  background: linear-gradient(135deg,#8b5cf6 0%,#06b6d4 100%); border-color:#8b5cf6; box-shadow:0 0 30px rgba(139,92,246,.25); }
-    .f-left   { transform: rotateY(-90deg) translateZ(40px); background: linear-gradient(135deg,#e2e8f0 0%,#06b6d4 100%); border-color:#06b6d4; box-shadow:0 0 30px rgba(6,182,212,.25); }
-    .f-top    { transform: rotateX(90deg) translateZ(40px); background: radial-gradient(circle,#f8fafc 0%,#06b6d4 100%); border-color:#f8fafc; box-shadow:0 0 40px rgba(248,250,252,.35); }
-    .f-bottom { transform: rotateX(-90deg) translateZ(40px);background: radial-gradient(circle,#0f172a 0%,#8b5cf6 100%); border-color:#8b5cf6; box-shadow:0 0 35px rgba(124,58,237,.3); }
-    .logo-shadow { width:140px; height:140px; background:radial-gradient(ellipse, rgba(6,182,212,.35) 0%, transparent 80%); position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotateX(90deg) translateZ(-60px); border-radius:50%; filter:blur(40px); opacity:.8; }
-    @keyframes spin {
-      0%   { transform: rotateY(0deg)   rotateX(0deg); }
-      25%  { transform: rotateY(90deg)  rotateX(10deg); }
-      50%  { transform: rotateY(180deg) rotateX(0deg); }
-      75%  { transform: rotateY(270deg) rotateX(-10deg); }
-      100% { transform: rotateY(360deg) rotateX(0deg); }
-    }
-  </style>
+  }
+</script>
+<script src="/static/vendor/lucide.min.js"></script>
+<script defer src="/site/assets/pwa.js"></script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+</style>
 </head>
-
 <body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 overflow-x-hidden">
+<header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+  <div class="mx-auto container px-4 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center space-x-3 group">
+      <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
+      <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
+    </a>
 
-  <!-- Header -->
-  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
-    <div class="mx-auto container px-4 h-16 flex items-center justify-between">
-      <a href="/" class="flex items-center space-x-3 group">
-        <img src="/site/assets/privana-mark.png"
-          alt="Privana"
-          class="h-12 w-12 md:h-12 md:w-12 select-none drop-shadow-sm"
-          loading="eager" decoding="async">
+    <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+      <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Security</a>
+      <a href="/#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+      <a href="/site/affiliates.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Affiliates</a>
+      <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+    </nav>
 
-        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</span>
+    <div class="flex items-center gap-2">
+      <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+        <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
+        <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
+      </button>
+      <a href="/auth/login" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log in</a>
+      <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
+        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
       </a>
-
-      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
-        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
-        <a href="#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
-        <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
-      </nav>
-
-      <div class="flex items-center gap-2">
-        <!-- Theme toggle -->
-        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
-          <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
-          <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
-        </button>
-        <a href="/auth/login" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log in</a>
-        <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
-          <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
-        </a>
-        <button
-          id="pwa-install"
-          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
-                 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
-          aria-label="Install app">
-          <i data-lucide="download" class="w-4 h-4 mr-2"></i>
-          <span class="hidden sm:inline">Install app</span>
-        </button>
-      </div>
     </div>
-  </header>
+  </div>
+</header>
+<main class="container mx-auto px-4 py-14 max-w-4xl">
+  <section class="mb-10">
+    <p class="inline-flex items-center rounded-full border border-cyan-300/40 bg-cyan-500/10 px-3 py-1 text-sm font-semibold text-cyan-800 dark:text-cyan-200">
+      Last updated: 24 May 2026
+    </p>
+    <h1 class="mt-5 text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">
+      Terms of Service
+    </h1>
+    <p class="mt-5 text-lg text-slate-600 dark:text-slate-300">
+      These terms describe the conditions for using Privana, an anonymous VPN access service operated by GoAnon.
+    </p>
+  </section>
 
-  <main class="container mx-auto px-4 py-14 max-w-3xl">
-    <h1 class="text-4xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent mb-6 dark:from-white dark:to-sky-300">Terms of Service</h1>
+  <div class="space-y-8 text-slate-600 dark:text-slate-300">
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">1. Service</h2>
+      <p class="mt-3">
+        Privana provides VPN access using WireGuard-based technology. The service is offered on a best-effort basis and may change as the product evolves.
+      </p>
+    </section>
 
-    <div class="space-y-8 text-slate-600 dark:text-slate-300">
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">2. Anonymous accounts</h2>
+      <p class="mt-3">
+        Privana accounts are based on a 16-digit account number and a one-time recovery code. No email, password, username, or phone number is required for the anonymous signup flow.
+      </p>
+      <p class="mt-3">
+        You are responsible for saving your account number and recovery code. If both are lost, access may not be recoverable.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">1. Translations</h2>
-        <p>This website’s official content is published in English. Automated translation features may be provided solely for your convenience. These machine-generated translations may contain errors, omissions, or inaccuracies and should not be relied upon for precise information.</p>
-        <p>In case of any conflict or discrepancy between translated content and the original English version, the English version shall prevail and be considered authoritative. All translations are provided “as is,” without warranties of any kind regarding accuracy, completeness, or reliability.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">3. Trial access</h2>
+      <p class="mt-3">
+        Privana may provide a 7-day free trial. The trial starts when the anonymous account is created. Recovering an account does not reset, extend, or restart the trial.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">2. Service</h2>
-        <p>Privana provides Virtual Private Network (VPN) access using the WireGuard® protocol. The service is operated by GoAnon LLC on a best-effort basis with a strict no-log architecture.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">4. Acceptable use</h2>
+      <p class="mt-3">
+        You agree not to use Privana for illegal activity, abuse, spam, malware distribution, harassment, unauthorized access, attacks against networks or systems, fraud, or activity that disrupts the service for others.
+      </p>
+      <p class="mt-3">
+        We may suspend or terminate access if we detect abuse, technical harm, fraud, or violations of these terms.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">3. Acceptable Use</h2>
-        <p>You agree not to use the service for any illegal or prohibited activities, including but not limited to spamming, distributing malware, copyright infringement, harassment, or attempting to breach other networks. Violation of this policy may result in immediate account termination without a refund.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">5. Device configuration</h2>
+      <p class="mt-3">
+        You are responsible for securing your devices, private keys, downloaded configuration files, and recovery code. Privana cannot protect configuration files once they are stored outside the service.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">4. Accounts & Billing</h2>
-        <p>You are responsible for keeping your account credentials secure. All payments are handled via secure third-party payment processors. We do not store your full credit card information on our servers. Subscriptions are billed on a recurring basis (e.g., monthly, annually) until canceled.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">6. Paid plans</h2>
+      <p class="mt-3">
+        If paid plans are offered, pricing, renewal terms, cancellation options, and refund rules will be shown at checkout or in the account area. Payment processing may be handled by third-party providers.
+      </p>
+    </section>
 
-      <!-- === NEW SECTION ADDED HERE === -->
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">5. Cancellation and Refund Policy</h2>
-        <p>You may cancel your subscription at any time through your account dashboard. Upon cancellation, your service will remain active until the end of your current paid billing period, and you will not be charged again.</p>
-        <p>We offer a <strong>7-day money-back guarantee</strong> on your initial subscription purchase. To request a refund, please contact our support team within 7 days of your first payment. This guarantee applies only to your first order and does not cover subscription renewals, upgrades, or subsequent purchases.</p>
-        <p>We reserve the right to deny refunds in cases where we detect a violation of these Terms of Service or suspect fraudulent activity, such as refund abuse or manipulation of our affiliate program. All refunds are processed at our sole discretion.</p>
-      </section>
-      <!-- === END NEW SECTION === -->
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">7. Availability</h2>
+      <p class="mt-3">
+        We aim to provide reliable service, but Privana is provided without a guarantee of uninterrupted availability. Maintenance, network issues, server failures, configuration errors, or events outside our control may affect access.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">6. Availability</h2>
-        <p>We strive for high service uptime but do not guarantee uninterrupted access. The service may be temporarily unavailable for scheduled maintenance, emergency repairs, or due to network failures beyond our control.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">8. No unlawful bypass promise</h2>
+      <p class="mt-3">
+        Privana is a privacy and security tool. It is not a guarantee that you can bypass every network restriction, content block, platform rule, legal order, or technical control.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">7. Limitation of Liability</h2>
-        <p>To the maximum extent permitted by law, GoAnon LLC shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from the use of or inability to use the service.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">9. Limitation of liability</h2>
+      <p class="mt-3">
+        To the maximum extent allowed by applicable law, Privana and GoAnon are not liable for indirect, incidental, special, consequential, or punitive damages arising from use of the service.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">8. Jurisdiction</h2>
-        <p>The Privana service is provided from infrastructure in Panama. This agreement and any dispute arising from it shall be governed by the laws of Georgia, where the operating company, GoAnon LLC, is registered.</p>
-      </section>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">10. Changes</h2>
+      <p class="mt-3">
+        We may update these terms as the service evolves. Continued use of Privana after an update means you accept the updated terms.
+      </p>
+    </section>
 
-      <section>
-        <h2 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">9. Changes to Terms</h2>
-        <p>We may update these terms from time to time. We will notify users of any material changes by posting the new terms on this page with an updated effective date. Your continued use of the service after such changes constitutes your acceptance of the new terms.</p>
-      </section>
-    </div>
+    <section class="rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">11. Contact</h2>
+      <p class="mt-3">
+        For service questions, contact GoAnon through <a href="https://goanon.pro" class="text-cyan-700 underline dark:text-cyan-300">GoAnon.pro</a>.
+      </p>
+    </section>
+  </div>
 </main>
-
-  <footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
-    <div class="container mx-auto px-4">
-      <div class="text-center mb-10">
-        <div class="flex items-center justify-center space-x-3 mb-6">
-          <img src="/site/assets/privana-mark.png"
-          alt="Privana"
-          class="h-12 w-12 drop-shadow-sm"
-          loading="lazy" decoding="async">
-          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
-        </div>
-        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that’s truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
-        <div class="flex items-center justify-center gap-3">
-          <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">← Back to Home</a>
-       </div>
+<footer class="border-t border-slate-200/70 bg-white py-14 dark:border-white/10 dark:bg-slate-950/60">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-10">
+      <div class="flex items-center justify-center space-x-3 mb-6">
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy" decoding="async">
+        <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
       </div>
+      <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">
+        Anonymous VPN access by GoAnon. No email account. No password account. No traffic logs.
+      </p>
+      <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">← Back to Home</a>
+    </div>
 
-      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
-        <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
-          <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
-          <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
-          <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
-          <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-        </div>
-        <div class="text-center md:text-right">
-          <p>Privana is Powered by GoAnon LLC.</p>
-          <p class="mt-1">
-            <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
-            <span class="mx-1">|</span>
-            <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
-          </p>
-        </div>
+    <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+      <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+        <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+        <a href="/site/terms.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+        <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+        <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+      </div>
+      <div class="text-center md:text-right">
+        <p>Privana is powered by GoAnon.</p>
+        <p class="mt-1">© <span id="year"></span> GoAnon. All rights reserved. | <a href="https://goanon.pro" class="hover:text-cyan-700 dark:hover:text-cyan-300">GoAnon.pro</a></p>
       </div>
     </div>
-  </footer>
-  <script>
-    // Header scroll shadow
-    const hdr = document.getElementById('site-header');
-    window.addEventListener('scroll', () => {
-      hdr.classList.toggle('shadow-lg', window.scrollY > 50);
-      hdr.classList.toggle('bg-white/90', window.scrollY > 50 && !document.documentElement.classList.contains('dark'));
-      hdr.classList.toggle('dark:bg-slate-950/80', window.scrollY > 50 && document.documentElement.classList.contains('dark'));
-    });
+  </div>
+</footer>
 
-    // Theme toggle logic
-    const toggle = document.getElementById('themeToggle');
-    function syncIcons() {
-      const sun = document.getElementById('iconSun');
-      const moon = document.getElementById('iconMoon');
-      if (!sun || !moon) return;
-      const dark = document.documentElement.classList.contains('dark');
-      sun.classList.toggle('hidden', dark);
-      moon.classList.toggle('hidden', !dark);
-    }
-    toggle?.addEventListener('click', () => {
-      const root = document.documentElement;
-      const isDark = root.classList.toggle('dark');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      syncIcons();
-    });
-    syncIcons();
+<script>
+  const hdr = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    const dark = document.documentElement.classList.contains('dark');
+    hdr.classList.toggle('shadow-lg', window.scrollY > 50);
+    hdr.classList.toggle('bg-white/90', window.scrollY > 50 && !dark);
+    hdr.classList.toggle('dark:bg-slate-950/80', window.scrollY > 50 && dark);
+  });
 
-    document.getElementById('year').textContent = new Date().getFullYear();
-    lucide.createIcons();
-    // Re-sync after Lucide potentially replaces <i> with <svg>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const toggle = document.getElementById('themeToggle');
+  function syncIcons() {
+    const dark = document.documentElement.classList.contains('dark');
+    document.getElementById('iconSun')?.classList.toggle('hidden', dark);
+    document.getElementById('iconMoon')?.classList.toggle('hidden', !dark);
+  }
+  toggle?.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     syncIcons();
-  </script>
+  });
+  syncIcons();
+
+  if (window.lucide) window.lucide.createIcons();
+</script>
 </body>
 </html>

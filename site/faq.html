@@ -1,22 +1,24 @@
 <!doctype html>
 <html lang="en" class="">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>FAQ — Privana VPN</title>
-  <meta name="description" content="Frequently asked questions about Privana VPN - quantum security, WireGuard protocol, pricing, setup and more." />
+  <meta name="description"
+    content="Frequently asked questions about Privana VPN - quantum security, WireGuard protocol, pricing, setup and more." />
 
   <!-- Favicons (keep) -->
-<link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
-<link rel="shortcut icon" href="/site/assets/favicon.ico">
+  <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/site/assets/favicon.ico">
 
-<!-- Single PWA manifest (root scope) -->
-<link rel="manifest" href="/manifest.webmanifest">
+  <!-- Single PWA manifest (root scope) -->
+  <link rel="manifest" href="/manifest.webmanifest">
 
-<!-- Colors -->
-<meta name="msapplication-TileColor" content="#06b6d4">
-<meta name="theme-color" content="#06b6d4">
+  <!-- Colors -->
+  <meta name="msapplication-TileColor" content="#06b6d4">
+  <meta name="theme-color" content="#06b6d4">
 
 
   <!-- Set theme ASAP (default: light). If user chose dark before, honor it. -->
@@ -38,10 +40,10 @@
       theme: {
         extend: {
           colors: {
-            slate: { 950:'#020617' },
-            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
-            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
-            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+            slate: { 950: '#020617' },
+            cyan: { 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4' },
+            purple: { 400: '#a78bfa', 500: '#8b5cf6' },
+            blue: { 50: '#eff6ff', 900: '#0b1b3b', 950: '#020a1a' }
           }
         }
       }
@@ -49,64 +51,166 @@
   </script>
   <!-- Lucide icons (CDN) -->
   <script src="/static/vendor/lucide.min.js"></script>
-    <style>
-    html { scroll-behavior: smooth; }
-    :root { --spin: 4s; }
-    .logo-scene { perspective: 1000px; }
-    .logo-obj   { transform-style: preserve-3d; transform: rotateX(-10deg) rotateY(15deg); }
-    .logo-cube  { position: relative; width: 200px; height: 200px; transform-style: preserve-3d; animation: spin var(--spin) linear infinite; }
-    .logo-face  { position:absolute; top:20px; left:20px; width:160px; height:160px; border-radius:25px; border:3px solid transparent; display:flex; align-items:center; justify-content:center; }
-    .f-front  { transform: translateZ(40px);  background: linear-gradient(135deg,#06b6d4 0%,#0891b2 100%); border-color:#06b6d4; box-shadow:0 0 40px rgba(6,182,212,.4); }
-    .f-back   { transform: translateZ(-40px) rotateY(180deg); background: linear-gradient(135deg,#7c3aed 0%,#8b5cf6 100%); border-color:#7c3aed; box-shadow:0 0 40px rgba(124,58,237,.35); }
-    .f-right  { transform: rotateY(90deg) translateZ(40px);  background: linear-gradient(135deg,#8b5cf6 0%,#06b6d4 100%); border-color:#8b5cf6; box-shadow:0 0 30px rgba(139,92,246,.25); }
-    .f-left   { transform: rotateY(-90deg) translateZ(40px); background: linear-gradient(135deg,#e2e8f0 0%,#06b6d4 100%); border-color:#06b6d4; box-shadow:0 0 30px rgba(6,182,212,.25); }
-    .f-top    { transform: rotateX(90deg) translateZ(40px); background: radial-gradient(circle,#f8fafc 0%,#06b6d4 100%); border-color:#f8fafc; box-shadow:0 0 40px rgba(248,250,252,.35); }
-    .f-bottom { transform: rotateX(-90deg) translateZ(40px);background: radial-gradient(circle,#0f172a 0%,#8b5cf6 100%); border-color:#8b5cf6; box-shadow:0 0 35px rgba(124,58,237,.3); }
-    .logo-shadow { width:140px; height:140px; background:radial-gradient(ellipse, rgba(6,182,212,.35) 0%, transparent 80%); position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotateX(90deg) translateZ(-60px); border-radius:50%; filter:blur(40px); opacity:.8; }
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    :root {
+      --spin: 4s;
+    }
+
+    .logo-scene {
+      perspective: 1000px;
+    }
+
+    .logo-obj {
+      transform-style: preserve-3d;
+      transform: rotateX(-10deg) rotateY(15deg);
+    }
+
+    .logo-cube {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      transform-style: preserve-3d;
+      animation: spin var(--spin) linear infinite;
+    }
+
+    .logo-face {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 160px;
+      height: 160px;
+      border-radius: 25px;
+      border: 3px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .f-front {
+      transform: translateZ(40px);
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+      border-color: #06b6d4;
+      box-shadow: 0 0 40px rgba(6, 182, 212, .4);
+    }
+
+    .f-back {
+      transform: translateZ(-40px) rotateY(180deg);
+      background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+      border-color: #7c3aed;
+      box-shadow: 0 0 40px rgba(124, 58, 237, .35);
+    }
+
+    .f-right {
+      transform: rotateY(90deg) translateZ(40px);
+      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 30px rgba(139, 92, 246, .25);
+    }
+
+    .f-left {
+      transform: rotateY(-90deg) translateZ(40px);
+      background: linear-gradient(135deg, #e2e8f0 0%, #06b6d4 100%);
+      border-color: #06b6d4;
+      box-shadow: 0 0 30px rgba(6, 182, 212, .25);
+    }
+
+    .f-top {
+      transform: rotateX(90deg) translateZ(40px);
+      background: radial-gradient(circle, #f8fafc 0%, #06b6d4 100%);
+      border-color: #f8fafc;
+      box-shadow: 0 0 40px rgba(248, 250, 252, .35);
+    }
+
+    .f-bottom {
+      transform: rotateX(-90deg) translateZ(40px);
+      background: radial-gradient(circle, #0f172a 0%, #8b5cf6 100%);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 35px rgba(124, 58, 237, .3);
+    }
+
+    .logo-shadow {
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(ellipse, rgba(6, 182, 212, .35) 0%, transparent 80%);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotateX(90deg) translateZ(-60px);
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: .8;
+    }
+
     @keyframes spin {
-      0%   { transform: rotateY(0deg)   rotateX(0deg); }
-      25%  { transform: rotateY(90deg)  rotateX(10deg); }
-      50%  { transform: rotateY(180deg) rotateX(0deg); }
-      75%  { transform: rotateY(270deg) rotateX(-10deg); }
-      100% { transform: rotateY(360deg) rotateX(0deg); }
+      0% {
+        transform: rotateY(0deg) rotateX(0deg);
+      }
+
+      25% {
+        transform: rotateY(90deg) rotateX(10deg);
+      }
+
+      50% {
+        transform: rotateY(180deg) rotateX(0deg);
+      }
+
+      75% {
+        transform: rotateY(270deg) rotateX(-10deg);
+      }
+
+      100% {
+        transform: rotateY(360deg) rotateX(0deg);
+      }
     }
   </style>
   <script defer src="/site/assets/pwa.js"></script>
 </head>
 
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 overflow-x-hidden">
+<body
+  class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 overflow-x-hidden">
 
   <!-- Header -->
-  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+  <header id="site-header"
+    class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
     <div class="mx-auto container px-4 h-16 flex items-center justify-between">
       <a href="/" class="flex items-center space-x-3 group">
-        <img src="/site/assets/privana-mark.png"
-          alt="Privana"
-          class="h-12 w-12 md:h-12 md:w-12 select-none drop-shadow-sm"
-          loading="eager" decoding="async">
-        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</span>
+        <img src="/site/assets/privana-mark.png" alt="Privana"
+          class="h-12 w-12 md:h-12 md:w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
+        <span
+          class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent">Privana</span>
       </a>
 
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
-        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
-        <a href="#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/quantum.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum
+          Security</a>
+        <a href="#pricing"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
         <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+        <a href="/site/faq.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
       </nav>
 
       <div class="flex items-center gap-2">
         <!-- Theme toggle -->
-        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+        <button id="themeToggle"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Toggle theme">
           <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
           <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
         </button>
-        <a href="/auth/login" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log in</a>
-        <a href="/auth/signup" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
+        <a href="/auth/login"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">Log
+          in</a>
+        <a href="/auth/signup"
+          class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 shadow-lg shadow-cyan-500/30">
           <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Start Free Trial
         </a>
-        <button
-          id="pwa-install"
-          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+        <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
                  dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
           aria-label="Install app">
           <i data-lucide="download" class="w-4 h-4 mr-2"></i>
@@ -119,12 +223,15 @@
   <!-- Hero -->
   <section class="relative pt-16 pb-12 text-center">
     <div class="container mx-auto px-4">
-      <div class="w-20 h-20 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 flex items-center justify-center">
+      <div
+        class="w-20 h-20 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 flex items-center justify-center">
         <i data-lucide="help-circle" class="w-10 h-10 text-cyan-700 dark:text-cyan-200"></i>
       </div>
 
       <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight">
-        <span class="bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">Frequently Asked Questions</span>
+        <span
+          class="bg-gradient-to-r from-slate-900 via-cyan-700 to-purple-600 bg-clip-text text-transparent dark:from-white dark:via-cyan-300 dark:to-purple-400">Frequently
+          Asked Questions</span>
       </h1>
       <p class="text-lg md:text-xl text-slate-600 mt-4 max-w-3xl mx-auto dark:text-slate-300">
         Check out the most common questions about Privana VPN and our quantum-secure solution.
@@ -136,110 +243,156 @@
   <section class="py-16 bg-white/80 dark:bg-slate-900/40">
     <div class="container mx-auto px-4">
       <div class="max-w-4xl mx-auto">
-        
+
         <!-- FAQ Item 1 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How quickly can I get started with Privana?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How quickly can I get started with
+              Privana?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 dark:text-slate-300">Getting started with Privana takes less than 5 minutes. Simply sign up for your free 7-day trial, download the official WireGuard app on your device, and import the configuration we provide in your dashboard. No credit card required for the trial.</p>
+            <p class="text-slate-600 dark:text-slate-300">Getting started with Privana takes less than 5 minutes. Simply
+              sign up for your free 7-day trial, download the official WireGuard app on your device, and import the
+              configuration we provide in your dashboard. No credit card required for the trial.</p>
           </div>
         </div>
 
         <!-- FAQ Item 2 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">What is post-quantum hardening and do I need it?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">What is post-quantum hardening and do
+              I need it?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">Post-quantum hardening protects against future quantum computer attacks. We add an extra 256-bit PreSharedKey layer on top of WireGuard's already strong encryption. This stops "harvest now, decrypt later" attacks where bad actors collect encrypted data today, waiting for quantum computers to break it.</p>
-            <p class="text-slate-600 dark:text-slate-300">The best part? It's enabled by default with no performance impact, so you get quantum protection without any extra complexity.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">Post-quantum hardening protects against future quantum
+              computer attacks. We add an extra 256-bit PreSharedKey layer on top of WireGuard's already strong
+              encryption. This stops "harvest now, decrypt later" attacks where bad actors collect encrypted data today,
+              waiting for quantum computers to break it.</p>
+            <p class="text-slate-600 dark:text-slate-300">The best part? It's enabled by default with no performance
+              impact, so you get quantum protection without any extra complexity.</p>
           </div>
         </div>
 
         <!-- FAQ Item 3 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How many devices can I connect?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How many devices can I
+              connect?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 dark:text-slate-300">It depends on your plan: Personal allows up to 3 devices, Family covers up to 6 devices, and Small Team supports up to 10 devices. You can easily add or remove devices through your dashboard anytime. The free trial includes 1 device to test everything out.</p>
+            <p class="text-slate-600 dark:text-slate-300">It depends on your plan: Personal allows up to 3 devices,
+              Family covers up to 6 devices, and Small Team supports up to 10 devices. You can easily add or remove
+              devices through your dashboard anytime. The free trial includes 1 device to test everything out.</p>
           </div>
         </div>
 
         <!-- FAQ Item 4 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
             <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">What logs do you keep?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">We keep <strong>no traffic logs</strong> by design. We can't see what websites you visit, what you download, or what you do online.</p>
-            <p class="text-slate-600 dark:text-slate-300">We only store minimal account information needed to operate the service (email, payment status, device count). Our architecture in Panama jurisdiction means we're not subject to data retention laws that force other VPN providers to log user activity.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">We keep <strong>no traffic logs</strong> by design. We
+              can't see what websites you visit, what you download, or what you do online.</p>
+            <p class="text-slate-600 dark:text-slate-300">We only store minimal account information needed to operate
+              the service (email, payment status, device count). Our architecture in Panama jurisdiction means we're not
+              subject to data retention laws that force other VPN providers to log user activity.</p>
           </div>
         </div>
 
         <!-- FAQ Item 5 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Which devices and platforms do you support?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Which devices and platforms do you
+              support?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">Privana works with the official WireGuard apps available on all major platforms:</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">Privana works with the official WireGuard apps available
+              on all major platforms:</p>
             <ul class="list-disc list-inside text-slate-600 space-y-2 ml-4 dark:text-slate-300">
               <li><strong>Mobile:</strong> iOS (iPhone/iPad) and Android</li>
               <li><strong>Desktop:</strong> Windows, macOS, and Linux</li>
               <li><strong>Router:</strong> Compatible routers for whole-home protection</li>
             </ul>
-            <p class="text-slate-600 mt-4 dark:text-slate-300">Since we use the standard WireGuard protocol, you get the benefit of thoroughly audited, open-source apps maintained by the WireGuard team.</p>
+            <p class="text-slate-600 mt-4 dark:text-slate-300">Since we use the standard WireGuard protocol, you get the
+              benefit of thoroughly audited, open-source apps maintained by the WireGuard team.</p>
           </div>
         </div>
 
         <!-- FAQ Item 6 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
             <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How fast is the connection?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">Privana uses WireGuard, the fastest VPN protocol available. Most users see minimal speed impact compared to their normal internet connection.</p>
-            <p class="text-slate-600 dark:text-slate-300">Our servers are optimized for performance with premium network peering, and our post-quantum hardening layer adds no measurable latency. You get maximum privacy without sacrificing speed.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">Privana uses WireGuard, the fastest VPN protocol
+              available. Most users see minimal speed impact compared to their normal internet connection.</p>
+            <p class="text-slate-600 dark:text-slate-300">Our servers are optimized for performance with premium network
+              peering, and our post-quantum hardening layer adds no measurable latency. You get maximum privacy without
+              sacrificing speed.</p>
           </div>
         </div>
 
         <!-- FAQ Item 7 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Where are your servers located?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Where are your servers
+              located?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">We operate high-performance servers in strategic locations worldwide, with our company incorporated in Panama for optimal privacy jurisdiction.</p>
-            <p class="text-slate-600 dark:text-slate-300">Our server locations are chosen for optimal performance and privacy, avoiding countries with invasive surveillance laws. You can select your preferred server location through your dashboard.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">We operate high-performance servers in strategic
+              locations worldwide, with our company incorporated in Panama for optimal privacy jurisdiction.</p>
+            <p class="text-slate-600 dark:text-slate-300">Our server locations are chosen for optimal performance and
+              privacy, avoiding countries with invasive surveillance laws. You can select your preferred server location
+              through your dashboard.</p>
           </div>
         </div>
 
         <!-- FAQ Item 8 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
             <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Can I cancel anytime?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">Yes, absolutely. You can cancel your subscription anytime through your dashboard with just a few clicks.</p>
-            <p class="text-slate-600 dark:text-slate-300">Your service will continue until the end of your current billing period, and we don't charge any cancellation fees. The 7-day free trial gives you plenty of time to test everything risk-free.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">Yes, absolutely. You can cancel your subscription anytime
+              through your dashboard with just a few clicks.</p>
+            <p class="text-slate-600 dark:text-slate-300">Your service will continue until the end of your current
+              billing period, and we don't charge any cancellation fees. The 7-day free trial gives you plenty of time
+              to test everything risk-free.</p>
           </div>
         </div>
 
         <!-- FAQ Item 9 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
-            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How is Privana different from other VPN providers?</span>
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+            <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">How is Privana different from other
+              VPN providers?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
@@ -247,21 +400,29 @@
             <ul class="list-disc list-inside text-slate-600 space-y-2 ml-4 dark:text-slate-300">
               <li><strong>You control the server:</strong> Through your dashboard, not us</li>
               <li><strong>Quantum-ready by default:</strong> Post-quantum hardening built-in from day one</li>
-              <li><strong>True no-logs architecture:</strong> Panama jurisdiction with no data retention requirements</li>
+              <li><strong>True no-logs architecture:</strong> Panama jurisdiction with no data retention requirements
+              </li>
             </ul>
-            <p class="text-slate-600 mt-4 dark:text-slate-300">Most VPN providers will need to scramble to add quantum protection later. We're building it in from the start, so your privacy stays protected as technology evolves.</p>
+            <p class="text-slate-600 mt-4 dark:text-slate-300">Most VPN providers will need to scramble to add quantum
+              protection later. We're building it in from the start, so your privacy stays protected as technology
+              evolves.</p>
           </div>
         </div>
 
         <!-- FAQ Item 10 -->
-        <div class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-          <button class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
+        <div
+          class="faq-item border border-slate-200/70 bg-white rounded-2xl mb-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <button
+            class="faq-question w-full flex items-center justify-between p-6 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition">
             <span class="text-lg font-semibold text-slate-800 dark:text-slate-100">Do you offer customer support?</span>
             <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transform transition-transform"></i>
           </button>
           <div class="faq-answer hidden px-6 pb-6">
-            <p class="text-slate-600 mb-4 dark:text-slate-300">Yes! We provide friendly, technical support to help you get the most out of Privana. Our team can help with setup, troubleshooting, and any questions about our quantum security features.</p>
-            <p class="text-slate-600 dark:text-slate-300">You can reach us through your dashboard or email. We typically respond within a few hours during business days.</p>
+            <p class="text-slate-600 mb-4 dark:text-slate-300">Yes! We provide friendly, technical support to help you
+              get the most out of Privana. Our team can help with setup, troubleshooting, and any questions about our
+              quantum security features.</p>
+            <p class="text-slate-600 dark:text-slate-300">You can reach us through your dashboard or email. We typically
+              respond within a few hours during business days.</p>
           </div>
         </div>
 
@@ -269,13 +430,16 @@
 
       <!-- Still have questions CTA -->
       <div class="max-w-2xl mx-auto mt-16 text-center">
-        <div class="p-8 rounded-2xl border-2 border-cyan-400/50 bg-gradient-to-br from-white to-cyan-50 shadow-xl dark:from-white/5 dark:to-cyan-950/20 dark:border-cyan-400/40">
+        <div
+          class="p-8 rounded-2xl border-2 border-cyan-400/50 bg-gradient-to-br from-white to-cyan-50 shadow-xl dark:from-white/5 dark:to-cyan-950/20 dark:border-cyan-400/40">
           <h3 class="text-2xl font-semibold mb-4 text-slate-800 dark:text-slate-100">Still have questions?</h3>
           <p class="text-slate-600 mb-6 dark:text-slate-300">
-            Can't find what you're looking for? Our support team is here to help you get started with quantum-secure privacy.
+            Can't find what you're looking for? Our support team is here to help you get started with quantum-secure
+            privacy.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="mailto:hello@privana.pro" class="inline-flex items-center justify-center rounded-xl border-2 border-cyan-500 text-cyan-700 hover:bg-cyan-50 px-6 py-3 font-semibold dark:text-cyan-200 dark:border-cyan-300 dark:hover:bg-white/10">
+            <a href="mailto:hello@privana.pro"
+              class="inline-flex items-center justify-center rounded-xl border-2 border-cyan-500 text-cyan-700 hover:bg-cyan-50 px-6 py-3 font-semibold dark:text-cyan-200 dark:border-cyan-300 dark:hover:bg-white/10">
               <i data-lucide="mail" class="w-4 h-4 mr-2"></i>
               Contact Support
             </a>
@@ -290,45 +454,49 @@
     <div class="container mx-auto px-4">
       <div class="text-center mb-10">
         <div class="flex items-center justify-center space-x-3 mb-6">
-          <img src="/site/assets/privana-mark.png"
-            alt="Privana"
-            class="h-12 w-12 drop-shadow-sm"
-            loading="lazy" decoding="async">
-          <h3 class="text-2xl font-bold text-slate-900 dark:bg-gradient-to-r dark:from-white dark:to-cyan-300 dark:bg-clip-text dark:text-transparent">Privana</h3>
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy"
+            decoding="async">
+          <h3
+            class="text-2xl font-bold text-slate-900 dark:bg-gradient-to-r dark:from-white dark:to-cyan-300 dark:bg-clip-text dark:text-transparent">
+            Privana</h3>
         </div>
-        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs,
+          quantum-ready hardening, Panama jurisdiction.</p>
         <div class="flex items-center justify-center gap-3">
-          <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">← Back to Home</a>
+          <a href="/"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">←
+            Back to Home</a>
         </div>
       </div>
 
-      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+      <div
+        class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
 
-  <!-- Left Side: Navigational Links (Unchanged) -->
-  <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
-    <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
-    <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
-    <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
-    <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-  </div>
+        <!-- Left Side: Navigational Links (Unchanged) -->
+        <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+          <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+          <a href="/site/terms.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+          <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+          <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+        </div>
 
-  <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
-  <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
-  <div class="text-center md:text-right">
-    
-    <!-- Line 1: Establishes the brand-to-company relationship -->
-    <p>Privana is Powered by GoAnon LLC.</p>
-    
-    <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
-    <p class="mt-1">
-      <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
-      <span class="mx-1">|</span>
-      <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
-    </p>
+        <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
+        <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
+        <div class="text-center md:text-right">
 
-  </div>
+          <!-- Line 1: Establishes the brand-to-company relationship -->
+          <p>Privana is Powered by GoAnon.</p>
 
-</div>
+          <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
+          <p class="mt-1">
+            <span>© <span id="year"></span> GoAnon. All Rights Reserved.</span>
+            <span class="mx-1">|</span>
+            <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+          </p>
+
+        </div>
+
+      </div>
     </div>
   </footer>
 
@@ -339,11 +507,11 @@
         const faqItem = question.closest('.faq-item');
         const answer = faqItem.querySelector('.faq-answer');
         const chevron = question.querySelector('[data-lucide="chevron-down"]');
-        
+
         // Toggle this FAQ item
         answer.classList.toggle('hidden');
         chevron.classList.toggle('rotate-180');
-        
+
         // Optional: Close other FAQ items (uncomment if you want accordion behavior)
         // document.querySelectorAll('.faq-item').forEach(item => {
         //   if (item !== faqItem) {
@@ -389,4 +557,5 @@
   </script>
 
 </body>
+
 </html>
