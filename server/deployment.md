@@ -1,7 +1,6 @@
 # WireGuard Server Deployment to Panama
 
 ## 🏠 Current Setup (Development - France)
-- **Your IP**: 91.163.90.105 (Saint-Grégoire, Brittany)
 - **Purpose**: Local development and testing
 - **Usage**: Run `python start_dev.py`
 
@@ -139,7 +138,7 @@ sudo systemctl status wireguard-server
 | Variable | Development | Production | Description |
 |----------|-------------|------------|-------------|
 | `ENVIRONMENT` | `development` | `production` | Environment mode |
-| `WG_HOST` | `91.163.90.105` | Panama IP | Public IP for clients |
+| `WG_HOST` | `vpn.yourdomain.com` or VPS public IP | Production endpoint | Public endpoint for VPN clients |
 | `WG_PORT` | `51820` | `51820` | WireGuard port |
 | `API_HOST` | `127.0.0.1` | `127.0.0.1` | API bind address |
 | `API_PORT` | `8080` | `8080` | API port |

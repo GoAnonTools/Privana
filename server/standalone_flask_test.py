@@ -7,7 +7,7 @@ import sys
 
 # Set development environment
 os.environ['ENVIRONMENT'] = 'development'
-os.environ['WG_HOST'] = '91.163.90.105'
+os.environ.setdefault('WG_HOST', '127.0.0.1')
 
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

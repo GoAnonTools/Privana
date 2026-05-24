@@ -7,7 +7,7 @@ import sys
 
 # Set development environment
 os.environ['ENVIRONMENT'] = 'development'
-os.environ['WG_HOST'] = '91.163.90.105'  # Your current French IP
+os.environ.setdefault('WG_HOST', '127.0.0.1')  # Override locally via .env or shell
 
 # Add the project root to Python path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

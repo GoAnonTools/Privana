@@ -44,8 +44,13 @@ if __name__ == '__main__':
         print("   python -c \"from config import ProductionConfig; print(ProductionConfig.get_deployment_guide())\"")
         sys.exit(1)
     
-    # Show configuration
-    config.Config.print_info()
+    # Enforce production-safe configuration
+    try:
+        config.Config.validate_or_raise()
+    except RuntimeError as e:
+        print("❌ Invalid production configuration:")
+        print(str(e))
+        sys.exit(1)
     
     # Start the server
     server = WireGuardServer()

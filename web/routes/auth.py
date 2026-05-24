@@ -6,6 +6,8 @@ import secrets
 import hashlib
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from werkzeug.security import generate_password_hash, check_password_hash
+import hmac
 
 from rate_limit import limiter
 from web.utils.api_client import sg_status
@@ -36,8 +38,21 @@ def table_exists(conn, table: str) -> bool:
 # -----------------------------------------------------------------------------
 
 def _client_ip() -> str:
-    xff = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
-    return xff or (request.remote_addr or "unknown")
+    """
+    Return the client IP used for rate limiting/audit logs.
+
+    By default, do NOT trust X-Forwarded-For because clients can spoof it.
+    Only enable TRUST_PROXY_HEADERS=true when the app is behind a trusted
+    reverse proxy that overwrites/cleans those headers.
+    """
+    trust_proxy = os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true"
+
+    if trust_proxy:
+        xff = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if xff:
+            return xff
+
+    return request.remote_addr or "unknown"
 
 def log_event(event_type: str, user_id=None, details: str | None = None, severity: str = "info") -> None:
     """Write a security/audit event. Never raises."""
@@ -118,8 +133,35 @@ def generate_recovery_code() -> str:
     return "-".join(groups)
 
 def hash_secret(value: str) -> str:
-    """SHA-256 hash for storing recovery codes."""
-    return hashlib.sha256(value.encode()).hexdigest()
+    """
+    Slow hash for storing recovery codes.
+
+    Recovery codes are user-held secrets, so they should be treated like passwords.
+    Werkzeug will use a salted password-hash format instead of fast raw SHA-256.
+    """
+    return generate_password_hash(value.strip(), method="pbkdf2:sha256", salt_length=16)
+
+
+def verify_secret(value: str, stored_hash: str) -> bool:
+    """
+    Verify recovery code.
+
+    Supports:
+    - new Werkzeug password hashes
+    - old legacy SHA-256 hashes for migration/dev compatibility
+    """
+    value = value.strip()
+    stored_hash = stored_hash or ""
+
+    try:
+        if check_password_hash(stored_hash, value):
+            return True
+    except Exception:
+        pass
+
+    # Legacy compatibility: old SHA-256 recovery hashes were 64 hex chars.
+    legacy_sha256 = hashlib.sha256(value.encode()).hexdigest()
+    return hmac.compare_digest(stored_hash, legacy_sha256)
 
 # -----------------------------------------------------------------------------
 # Plan helpers
@@ -405,10 +447,14 @@ def recover():
         return render_template("recover.html")
 
     recovery_input = (request.form.get("recovery_code") or "").strip().upper().replace(" ", "")
-    recovery_hash  = hash_secret(recovery_input)
-
     conn = get_db()
-    user = conn.execute("SELECT * FROM users WHERE recovery_hash=?", (recovery_hash,)).fetchone()
+    users = conn.execute("SELECT * FROM users WHERE recovery_hash IS NOT NULL").fetchall()
+
+    user = None
+    for candidate in users:
+        if verify_secret(recovery_input, candidate["recovery_hash"]):
+            user = candidate
+            break
 
     if not user:
         conn.close()

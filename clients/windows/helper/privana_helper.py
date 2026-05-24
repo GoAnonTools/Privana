@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import hmac
 import ctypes
 import logging
 import subprocess
@@ -179,7 +180,7 @@ def require_helper_token():
         return with_cors(jsonify({"ok": False, "error": "helper token not configured"})), 503
 
     submitted = request.headers.get("X-Privana-Helper-Token", "").strip()
-    if not submitted or submitted != HELPER_TOKEN:
+    if not submitted or not hmac.compare_digest(submitted, HELPER_TOKEN):
         return with_cors(jsonify({"ok": False, "error": "unauthorized helper request"})), 401
 
     return None

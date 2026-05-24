@@ -31,11 +31,21 @@ def _wg(cmd_args: list[str], timeout=10):
     return _run(["wg", *cmd_args], timeout=timeout)
 
 def _gen_keypair():
-    code, priv, err = _wg(["genkey"])
-    if code != 0: return None, None, f"wg genkey failed: {err}"
-    code, pub, err2 = _run(["bash","-lc", f"printf %s \"{priv}\" | wg pubkey"])
-    if code != 0: return None, None, f"wg pubkey failed: {err2}"
-    return priv.strip(), pub.strip(), None
+    code, priv, err = _run(["wg", "genkey"])
+    if code != 0:
+        return None, None, f"wg genkey failed: {err}"
+
+    priv = priv.strip()
+    proc = subprocess.run(
+        ["wg", "pubkey"],
+        input=priv + "\n",
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        return None, None, f"wg pubkey failed: {proc.stderr}"
+
+    return priv, proc.stdout.strip(), None
 
 def _server_public_key():
     # Try /etc/wireguard/<iface>.pub, then /etc/wireguard/server_public.key

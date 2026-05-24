@@ -15,9 +15,17 @@ from fido2.webauthn import (
 )
 
 # ---------- Config ----------
-RP_ID   = os.getenv("WEBAUTHN_RP_ID", "localhost")              # e.g. "privana.pro"
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+
+RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost").strip()
 RP_NAME = "Privana"
-ORIGIN  = os.getenv("WEBAUTHN_ORIGIN", "http://localhost:5000") # e.g. "https://privana.pro"
+ORIGIN = os.getenv("WEBAUTHN_ORIGIN", "http://localhost:5000").strip()
+
+if ENVIRONMENT == "production":
+    if RP_ID in {"", "localhost", "127.0.0.1"}:
+        raise RuntimeError("WEBAUTHN_RP_ID must be set to your production domain in production.")
+    if not ORIGIN.startswith("https://") or "localhost" in ORIGIN or "127.0.0.1" in ORIGIN:
+        raise RuntimeError("WEBAUTHN_ORIGIN must be set to your HTTPS production origin in production.")
 
 DB_PATH = os.path.join(os.getcwd(), "privana.db")
 
@@ -175,8 +183,11 @@ def register_options():
 
         return jsonify(data)
 
-    except Exception as e:
-        return jsonify({"error": "register_options_failed", "detail": str(e)}), 500
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"error": "register_options_failed"}), 500
 
 
 @webauthn_bp.route("/register/verify", methods=["POST"])
@@ -325,11 +336,11 @@ def register_verify():
 
         return jsonify({"ok": True})
 
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        return jsonify({"error": "register_verify_failed", "detail": str(e), "trace": tb}), 500
-
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"error": "register_verify_failed"}), 500
 
 # =====================================================================
 # Assertion PRECHECK (signup gate) — no login side-effects, trial guard
@@ -344,8 +355,11 @@ def assert_options_precheck():
         )
         session["webauthn_assert_state_precheck"] = state
         return jsonify(options)
-    except Exception as e:
-        return jsonify({"error": "assert_options_failed", "detail": str(e)}), 500
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"error": "assert_options_failed"}), 500
 
 
 @webauthn_bp.route("/assert/verify-precheck", methods=["POST"])
@@ -401,8 +415,11 @@ def assert_verify_precheck():
 
         return jsonify({"ok": True, "recognized": True, "blocked": blocked})
 
-    except Exception as e:
-        return jsonify({"error": "assert_verify_failed", "detail": str(e)}), 500
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"error": "assert_options_failed"}), 500
 
 
 # ===========================================

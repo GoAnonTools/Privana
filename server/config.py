@@ -1,5 +1,5 @@
 import os
-import secrets
+import re
 import requests
 import socket
 
@@ -24,7 +24,7 @@ class Config:
     # API settings
     API_HOST = os.environ.get('API_HOST', '127.0.0.1')  # Localhost for security
     API_PORT = int(os.environ.get('API_PORT', 8080))
-    API_SECRET = os.environ.get('API_SECRET', secrets.token_urlsafe(32))
+    API_SECRET = os.environ.get('API_SECRET', '').strip()
     
     # Client settings
     CLIENT_IP_RANGE = os.environ.get('CLIENT_IP_RANGE', '10.0.1.0/24')
@@ -67,7 +67,22 @@ class Config:
                 print("WARNING: Could not detect public IP. Using localhost - external clients won't connect!")
                 return "127.0.0.1"
         return cls.HOST
-    
+
+    @staticmethod
+    def _is_weak_secret(value: str) -> bool:
+        lowered = (value or "").strip().lower()
+        return (
+            not lowered
+            or lowered == "change_me"
+            or lowered.startswith("change-me")
+            or lowered.startswith("dev-insecure")
+            or len(value.strip()) < 32
+        )
+
+    @staticmethod
+    def _is_valid_wg_interface(value: str) -> bool:
+        return bool(re.fullmatch(r"[A-Za-z0-9_-]{1,32}", value or ""))
+
     @classmethod
     def validate(cls):
         """Validate configuration settings"""
@@ -89,13 +104,27 @@ class Config:
         if current_host in ['0.0.0.0', '127.0.0.1', 'localhost']:
             issues.append("WARNING: HOST is set to localhost - external clients won't be able to connect.")
         
-        # Environment-specific warnings
+        if not cls._is_valid_wg_interface(cls.WG_INTERFACE):
+            issues.append("Invalid WG_INTERFACE. Use only letters, numbers, underscore, or hyphen.")
+
+        if cls._is_weak_secret(cls.API_SECRET):
+            issues.append("API_SECRET must be set to a strong fixed random value.")
+
         if cls.ENVIRONMENT == 'production':
             if not cls.WG_PRIVATE_KEY:
                 issues.append("PRODUCTION: WireGuard private key should be set via environment variable")
-            if 'token_urlsafe' in str(cls.API_SECRET):
-                issues.append("PRODUCTION: Set a fixed API_SECRET environment variable")
+            if current_host in ['0.0.0.0', '127.0.0.1', 'localhost']:
+                issues.append("PRODUCTION: WG_HOST must be a real public VPN hostname or IP.")
+            if cls.API_HOST == "0.0.0.0":
+                issues.append("PRODUCTION: API_HOST should not bind to 0.0.0.0. Use 127.0.0.1 behind Nginx/systemd.")
         
+        return issues
+
+    @classmethod
+    def validate_or_raise(cls):
+        issues = cls.validate()
+        if cls.ENVIRONMENT == "production" and issues:
+            raise RuntimeError("Invalid production configuration:\n- " + "\n- ".join(issues))
         return issues
     
     @classmethod
@@ -142,7 +171,7 @@ class Config:
         print("=" * 50)
 
 class DevelopmentConfig(Config):
-    """Configuration for local development — inherits random API_SECRET from Config."""
+    """Configuration for local development — requires API_SECRET from environment."""
 
 class ProductionConfig(Config):
     """Configuration for Panama production server"""

@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 import sqlite3
 import os
+import re
+from markupsafe import escape
 from datetime import datetime, timezone
 from web.utils.wireguard import (
     check_wireguard_status,
@@ -26,6 +28,29 @@ from web.utils.api_client import (
 
 # Blueprint
 dashboard_bp = Blueprint("dashboard", __name__)
+
+ALLOWED_PLATFORMS = {"windows", "macos", "mac", "linux", "android", "ios"}
+
+def validate_device_name(value: str) -> str:
+    """Allow simple human device names only."""
+    value = (value or "").strip()
+
+    if not 1 <= len(value) <= 40:
+        raise ValueError("Device name must be between 1 and 40 characters.")
+
+    if not re.fullmatch(r"[A-Za-z0-9 _.\-]+", value):
+        raise ValueError("Device name can only contain letters, numbers, spaces, dots, dashes, and underscores.")
+
+    return value
+
+
+def validate_platform(value: str) -> str:
+    value = (value or "").strip().lower()
+
+    if value not in ALLOWED_PLATFORMS:
+        raise ValueError("Unsupported platform.")
+
+    return "macos" if value == "mac" else value
 
 # ---- DB helper (use your local version to keep behavior) ----
 def get_db():
@@ -414,8 +439,12 @@ def add_device():
         return guard
 
     user_id = session["user_id"]
-    name = request.form.get("name")
-    platform = request.form.get("platform")
+    try:
+        name = validate_device_name(request.form.get("name"))
+        platform = validate_platform(request.form.get("platform"))
+    except ValueError as e:
+        flash(str(e), "error")
+        return redirect(url_for("dashboard.dashboard"))
 
     can_add, message = check_device_limit(user_id)
     if not can_add:
@@ -434,7 +463,7 @@ def add_device():
     return redirect(url_for("dashboard.dashboard"))
 
 
-@dashboard_bp.route("/remove-device/<int:device_id>")
+@dashboard_bp.route("/remove-device/<int:device_id>", methods=["POST"])
 def remove_device(device_id):
     guard = require_active_dashboard()
     if guard:
@@ -603,15 +632,18 @@ def show_qr(device_id):
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf)
     img_b64 = base64.b64encode(buf.getvalue()).decode('ascii')
 
     # Simple, fixed-width page with the QR
+    safe_device_name = escape(device["name"])
+    safe_platform = escape((device["platform"] or "").capitalize())
+
     html = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Privana QR – {device["name"]}</title>
+  <title>Privana QR – {safe_device_name}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {{
@@ -635,7 +667,7 @@ def show_qr(device_id):
   <div class="wrap">
     <div class="card">
       <h1>Scan in WireGuard</h1>
-      <div class="muted">Device: <strong>{device["name"]}</strong> · Platform: <strong>{device["platform"].capitalize()}</strong></div>
+      <div class="muted">Device: <strong>{safe_device_name}</strong> · Platform: <strong>{safe_platform}</strong></div>
       <div class="qr">
         <img src="data:image/png;base64,{img_b64}" alt="WireGuard config QR" />
       </div>
@@ -693,7 +725,8 @@ def qr_token_config(token):
     # Serve as a file download; mobile OS will offer “Open in WireGuard”
     resp = make_response(row["config"])
     resp.headers["Content-Type"] = "text/plain"
-    resp.headers["Content-Disposition"] = f'attachment; filename={row["device_name"]}_privana.conf'
+    safe_filename = re.sub(r"[^A-Za-z0-9_.-]+", "_", row["device_name"] or "device")
+    resp.headers["Content-Disposition"] = f'attachment; filename="{safe_filename}_privana.conf"'
     return resp
 
 

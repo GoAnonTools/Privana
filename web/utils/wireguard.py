@@ -1,27 +1,43 @@
 import subprocess
-import os
+import re
+import json
+from markupsafe import escape
 import uuid
 import base64
 from datetime import datetime
 import qrcode
 import io
-import base64
 
 def generate_wireguard_keys():
-    """Generate WireGuard private and public keys"""
+    """Generate a real WireGuard keypair using wg. Never generate fake fallback keys."""
     try:
-        # Generate private key
-        private_key = subprocess.check_output(['wg', 'genkey'], text=True).strip()
-        
-        # Generate public key from private key
-        public_key = subprocess.check_output(['wg', 'pubkey'], input=private_key, text=True).strip()
-        
+        private_result = subprocess.run(
+            ["wg", "genkey"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        private_key = private_result.stdout.strip()
+
+        public_result = subprocess.run(
+            ["wg", "pubkey"],
+            input=private_key + "\n",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        public_key = public_result.stdout.strip()
+
         return private_key, public_key
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        # Fallback method if wg command is not available
-        private_key = base64.b64encode(os.urandom(32)).decode('utf-8')
-        public_key = base64.b64encode(os.urandom(32)).decode('utf-8')
-        return private_key, public_key
+
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "WireGuard tools are required to generate valid keys. Install wireguard-tools."
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"WireGuard key generation failed: {exc.stderr or exc}"
+        ) from exc
 
 def generate_wireguard_config(user_id, device_name, private_key, server_public_key, server_endpoint):
     """Generate a complete WireGuard configuration for a device"""
@@ -107,17 +123,23 @@ PersistentKeepalive = 25
         # Generate QR code for mobile
         qr_img = qrcode.make(str(mobile_config))
         qr_buffer = io.BytesIO()
-        qr_img.save(qr_buffer, format='PNG')
+        qr_img.save(qr_buffer)
         qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
         
         # Capitalize the platform name properly
         platform_capitalized = platform.capitalize()
         
+        safe_device_name = escape(device_name)
+        safe_platform = escape(platform)
+        safe_platform_capitalized = escape(platform_capitalized)
+        safe_download_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", device_name or "device")
+        safe_download_name_js = json.dumps(f"{safe_download_name}_privana.conf")
+
         # Create HTML page with QR code and download option
         html_content = f'''<!DOCTYPE html>
 <html>
 <head>
-    <title>Privana Configuration for {device_name}</title>
+    <title>Privana Configuration for {safe_device_name}</title>
     <style>
         body {{ font-family: Arial, sans-serif; text-align: center; margin: 40px; }}
         .qr-container {{ margin: 20px auto; display: inline-block; }}
@@ -126,19 +148,19 @@ PersistentKeepalive = 25
     </style>
 </head>
 <body>
-    <h1>Privana Configuration for {device_name}</h1>
+    <h1>Privana Configuration for {safe_device_name}</h1>
     <div class="qr-container">
         <img src="data:image/png;base64,{qr_base64}" alt="WireGuard Configuration QR Code">
     </div>
     <div class="instructions">
-        <h2>Instructions for {platform_capitalized}:</h2>
+        <h2>Instructions for {safe_platform_capitalized}:</h2>
         <ol>
             <li>Install the WireGuard app from your app store</li>
             <li>Open the WireGuard app</li>
             <li>Tap the "+" button to add a new tunnel</li>
             <li>Choose "Scan from QR code"</li>
             <li>Scan the QR code shown above</li>
-            <li>Name the tunnel "{device_name}"</li>
+            <li>Name the tunnel "{safe_device_name}"</li>
             <li>Toggle the tunnel to connect</li>
         </ol>
     </div>
@@ -151,7 +173,7 @@ PersistentKeepalive = 25
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = '{device_name}_privana.conf';
+        a.download = {safe_download_name_js};
         a.click();
         URL.revokeObjectURL(url);
     }}

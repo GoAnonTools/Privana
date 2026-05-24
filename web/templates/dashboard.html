@@ -292,6 +292,7 @@
       border-radius: 999px;
       background: linear-gradient(90deg, var(--brand1), var(--brand2));
       transition: width .3s ease;
+      width: var(--usage-percent, 0%);
     }
 
     .devices {
@@ -599,7 +600,7 @@
 
           <div class="usage-track" aria-label="Device usage {{ usage_summary }}"
             title="Device usage {{ usage_summary }}">
-            <div class="usage-bar" style="width: {{ usage_percent_str }};"></div>
+            <div class="usage-bar" style="--usage-percent: {{ usage_percent_str }}"></div>
           </div>
         </div>
       </section>
@@ -731,7 +732,7 @@
 
                 <!-- Keys are generated in the browser; private key never sent to server -->
                 <button class="btn btn-qp" type="button" data-keygen-download data-device-id="{{ device.id }}"
-                  data-device-name="{{ device.name }}">
+                  data-device-name="{{ device.name|e }}">
                   {% if device.has_config %}Download settings{% else %}Set up this device{% endif %}
                 </button>
 
@@ -748,8 +749,14 @@
                 {% endif %}
                 {% endif %}
 
-                <a class="btn btn-danger"
-                  href="{{ url_for('dashboard.remove_device', device_id=device.id) }}">Remove</a>
+                <form method="POST" action="{{ url_for('dashboard.remove_device', device_id=device.id) }}"
+                  style="display:inline;">
+                  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-danger" type="submit"
+                    onclick="return confirm('Remove this device? This will delete its saved VPN configuration.');">
+                    Remove
+                  </button>
+                </form>
               </div>
             </div>
             {% endfor %}

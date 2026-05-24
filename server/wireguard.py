@@ -109,46 +109,37 @@ class WireGuardManager:
             print(f"Generated WireGuard keys. Public Key: {public_key}")
 
     def _generate_private_key(self):
-        """Generate a WireGuard private key"""
-        if self.wg_available:
-            try:
-                result = subprocess.run(
-                    [self.wg_command, "genkey"],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    timeout=10,
-                )
-                return result.stdout.strip()
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                pass
+        """Generate a real WireGuard private key using wg."""
+        if not self.wg_available:
+            raise RuntimeError(
+                "WireGuard tools are required to generate valid keys. "
+                "Install wireguard-tools; refusing to generate fake keys."
+            )
 
-        # Fallback method using cryptographically secure random
-        import base64
-        import secrets
-
-        return base64.b64encode(secrets.token_bytes(32)).decode("utf-8")
+        result = subprocess.run(
+            ["wg", "genkey"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
 
     def _generate_public_key(self, private_key):
-        """Generate a WireGuard public key from a private key"""
-        if self.wg_available:
-            try:
-                result = subprocess.run(
-                    [self.wg_command, "pubkey"],
-                    input=private_key,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    timeout=10,
-                )
-                return result.stdout.strip()
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                pass
+        """Derive a real WireGuard public key from a private key using wg."""
+        if not self.wg_available:
+            raise RuntimeError(
+                "WireGuard tools are required to derive valid public keys. "
+                "Install wireguard-tools; refusing to generate fake keys."
+            )
 
-        # Fallback method - NOT the real WireGuard derivation (dev only)
-        import base64
-
-        return base64.b64encode(hashlib.sha256(private_key.encode()).digest()).decode("utf-8")
+        result = subprocess.run(
+            ["wg", "pubkey"],
+            input=private_key + "\n",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
 
     # ---------------------------
     # Config files / interface mgmt

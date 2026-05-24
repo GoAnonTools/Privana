@@ -30,13 +30,44 @@ app = Flask(
 # --------------------------------------------------------------------------------------
 # Core config
 # --------------------------------------------------------------------------------------
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-insecure-change-me")
-app.config["SECURITY_PASSWORD_SALT"] = os.getenv("SECURITY_PASSWORD_SALT", "dev-insecure-salt")
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+
+SECRET_KEY = (os.getenv("SECRET_KEY") or "").strip()
+SECURITY_PASSWORD_SALT = (os.getenv("SECURITY_PASSWORD_SALT") or "").strip()
+
+_INSECURE_SECRET_VALUES = {
+    "",
+    "CHANGE_ME",
+    "change-me",
+    "change-me-dev-secret",
+    "change-me-dev-salt",
+}
+
+def _is_weak_secret(value: str) -> bool:
+    lowered = value.lower()
+    return (
+        value in _INSECURE_SECRET_VALUES
+        or lowered.startswith("change-me")
+        or lowered.startswith("dev-insecure")
+        or len(value) < 32
+    )
+
+if ENVIRONMENT == "production":
+    if _is_weak_secret(SECRET_KEY):
+        raise RuntimeError("SECRET_KEY must be set to a strong random value in production.")
+    if _is_weak_secret(SECURITY_PASSWORD_SALT):
+        raise RuntimeError("SECURITY_PASSWORD_SALT must be set to a strong random value in production.")
+else:
+    # Development only. Never used in production.
+    SECRET_KEY = SECRET_KEY or "dev-only-local-secret-not-for-production"
+    SECURITY_PASSWORD_SALT = SECURITY_PASSWORD_SALT or "dev-only-local-salt-not-for-production"
+
+app.config["SECRET_KEY"] = SECRET_KEY
+app.config["SECURITY_PASSWORD_SALT"] = SECURITY_PASSWORD_SALT
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "True").lower() != "false"  # defaults to True; set SESSION_COOKIE_SECURE=false only for local http dev
-
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "True").lower() != "false"
 # --------------------------------------------------------------------------------------
 # Rate limiter
 # --------------------------------------------------------------------------------------
