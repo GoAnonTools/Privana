@@ -411,6 +411,19 @@ def healthz():
     return jsonify({"ok": True, "wg_available": wg_ok})
 
 # -------------------------------------------------------------------
+# PQC blueprint
+# -------------------------------------------------------------------
+try:
+    try:
+        from server.pqc_routes import pqc_bp
+    except (ImportError, ModuleNotFoundError):
+        from pqc_routes import pqc_bp
+    app.register_blueprint(pqc_bp)
+    print("✅ PQC blueprint registered (/api/pqc/init)")
+except Exception as e:
+    print(f"❌ Failed to register PQC blueprint: {e}")
+
+# -------------------------------------------------------------------
 # Main
 # -------------------------------------------------------------------
 if __name__ == "__main__":
