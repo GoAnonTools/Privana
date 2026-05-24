@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Privana</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="/static/css/style.css" />
 
   <!-- Favicons (keep) -->
@@ -29,7 +29,7 @@
   </script>
 
   <!-- Tailwind + site CSS + Lucide -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="{{ url_for('static', filename='vendor/tailwindcss.js') }}"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -46,7 +46,7 @@
     }
   </script>
   <link rel="stylesheet" href="/site/assets/privana.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
   <script defer src="/site/assets/pwa.js"></script>
 
   <style>
@@ -98,7 +98,7 @@
       min-height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
@@ -202,7 +202,8 @@
       letter-spacing: .02em;
     }
 
-    input[type="email"] {
+    input[type="email"],
+    input[type="text"] {
       border: 1px solid var(--input-border);
       border-radius: 14px;
       padding: 12px 14px;
@@ -213,7 +214,8 @@
       transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     }
 
-    input[type="email"]:focus {
+    input[type="email"]:focus,
+    input[type="text"]:focus {
       box-shadow: 0 0 0 4px var(--ring);
       border-color: #2563eb;
     }
@@ -485,15 +487,7 @@
     </div>
   </footer>
 
-  <script>
-    document.getElementById('resend-link').addEventListener('click', function () {
-      const email = document.getElementById('email').value.trim().toLowerCase();
-      if (!email) { alert('Please enter your email first.'); return; }
-      const url = new URL('{{ url_for("auth.resend_confirmation") }}', window.location.origin);
-      url.searchParams.set('email', email);
-      window.location.href = url.toString();
-    });
-  </script>
+
 
   <script>
     // Header scroll shadow - SAME AS TERMS.HTML

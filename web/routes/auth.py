@@ -19,8 +19,11 @@ TRIAL_DAYS  = 7
 DB_PATH = os.path.join(os.getcwd(), "privana.db")
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=5)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 def table_exists(conn, table: str) -> bool:
@@ -68,6 +71,33 @@ def flag_suspicious_if_needed(ip: str) -> None:
     if fails > 10:
         log_event("suspicious_bruteforce_ip", None, f"ip={ip} fails={fails}", severity="warn")
 
+
+def is_ip_temporarily_locked(ip: str) -> bool:
+    """
+    Block login attempts after too many invalid account numbers.
+    Uses security_events so it survives app restarts.
+    """
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT COUNT(*) AS c
+            FROM security_events
+            WHERE ip = ?
+              AND event_type = 'login_invalid_account'
+              AND created_at >= DATETIME('now', '-15 minutes')
+            """,
+            (ip,),
+        ).fetchone()
+        return int(row["c"] if row and row["c"] is not None else 0) >= 10
+    finally:
+        conn.close()
+
+
+def block_login_response():
+    flash("Too many failed login attempts. Please wait 15 minutes and try again.", "error")
+    return render_template("login.html"), 429
+
 # -----------------------------------------------------------------------------
 # Account number helpers
 # -----------------------------------------------------------------------------
@@ -109,34 +139,41 @@ def cleanup_user_devices(user_id: int):
 
 
 def consume_trial_if_expired(user_id: int) -> None:
-    """Mark trial as consumed on the first authenticator if 7 days have elapsed."""
+    """Mark a trial user as consumed/expired based on users.trial_expires_at."""
     conn = get_db()
     try:
         row = conn.execute(
             """
-            SELECT id, trial_started_at, trial_consumed_at
-            FROM authenticators
-            WHERE user_id = ?
-            ORDER BY first_seen_at ASC
-            LIMIT 1
+            SELECT id, subscription_plan, trial_expires_at, trial_consumed_at
+            FROM users
+            WHERE id = ?
             """,
             (user_id,),
         ).fetchone()
 
-        if not row or row["trial_consumed_at"] or not row["trial_started_at"]:
+        if not row:
             return
 
-        started = datetime.fromisoformat(row["trial_started_at"])
-        if started.tzinfo is None:
-            started = started.replace(tzinfo=timezone.utc)
+        if (row["subscription_plan"] or "").lower() != "trial":
+            return
 
-        elapsed_days = (datetime.now(timezone.utc) - started).days
-        if elapsed_days >= TRIAL_DAYS:
+        if row["trial_consumed_at"]:
+            return
+
+        if not row["trial_expires_at"]:
+            return
+
+        expires = datetime.fromisoformat(row["trial_expires_at"])
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+
+        if datetime.now(timezone.utc) > expires:
             conn.execute(
-                "UPDATE authenticators SET trial_consumed_at = ? WHERE id = ?",
-                (datetime.now(timezone.utc).isoformat(), row["id"]),
+                "UPDATE users SET trial_consumed_at = ? WHERE id = ?",
+                (datetime.now(timezone.utc).isoformat(), user_id),
             )
             conn.commit()
+
     except Exception:
         pass
     finally:
@@ -154,12 +191,14 @@ def init_db():
         cur.execute("""
             CREATE TABLE users (
                 id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_number   TEXT UNIQUE NOT NULL,        -- 16 digits, no spaces, e.g. 1234567890123456
-                recovery_hash    TEXT,                        -- SHA-256 of recovery code shown once at signup
+                account_number   TEXT UNIQUE NOT NULL,
+                recovery_hash    TEXT UNIQUE NOT NULL,
                 subscription_plan    TEXT DEFAULT 'trial',
                 subscription_status  TEXT DEFAULT 'active',
                 device_limit         INTEGER DEFAULT 1,
-                trial_expires_at     TEXT,                    -- ISO-8601 UTC
+                trial_started_at     TEXT,
+                trial_expires_at     TEXT,
+                trial_consumed_at    TEXT,
                 created_at           TEXT DEFAULT (datetime('now'))
             )
         """)
@@ -316,6 +355,11 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
 
+    ip = _client_ip()
+    if is_ip_temporarily_locked(ip):
+        log_event("login_blocked_ip", None, f"ip={ip}", severity="warn")
+        return block_login_response()
+
     raw = (request.form.get("account_number") or "").strip()
     account_stored = normalise_account_number(raw)
 
@@ -330,7 +374,7 @@ def login():
     if not user:
         flash("Account not found.", "error")
         log_event("login_invalid_account", None, f"account={account_stored[:4]}xxxx")
-        flag_suspicious_if_needed(_client_ip())
+        flag_suspicious_if_needed(ip)
         return render_template("login.html"), 404
 
     # Check trial
@@ -372,21 +416,35 @@ def recover():
         log_event("recovery_failed", None, severity="warn")
         return render_template("recover.html"), 404
 
-    # Invalidate the old recovery code immediately and issue a new one
+    # Invalidate the old account number + old recovery code immediately
+    new_account_number = generate_account_number()
+    new_account_stored = normalise_account_number(new_account_number)
+
+    while conn.execute("SELECT id FROM users WHERE account_number=?", (new_account_stored,)).fetchone():
+        new_account_number = generate_account_number()
+        new_account_stored = normalise_account_number(new_account_number)
+
     new_recovery_code = generate_recovery_code()
     new_recovery_hash = hash_secret(new_recovery_code)
-    conn.execute("UPDATE users SET recovery_hash=? WHERE id=?", (new_recovery_hash, user["id"]))
+
+    conn.execute(
+        """
+        UPDATE users
+        SET account_number = ?, recovery_hash = ?
+        WHERE id = ?
+        """,
+        (new_account_stored, new_recovery_hash, user["id"]),
+    )
     conn.commit()
     conn.close()
 
-    log_event("recovery_success", user["id"])
+    log_event("recovery_success_rotated_account", user["id"])
 
-    # Show new account number + fresh recovery code
-    session["reveal_account_number"] = " ".join([
-        user["account_number"][i:i+4] for i in range(0, 16, 4)
-    ])
+    session["reveal_account_number"] = new_account_number
     session["reveal_recovery_code"] = new_recovery_code
-    session["reveal_user_id"]       = user["id"]
+    session["reveal_user_id"] = user["id"]
+    session["user_id"] = user["id"]
+    session.permanent = True
 
     flash("Recovery successful. Here are your new credentials — save them now.", "success")
     return redirect(url_for("auth.reveal"))

@@ -15,7 +15,9 @@ sys.path.insert(0, PROJECT_ROOT)
 
 from main import WireGuardServer
 import config
-from web.routes.auth import DB_PATH # Import DB_PATH
+from web.routes.auth import DB_PATH
+
+RESET_DEV_DB = os.getenv("RESET_DEV_DB", "false").lower() == "true"
 
 if __name__ == '__main__':
     print("🇫🇷 Starting WireGuard Server - DEVELOPMENT MODE (France)")
@@ -24,11 +26,10 @@ if __name__ == '__main__':
     # Show configuration
     config.Config.print_info()
 
-    # --- Start: Added for testing new user workflow ---
-    if os.path.exists(DB_PATH):
-        print(f"🗑️ Deleting existing database: {DB_PATH}")
-        os.remove(DB_PATH)
-    # --- End: Added for testing new user workflow ---
+    if RESET_DEV_DB:
+        if os.path.exists(DB_PATH):
+            print(f"⚠️ RESET_DEV_DB=true — deleting development database: {DB_PATH}")
+            os.remove(DB_PATH)
     
     # Start the server
     server = WireGuardServer()

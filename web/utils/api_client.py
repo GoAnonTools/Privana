@@ -91,9 +91,7 @@ def sg_add_peer(public_key: str, user_id: int, device_id: Optional[int] = None) 
         payload["device_id"] = device_id
     return api_post_json("/api/peer/add", payload)
 
-def sg_issue_config(user_id: int, device_id: int) -> requests.Response:
-    payload = {"user_id": user_id, "device_id": device_id}
-    return api_post_json("/api/peer/issue-config", payload)
+
 
 def sg_remove_peer(public_key: str) -> requests.Response:
     return api_post_json("/api/peer/remove", {"public_key": public_key})

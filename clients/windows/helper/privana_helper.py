@@ -44,6 +44,13 @@ logging.basicConfig(
 )
 log = logging.getLogger("privana-helper")
 
+HELPER_TOKEN = os.getenv("PRIVANA_HELPER_TOKEN", "").strip()
+
+if not HELPER_TOKEN:
+    log.warning(
+        "PRIVANA_HELPER_TOKEN is not set. Sensitive helper routes will refuse requests."
+    )
+
 app = Flask(__name__)
 
 # -----------------------------------------------------------------------------
@@ -57,7 +64,7 @@ def is_admin() -> bool:
 
 
 def wireguard_paths() -> Tuple[Optional[str], Optional[str]]:
-    """
+    r"""
     Returns (wireguard.exe, wg.exe) if found.
     Typical install: C:\Program Files\WireGuard\wireguard.exe / wg.exe
     """
@@ -156,8 +163,26 @@ def with_cors(resp):
         resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Vary"] = "Origin"
     resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-    resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Privana-Helper-Token"
     return resp
+
+
+def require_helper_token():
+    """
+    Require a local helper token for browser-driven helper actions.
+    This prevents random websites from controlling the local WireGuard helper.
+    """
+    if request.method == "OPTIONS":
+        return None
+
+    if not HELPER_TOKEN:
+        return with_cors(jsonify({"ok": False, "error": "helper token not configured"})), 503
+
+    submitted = request.headers.get("X-Privana-Helper-Token", "").strip()
+    if not submitted or submitted != HELPER_TOKEN:
+        return with_cors(jsonify({"ok": False, "error": "unauthorized helper request"})), 401
+
+    return None
 
 
 @app.after_request
@@ -190,6 +215,11 @@ def health():
 def status():
     if request.method == "OPTIONS":
         return with_cors(make_response("", 204))
+
+    auth_error = require_helper_token()
+    if auth_error:
+        return auth_error
+
     name = safe_name(request.args.get("name") or request.args.get("tunnel") or "Privana")
     installed = service_exists(name)
     running = installed and service_running(name)
@@ -201,7 +231,7 @@ def status():
 
 @app.route("/import-config", methods=["POST", "OPTIONS"])
 def import_config():
-    """
+    r"""
     Install/refresh a WireGuard tunnel service from raw config text.
     Body: {"name":"Laptop-1", "config":"[Interface] ..."}
     - Writes to C:\ProgramData\WireGuard\<name>.conf
@@ -209,6 +239,10 @@ def import_config():
     """
     if request.method == "OPTIONS":
         return with_cors(make_response("", 204))
+
+    auth_error = require_helper_token()
+    if auth_error:
+        return auth_error
 
     if not is_admin():
         return with_cors(jsonify({"ok": False, "error": "Helper must run as Administrator"})), 403
@@ -261,6 +295,10 @@ def connect():
     if request.method == "OPTIONS":
         return with_cors(make_response("", 204))
 
+    auth_error = require_helper_token()
+    if auth_error:
+        return auth_error
+
     if not is_admin():
         return with_cors(jsonify({"ok": False, "error": "Helper must run as Administrator"})), 403
 
@@ -298,6 +336,10 @@ def connect():
 def disconnect():
     if request.method == "OPTIONS":
         return with_cors(make_response("", 204))
+
+    auth_error = require_helper_token()
+    if auth_error:
+        return auth_error
 
     if not is_admin():
         return with_cors(jsonify({"ok": False, "error": "Helper must run as Administrator"})), 403

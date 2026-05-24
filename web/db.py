@@ -9,14 +9,17 @@ SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
-  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-  email              TEXT NOT NULL UNIQUE,
-  confirmed          INTEGER NOT NULL DEFAULT 0,
-  subscription_plan  TEXT NOT NULL DEFAULT 'trial',
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_number      TEXT NOT NULL UNIQUE,
+  recovery_hash       TEXT NOT NULL UNIQUE,
+  subscription_plan   TEXT NOT NULL DEFAULT 'trial',
   subscription_status TEXT NOT NULL DEFAULT 'active',
-  device_limit       INTEGER NOT NULL DEFAULT 3,
-  token              TEXT UNIQUE,
-  created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+  device_limit        INTEGER NOT NULL DEFAULT 1,
+  token               TEXT UNIQUE,
+  trial_started_at    TEXT,
+  trial_expires_at    TEXT,
+  trial_consumed_at   TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS devices (
@@ -44,17 +47,8 @@ CREATE TABLE IF NOT EXISTS device_configs (
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- WebAuthn
-CREATE TABLE IF NOT EXISTS passkeys (
-  id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  credential_id  TEXT NOT NULL UNIQUE,
-  public_key     BLOB NOT NULL,
-  sign_count     INTEGER NOT NULL DEFAULT 0,
-  transports     TEXT,
-  attestation_fmt TEXT,
-  created_at     TEXT NOT NULL DEFAULT (datetime('now'))
-);
+-- WebAuthn authenticators are handled in web/routes/auth.py and web/routes/webauthn.py
+
 
 CREATE TABLE IF NOT EXISTS webauthn_challenges (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,14 +59,18 @@ CREATE TABLE IF NOT EXISTS webauthn_challenges (
   expires_at  TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_number ON users(account_number);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_recovery_hash ON users(recovery_hash);
 CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_passkeys_cred ON passkeys(credential_id);
+
 """
 
 def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        conn.execute("PRAGMA foreign_keys=ON")
         conn.executescript(SCHEMA_SQL)
 
 def reset_db():
@@ -82,9 +80,10 @@ def reset_db():
     DROP TABLE IF EXISTS device_configs;
     DROP TABLE IF EXISTS webauthn_challenges;
     DROP TABLE IF EXISTS devices;
-    DROP TABLE IF EXISTS passkeys;
     DROP TABLE IF EXISTS users;
     PRAGMA foreign_keys = ON;
     """
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         conn.executescript(drops)

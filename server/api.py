@@ -1,6 +1,7 @@
 # server/api.py
 from flask import Flask, request, jsonify
 import os
+import sqlite3
 import json
 from functools import wraps
 import hmac
@@ -50,14 +51,66 @@ if not api_log.handlers:
 # -------------------------------------------------------------------
 # Replay protection (nonce cache)
 # -------------------------------------------------------------------
-NONCE_TTL = 90  # seconds; must be >= timestamp window, here we use 90s for safety
-_recent_nonces: dict[str, int] = {}
+NONCE_TTL = 90  # seconds; must be >= timestamp window
+
+NONCE_DB_PATH = Path(os.getenv("NONCE_DB_PATH", str(ROOT_DIR / "server" / "nonces.db")))
+
+
+def _nonce_db():
+    conn = sqlite3.connect(NONCE_DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS used_nonces (
+            nonce TEXT PRIMARY KEY,
+            used_at INTEGER NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    return conn
+
 
 def _purge_nonces(now: int) -> None:
-    # Drop entries older than TTL
-    stale = [n for n, t in _recent_nonces.items() if now - t > NONCE_TTL]
-    for n in stale:
-        _recent_nonces.pop(n, None)
+    cutoff = now - NONCE_TTL
+    conn = _nonce_db()
+    conn.execute("DELETE FROM used_nonces WHERE used_at < ?", (cutoff,))
+    conn.commit()
+    conn.close()
+
+
+def _nonce_already_used(nonce: str, now: int) -> bool:
+    conn = _nonce_db()
+    row = conn.execute(
+        "SELECT used_at FROM used_nonces WHERE nonce = ?",
+        (nonce,),
+    ).fetchone()
+    conn.close()
+
+    if not row:
+        return False
+
+    return now - int(row[0]) <= NONCE_TTL
+
+
+def _mark_nonce_used(nonce: str, now: int) -> bool:
+    """
+    Return True if nonce was stored.
+    Return False if it was already present.
+    """
+    conn = _nonce_db()
+    try:
+        conn.execute(
+            "INSERT INTO used_nonces (nonce, used_at) VALUES (?, ?)",
+            (nonce, now),
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
 
 
 # -------------------------------------------------------------------
@@ -115,8 +168,8 @@ def auth_required(f):
 
         # Purge old nonces and check replay
         _purge_nonces(now)
-        prev = _recent_nonces.get(nonce)
-        if prev is not None and now - prev <= NONCE_TTL:
+
+        if _nonce_already_used(nonce, now):
             api_log.warning(f"auth_failed reason=replay nonce={nonce[:8]} ip={request.remote_addr} path={request.path}")
             return jsonify({"success": False, "message": "Replay detected"}), 401
 
@@ -149,7 +202,9 @@ def auth_required(f):
             return jsonify({"success": False, "message": "Unauthorized"}), 401
 
         # Mark nonce as used after successful verification
-        _recent_nonces[nonce] = now
+        if not _mark_nonce_used(nonce, now):
+            api_log.warning(f"auth_failed reason=replay_insert nonce={nonce[:8]} ip={request.remote_addr} path={request.path}")
+            return jsonify({"success": False, "message": "Replay detected"}), 401
 
         return f(*args, **kwargs)
     return decorated_function

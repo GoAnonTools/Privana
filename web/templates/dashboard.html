@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - Privana</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
 
   <!-- Favicons (keep) -->
   <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
@@ -18,6 +18,7 @@
   <!-- Colors -->
   <meta name="msapplication-TileColor" content="#06b6d4">
   <meta name="theme-color" content="#06b6d4">
+  <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
 
 
   <style>
@@ -55,7 +56,7 @@
         radial-gradient(1000px 500px at 110% 20%, rgba(37, 99, 235, .08), transparent),
         var(--bg);
       color: var(--text);
-      font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .container {
@@ -514,7 +515,7 @@
         <h1>PRIVANA</h1>
       </div>
       <div class="user-menu">
-        <span class="user-email">{{ user_email }}</span>
+        <span class="user-email">{{ user.account_number[:4] }} •••• •••• {{ user.account_number[-4:] }}</span>
         <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost">Logout</a>
         <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
                  dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
@@ -891,6 +892,7 @@
   </main>
 
   <script>
+    const CSRF_TOKEN = "{{ csrf_token() }}";
     document.getElementById('year').textContent = new Date().getFullYear();
     lucide.createIcons();
 
@@ -903,7 +905,13 @@
         btn.disabled = true;
         btn.textContent = 'Processing...';
         try {
-          const res = await fetch('/dashboard/toggle-protection', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          const res = await fetch('/dashboard/toggle-protection', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': CSRF_TOKEN
+            }
+          });
           const data = await res.json();
           if (data.success) { location.reload(); return; }
           alert('Error: ' + (data.message || 'Unable to toggle'));
@@ -1010,7 +1018,12 @@
         const original = btn.textContent;
         btn.disabled = true; btn.textContent = 'Creating…';
         try {
-          const oRes = await fetch('/webauthn/register/options', { method: 'POST' });
+          const oRes = await fetch('/webauthn/register/options', {
+            method: 'POST',
+            headers: {
+              'X-CSRF-Token': CSRF_TOKEN
+            }
+          });
           if (!oRes.ok) { const err = await oRes.json().catch(() => ({})); throw new Error(err.detail || 'Unable to start passkey creation.'); }
           const options = await oRes.json();
 
@@ -1036,7 +1049,12 @@
           };
 
           const vRes = await fetch('/webauthn/register/verify', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
           });
           const out = await vRes.json().catch(() => ({}));
           if (!vRes.ok || !out?.ok) throw new Error(out?.error || 'Passkey verification failed.');
@@ -1108,6 +1126,7 @@
     // ===== Helper integration (auto-setup on Windows) =====
     (function () {
       const HELPER_ORIGIN = "http://127.0.0.1:51821";
+      const HELPER_TOKEN = "{{ helper_token }}";
       let helperOK = false;
 
       function timeoutFetch(url, opts = {}, ms = 1500) {
@@ -1129,7 +1148,14 @@
         return r.text();
       }
       async function helperPost(path, body) {
-        const r = await fetch(HELPER_ORIGIN + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+        const r = await fetch(HELPER_ORIGIN + path, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Privana-Helper-Token': HELPER_TOKEN
+          },
+          body: JSON.stringify(body || {})
+        });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) { const msg = (j && (j.error || j.stderr)) || `HTTP ${r.status}`; throw new Error(msg); }
         return j;
@@ -1181,8 +1207,11 @@
             if (!firstCard) throw new Error('No devices found.');
             const deviceId = Number(firstCard.getAttribute('data-device-id'));
             const tunnelName = `Privana-${deviceId}`;
-            const st = await fetch(HELPER_ORIGIN + '/status?name=' + encodeURIComponent(tunnelName))
-              .then(r => r.json()).catch(() => ({ state: 'unknown' }));
+            const st = await fetch(HELPER_ORIGIN + '/status?name=' + encodeURIComponent(tunnelName), {
+              headers: {
+                'X-Privana-Helper-Token': HELPER_TOKEN
+              }
+            }).then(r => r.json()).catch(() => ({ state: 'unknown' }));
             if (st.state !== 'running') await helperPost('/connect', { name: tunnelName });
             else await helperPost('/disconnect', { name: tunnelName });
             location.reload();
@@ -1352,9 +1381,12 @@
           btn.textContent = 'Registering…';
 
           // Send only the public key to the server
-          const res = await fetch(, {
+          const res = await fetch(`/dashboard/register-key/${deviceId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': CSRF_TOKEN
+            },
             body: JSON.stringify({ public_key: publicKey }),
           });
 
@@ -1366,7 +1398,7 @@
           // Substitute PLACEHOLDER with the real private key (client-side only)
           const finalConfig = data.config.replace('PLACEHOLDER', privateKey);
 
-          triggerDownload(, finalConfig);
+          triggerDownload(`${deviceName}_privana.conf`, finalConfig);
           location.reload(); // refresh to show has_config = true
 
         } catch (err) {

@@ -26,11 +26,11 @@
     tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
   </script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="{{ url_for('static', filename='vendor/tailwindcss.js') }}"></script>
   <link rel="stylesheet" href="/site/assets/privana.css">
 
   <!-- Icons + PWA helper -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="{{ url_for('static', filename='vendor/lucide.min.js') }}"></script>
   <script defer src="/site/assets/pwa.js"></script>
 </head>
 

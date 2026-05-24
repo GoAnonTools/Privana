@@ -1,7 +1,8 @@
 # web/routes/webauthn.py
 from flask import Blueprint, request, jsonify, session
 import base64, hashlib, sqlite3, os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from web.routes.auth import TRIAL_DAYS
 
 from fido2.server import Fido2Server
 from fido2.webauthn import (
@@ -124,14 +125,23 @@ def options_to_json(options):
 def register_options():
     try:
         user_id = session.get("user_id")
-        email = session.get("email")
-        if not user_id or not email:
+        if not user_id:
             return jsonify({"error": "Not authenticated"}), 401
+
+        conn = get_db()
+        user_row = conn.execute("SELECT account_number FROM users WHERE id = ?", (user_id,)).fetchone()
+        conn.close()
+
+        if not user_row:
+            return jsonify({"error": "User not found"}), 404
+
+        account_number = user_row["account_number"]
+        display_account = f"Privana {account_number[:4]}••••{account_number[-4:]}"
 
         user = PublicKeyCredentialUserEntity(
             id=str(user_id).encode("utf-8"),
-            name=email,
-            display_name=email,
+            name=account_number,
+            display_name=display_account,
         )
 
         # Exclude existing credentials for this user (cross-version safe)
@@ -179,9 +189,8 @@ def register_verify():
     import sqlite3, traceback
     try:
         user_id = session.get("user_id")
-        email   = session.get("email")
         state   = session.get("webauthn_register_state")
-        if not user_id or not email or not state:
+        if not user_id or not state:
             return jsonify({"error": "Bad state"}), 400
 
         data = request.get_json(force=True)
@@ -300,10 +309,14 @@ def register_verify():
             """, (user_id, sqlite3.Binary(cred_id), cred_hash, sqlite3.Binary(pub_key), int(sign_count), aaguid, now))
 
         # Start the user-bound trial if it hasn't started yet
-        cur.execute("SELECT trial_started_at FROM users WHERE id = ?", (user_id,))
+        cur.execute("SELECT trial_started_at, trial_expires_at FROM users WHERE id = ?", (user_id,))
         u = cur.fetchone()
         if u and not u["trial_started_at"]:
-            cur.execute("UPDATE users SET trial_started_at = ? WHERE id = ?", (now, user_id))
+            trial_expires = (datetime.now(timezone.utc) + timedelta(days=TRIAL_DAYS)).isoformat()
+            cur.execute(
+                "UPDATE users SET trial_started_at = ?, trial_expires_at = ? WHERE id = ?",
+                (now, trial_expires, user_id),
+            )
 
         conn.commit()
         conn.close()

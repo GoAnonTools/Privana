@@ -60,13 +60,24 @@ def _csrf_check():
     """Validate CSRF token on every state-changing request."""
     if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
         return
-    # Skip CSRF for JSON API endpoints (they use HMAC auth instead)
-    if request.is_json:
+
+    # Only skip CSRF for true machine/API routes that use their own HMAC auth.
+    # Browser-session JSON endpoints, especially /dashboard/*, must still send CSRF.
+    csrf_exempt_prefixes = (
+        "/api/",
+    )
+
+    if any(request.path.startswith(prefix) for prefix in csrf_exempt_prefixes):
         return
+
     expected = session.get("_csrf_token")
-    submitted = request.form.get("_csrf_token", "")
+    submitted = (
+        request.form.get("_csrf_token", "")
+        or request.headers.get("X-CSRF-Token", "")
+        or request.headers.get("X-CSRFToken", "")
+    )
+
     if not expected or not hmac.compare_digest(expected, submitted):
-        from flask import abort
         abort(403)
 
 # Expose csrf_token() as a template global so every template can call it

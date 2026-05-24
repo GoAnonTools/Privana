@@ -18,7 +18,7 @@ from flask import (
 )
 
 # Local or remote depending on your API_MODE wiring
-from web.utils.api_client import sg_issue_config
+# sg_issue_config removed - use manual registration flow if not in stub mode
 
 # -----------------------------------------------------------------------------
 # Blueprint
@@ -178,24 +178,15 @@ def download_config(device_id: int):
             return redirect(url_for("dashboard.dashboard"))
         device_name = d["name"] or "device"
 
-    # Issue config via stub (dev) or SG (real)
+    # Issue config via stub (dev) or fail (real flow moved to register_key)
     try:
         if ISSUE_CONFIG_STUB:
             payload = _stub_issue_config(user_id=user_id, device_id=device_id)
-            resp = None
         else:
-            resp = sg_issue_config(user_id=user_id, device_id=device_id)
-            if getattr(resp, "status_code", 500) != 200:
-                current_app.logger.error(
-                    "sg_issue_config HTTP %s: %s",
-                    getattr(resp, "status_code", "??"),
-                    getattr(resp, "text", ""),
-                )
-                flash("Server error while issuing config.", "error")
-                return redirect(url_for("dashboard.dashboard"))
-            payload = resp.json() if hasattr(resp, "json") else {}
+            flash("Automated config generation is currently unavailable. Please use the 'Add Device' button on the dashboard for manual setup.", "error")
+            return redirect(url_for("dashboard.dashboard"))
     except Exception:
-        current_app.logger.exception("sg_issue_config call failed")
+        current_app.logger.exception("Config generation failed")
         flash("Server error while issuing config.", "error")
         return redirect(url_for("dashboard.dashboard"))
 
@@ -366,18 +357,11 @@ def download_config_by_token(token: str):
         user_id = int(row["user_id"])
         device_id = int(row["device_id"])
 
-    # Issue config via stub (dev) or SG (real)
+    # Issue config via stub (dev) or fail (real)
     if ISSUE_CONFIG_STUB:
         payload = _stub_issue_config(user_id=user_id, device_id=device_id)
     else:
-        try:
-            resp = sg_issue_config(user_id=user_id, device_id=device_id)
-        except Exception:
-            return jsonify({"success": False, "message": "server error issuing config"}), 502
-
-        if getattr(resp, "status_code", 500) != 200:
-            return jsonify({"success": False, "message": "server error issuing config"}), 502
-        payload = resp.json() if hasattr(resp, "json") else {}
+        return jsonify({"success": False, "message": "Automated config generation unavailable. Use manual registration."}), 502
 
     if not payload.get("success"):
         return jsonify({"success": False, "message": payload.get("message", "failed to issue config")}), 502

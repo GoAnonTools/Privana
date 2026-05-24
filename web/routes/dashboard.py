@@ -29,9 +29,11 @@ dashboard_bp = Blueprint("dashboard", __name__)
 
 # ---- DB helper (use your local version to keep behavior) ----
 def get_db():
-    # keep your local DB helper (same as before)
-    conn = sqlite3.connect("privana.db")
+    conn = sqlite3.connect("privana.db", timeout=5)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 # Ensure users.token column exists (runs once, harmless later)
@@ -69,38 +71,38 @@ def _qr_serializer() -> URLSafeSerializer:
 # ---- Trial helper for banner/CTA ----
 def _trial_context(user_id: int):
     """
-    Return a dict describing trial state for the first authenticator:
-      - status: 'active' | 'ended' | 'not_started'
-      - days_left: int | None
-      - has_passkey: bool
-      - raw fields: trial_started_at, trial_consumed_at
+    Return trial state from users table.
+    Source of truth:
+      - users.trial_started_at
+      - users.trial_expires_at
+      - users.trial_consumed_at
     """
+    consume_trial_if_expired(user_id)
+
     conn = get_db()
     row = conn.execute(
         """
-        SELECT id, first_seen_at, trial_started_at, trial_consumed_at
-        FROM authenticators
-        WHERE user_id = ?
-        ORDER BY first_seen_at ASC
-        LIMIT 1
+        SELECT trial_started_at, trial_expires_at, trial_consumed_at
+        FROM users
+        WHERE id = ?
         """,
         (user_id,),
     ).fetchone()
     conn.close()
 
-    has_passkey = bool(row)
     trial = {
         "status": "not_started",
         "days_left": None,
         "trial_started_at": None,
+        "trial_expires_at": None,
         "trial_consumed_at": None,
-        "has_passkey": has_passkey,
     }
 
     if not row:
         return trial
 
     trial["trial_started_at"] = row["trial_started_at"]
+    trial["trial_expires_at"] = row["trial_expires_at"]
     trial["trial_consumed_at"] = row["trial_consumed_at"]
 
     if row["trial_consumed_at"]:
@@ -108,29 +110,29 @@ def _trial_context(user_id: int):
         trial["days_left"] = 0
         return trial
 
-    if row["trial_started_at"]:
-        try:
-            started = datetime.fromisoformat(row["trial_started_at"])
-            if started.tzinfo is None:
-                started = started.replace(tzinfo=timezone.utc)
-        except Exception:
-            started = None
+    if not row["trial_started_at"] or not row["trial_expires_at"]:
+        trial["status"] = "not_started"
+        trial["days_left"] = TRIAL_DAYS
+        return trial
 
-        if started:
-            now = datetime.now(timezone.utc)
-            elapsed_days = (now - started).days  # floor on purpose
-            remaining = TRIAL_DAYS - elapsed_days
-            if remaining <= 0:
-                trial["status"] = "ended"
-                trial["days_left"] = 0
-            else:
-                trial["status"] = "active"
-                trial["days_left"] = remaining
+    try:
+        expires = datetime.fromisoformat(row["trial_expires_at"])
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+
+        now = datetime.now(timezone.utc)
+        seconds_left = max(0, int((expires - now).total_seconds()))
+        days_left = (seconds_left + 86399) // 86400
+
+        if seconds_left <= 0:
+            trial["status"] = "ended"
+            trial["days_left"] = 0
         else:
             trial["status"] = "active"
-            trial["days_left"] = TRIAL_DAYS
-    else:
-        trial["status"] = "not_started"
+            trial["days_left"] = days_left
+
+    except Exception:
+        trial["status"] = "active"
         trial["days_left"] = TRIAL_DAYS
 
     return trial
@@ -172,6 +174,49 @@ def check_device_limit(user_id):
 
     return True, f"You can add {device_limit - device_count} more device(s)"
 
+def is_trial_expired_for_user(user_id: int) -> bool:
+    """Return True when a trial user has consumed/expired their trial."""
+    consume_trial_if_expired(user_id)
+
+    conn = get_db()
+    row = conn.execute(
+        "SELECT subscription_plan, trial_consumed_at FROM users WHERE id = ?",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+
+    if not row:
+        return True
+
+    plan = (row["subscription_plan"] or "trial").lower()
+    return plan == "trial" and bool(row["trial_consumed_at"])
+
+
+def require_active_dashboard():
+    """Guard for normal page routes."""
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    if is_trial_expired_for_user(int(session["user_id"])):
+        return redirect(url_for("auth.trial_ended"))
+
+    return None
+
+
+def require_active_dashboard_json():
+    """Guard for JSON/browser action routes."""
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "Not logged in"}), 401
+
+    if is_trial_expired_for_user(int(session["user_id"])):
+        return jsonify({
+            "success": False,
+            "message": "Trial expired",
+            "redirect": url_for("auth.trial_ended"),
+        }), 403
+
+    return None
+
 # ----------------------------
 # Routes
 # ----------------------------
@@ -183,14 +228,12 @@ def root_to_dashboard():
 
 @dashboard_bp.route("/dashboard")
 def dashboard():
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     TRIAL_DAYS = 7  # adjust if your free-trial length changes
-
-    # Flip trial to "consumed" after 7 days if needed
-    consume_trial_if_expired(user_id)
 
     conn = get_db()
 
@@ -246,32 +289,7 @@ def dashboard():
     usage_summary = f"{device_count} / {device_limit}"
 
     # Trial banner context (status + days_left)
-    def _parse_iso(val):
-        if not val:
-            return None
-        try:
-            return datetime.fromisoformat(val)
-        except Exception:
-            return None
-
-    started_iso = user.get("trial_started_at")
-    consumed_iso = user.get("trial_consumed_at")
-    trial = {"status": "not_started", "days_left": TRIAL_DAYS, "has_passkey": has_passkey}
-
-    if consumed_iso:
-        trial["status"] = "ended"
-        trial["days_left"] = 0
-    elif started_iso:
-        started_dt = _parse_iso(started_iso)
-        if started_dt:
-            now = datetime.now(timezone.utc)
-            # Coerce naive to UTC if needed
-            if started_dt.tzinfo is None:
-                started_dt = started_dt.replace(tzinfo=timezone.utc)
-            elapsed_days = max(0, int((now - started_dt).total_seconds() // 86400))
-            days_left = max(0, TRIAL_DAYS - elapsed_days)
-            trial["status"] = "active" if days_left > 0 else "ended"
-            trial["days_left"] = days_left
+    trial = _trial_context(user_id)
 
     # WireGuard download links (you also have the local /download routes elsewhere)
     wireguard_downloads = {
@@ -295,15 +313,16 @@ def dashboard():
         TRIAL_DAYS=TRIAL_DAYS,
         has_passkey=has_passkey,
         wireguard_downloads=wireguard_downloads,
-        user_email=session.get("email"),
+        helper_token=os.getenv("PRIVANA_HELPER_TOKEN", ""),
     )
 
 # ---- Protection toggle (support both old and new URLs) ----
 @dashboard_bp.route("/dashboard/toggle-protection", methods=["POST"])
 @dashboard_bp.route("/toggle-protection", methods=["POST"])
 def toggle_protection():
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "Not logged in"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
 
     is_connected = check_wireguard_status()
     try:
@@ -348,8 +367,9 @@ def toggle_protection():
 @dashboard_bp.route("/dashboard/check-devices-status")
 @dashboard_bp.route("/check-devices-status")
 def check_devices_status():
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "Not logged in"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     conn = get_db()
@@ -373,8 +393,9 @@ def check_devices_status():
 
 @dashboard_bp.route("/account/token/regenerate", methods=["POST"])
 def regenerate_token():
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
     import secrets
     new_token = secrets.token_urlsafe(32)
     conn = get_db()
@@ -388,8 +409,9 @@ def regenerate_token():
 # ---- CRUD/Actions (unchanged behavior, cleaned a bit) ----
 @dashboard_bp.route("/add-device", methods=["POST"])
 def add_device():
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     name = request.form.get("name")
@@ -414,8 +436,9 @@ def add_device():
 
 @dashboard_bp.route("/remove-device/<int:device_id>")
 def remove_device(device_id):
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     conn = get_db()
@@ -449,8 +472,9 @@ def register_key(device_id):
     Body JSON: { "public_key": "<base64 WireGuard public key>" }
     Returns JSON: { "success": true, "config": "<.conf text with PLACEHOLDER>" }
     """
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
 
     user_id = int(session["user_id"])
     data = request.get_json(silent=True) or {}
@@ -529,8 +553,9 @@ PersistentKeepalive = 25
 
 @dashboard_bp.route('/show-qr/<int:device_id>')
 def show_qr(device_id):
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
 
     user_id = session['user_id']
     conn = get_db()
@@ -675,8 +700,9 @@ def qr_token_config(token):
 
 @dashboard_bp.route("/device/<int:device_id>/qr", methods=["GET"])
 def ensure_config_then_show_qr(device_id):
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     conn = get_db()
@@ -710,15 +736,17 @@ def ensure_config_then_show_qr(device_id):
 @dashboard_bp.route("/mobile-config/<int:device_id>")
 def mobile_config(device_id):
     """Redirects to the QR flow which handles mobile config display securely."""
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+    guard = require_active_dashboard()
+    if guard:
+        return guard
     return redirect(url_for("dashboard.show_qr", device_id=device_id))
 
 
 @dashboard_bp.route("/update-device-status/<int:device_id>/<int:status>", methods=["POST"])
 def update_device_status(device_id, status):
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "Not logged in"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
 
     user_id = session["user_id"]
     conn = get_db()
@@ -753,8 +781,9 @@ def update_device_status(device_id, status):
 
 @dashboard_bp.get("/sg-status")
 def ui_sg_status():
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
     r = sg_status()
     return jsonify(r.json()), r.status_code
 
@@ -764,8 +793,9 @@ def ui_peer_add():
     Body JSON: { "public_key": "...", "device_id": 123 } 
     user_id is taken from session when available.
     """
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
 
     data = request.get_json(silent=True) or {}
     public_key = (data.get("public_key") or "").strip()
@@ -780,15 +810,17 @@ def ui_peer_add():
 
 @dashboard_bp.get("/peer/config/<public_key>")
 def ui_peer_config(public_key):
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
     r = sg_get_peer_config(public_key)
     return jsonify(r.json()), r.status_code
 
 @dashboard_bp.post("/peer/remove")
 def ui_peer_remove():
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
     data = request.get_json(silent=True) or {}
     public_key = (data.get("public_key") or "").strip()
     if not public_key:
@@ -802,8 +834,9 @@ def ui_peer_heartbeat():
     Optional: clients can call this to record 'last connected'.
     Body JSON: { "public_key": "..." }
     """
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
     data = request.get_json(silent=True) or {}
     public_key = (data.get("public_key") or "").strip()
     if not public_key:
@@ -813,7 +846,8 @@ def ui_peer_heartbeat():
 
 @dashboard_bp.get("/sg-stats")
 def ui_sg_stats():
-    if "user_id" not in session:
-        return jsonify({"success": False, "message": "auth required"}), 401
+    guard = require_active_dashboard_json()
+    if guard:
+        return guard
     r = sg_stats()
     return jsonify(r.json()), r.status_code
