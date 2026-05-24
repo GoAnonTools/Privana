@@ -142,8 +142,7 @@ class Config:
         print("=" * 50)
 
 class DevelopmentConfig(Config):
-    """Configuration for local development"""
-    API_SECRET = 'dev_secret_key_123456'
+    """Configuration for local development — inherits random API_SECRET from Config."""
 
 class ProductionConfig(Config):
     """Configuration for Panama production server"""

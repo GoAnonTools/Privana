@@ -3,11 +3,8 @@ import sqlite3
 import os
 from datetime import datetime, timezone
 from web.utils.wireguard import (
-    generate_wireguard_keys,
-    generate_wireguard_config,
     check_wireguard_status,
     toggle_wireguard_protection,
-    generate_platform_config,
 )
 import qrcode
 import io
@@ -438,12 +435,35 @@ def remove_device(device_id):
     conn.close()
     return redirect(url_for("dashboard.dashboard"))
 
-@dashboard_bp.route("/generate-config/<int:device_id>")
-def generate_config(device_id):
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+@dashboard_bp.post("/register-key/<int:device_id>")
+def register_key(device_id):
+    """
+    Browser-facing endpoint for the proper client-side key generation flow.
 
-    user_id = session["user_id"]
+    The browser generates a WireGuard keypair using WebCrypto, sends ONLY the
+    public key here, and receives back a config template with
+    PrivateKey = PLACEHOLDER. The browser substitutes PLACEHOLDER with the real
+    private key before triggering the download — the private key never touches
+    the server.
+
+    Body JSON: { "public_key": "<base64 WireGuard public key>" }
+    Returns JSON: { "success": true, "config": "<.conf text with PLACEHOLDER>" }
+    """
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "auth required"}), 401
+
+    user_id = int(session["user_id"])
+    data = request.get_json(silent=True) or {}
+    public_key = (data.get("public_key") or "").strip()
+
+    if not public_key:
+        return jsonify({"success": False, "message": "public_key is required"}), 400
+
+    # Basic sanity check: WireGuard public keys are 44-char base64
+    import re
+    if not re.match(r'^[A-Za-z0-9+/]{43}=$', public_key):
+        return jsonify({"success": False, "message": "invalid public_key format"}), 400
+
     conn = get_db()
     device = conn.execute(
         "SELECT * FROM devices WHERE id = ? AND user_id = ?",
@@ -452,104 +472,60 @@ def generate_config(device_id):
 
     if not device:
         conn.close()
-        flash("Device not found.", "error")
-        return redirect(url_for("dashboard.dashboard"))
+        return jsonify({"success": False, "message": "device not found"}), 404
 
-    cfg_row = conn.execute(
-        "SELECT * FROM device_configs WHERE device_id = ?",
-        (device_id,),
-    ).fetchone()
-
-    if cfg_row:
-        private_key = cfg_row["private_key"]
-        config = cfg_row["config"]
-    else:
-        private_key, public_key = generate_wireguard_keys()
-        server_public_key = "SERVER_PUBLIC_KEY_HERE"
-        server_endpoint = "vpn.privana.pro:51820"
-
-        config, content_type = generate_platform_config(
-            user_id,
-            device["name"],
-            private_key,
-            server_public_key,
-            server_endpoint,
-            device["platform"],
-        )
-
-        conn.execute(
-            "INSERT INTO device_configs (device_id, private_key, public_key, config) VALUES (?, ?, ?, ?)",
-            (device_id, private_key, public_key, config),
-        )
-        conn.commit()
-
-    conn.close()
-
-    # ⭐ NEW: honor ?next=... if present (works for both mobile & desktop flows)
-    nxt = request.args.get("next")
-    if nxt:
-        return redirect(nxt)
-
-    if device["platform"] in ["android", "ios"]:
-        return redirect(url_for("dashboard.show_qr", device_id=device_id))
-    else:
-        response = make_response(config)
-        response.headers["Content-Type"] = "text/plain"
-        response.headers["Content-Disposition"] = f'attachment; filename={device["name"]}_privana.conf'
-        return response
-
-@dashboard_bp.route("/download-config/<int:device_id>")
-def download_config(device_id):
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
-
-    user_id = session["user_id"]
-    conn = get_db()
-    device = conn.execute(
-        "SELECT * FROM devices WHERE id = ? AND user_id = ?",
-        (device_id, user_id),
-    ).fetchone()
-
-    if not device:
+    # Call the VPN server to register the public key and get an assigned IP
+    try:
+        r = sg_add_peer(public_key=public_key, user_id=user_id, device_id=device_id)
+        payload = r.json()
+    except Exception as e:
         conn.close()
-        flash("Device not found.", "error")
-        return redirect(url_for("dashboard.dashboard"))
+        return jsonify({"success": False, "message": f"VPN server error: {e}"}), 502
 
-    cfg_row = conn.execute(
-        "SELECT config FROM device_configs WHERE device_id = ?",
-        (device_id,),
+    if not payload.get("success"):
+        conn.close()
+        return jsonify({"success": False, "message": payload.get("message", "peer registration failed")}), 400
+
+    assigned_ip = payload.get("assigned_ip", "")
+    server_public_key = os.getenv("WG_SERVER_PUBLIC_KEY", "")
+    server_endpoint   = os.getenv("WG_SERVER_ENDPOINT", "vpn.privana.pro:51820")
+    dns               = os.getenv("WG_DNS", "1.1.1.1, 1.0.0.1")
+
+    # Config template — private key is a placeholder, filled in by the browser
+    config_template = f"""[Interface]
+PrivateKey = PLACEHOLDER
+Address = {assigned_ip}
+DNS = {dns}
+
+[Peer]
+PublicKey = {server_public_key}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = {server_endpoint}
+PersistentKeepalive = 25
+"""
+
+    # Upsert into device_configs — no private key stored
+    existing = conn.execute(
+        "SELECT id FROM device_configs WHERE device_id = ?", (device_id,)
     ).fetchone()
-
-    if not cfg_row:
-        # generate on the fly if missing
-        private_key, public_key = generate_wireguard_keys()
-        server_public_key = "SERVER_PUBLIC_KEY_HERE"
-        server_endpoint = "vpn.privana.pro:51820"
-
-        config, content_type = generate_platform_config(
-            user_id,
-            device["name"],
-            private_key,
-            server_public_key,
-            server_endpoint,
-            device["platform"],
-        )
-
+    if existing:
         conn.execute(
-            "INSERT INTO device_configs (device_id, private_key, public_key, config) VALUES (?, ?, ?, ?)",
-            (device_id, private_key, public_key, config),
+            "UPDATE device_configs SET public_key=?, assigned_ip=?, config=?, created_at=datetime('now') WHERE device_id=?",
+            (public_key, assigned_ip, config_template, device_id),
         )
-        conn.commit()
-        config_to_download = config
     else:
-        config_to_download = cfg_row[0]
-
+        conn.execute(
+            "INSERT INTO device_configs (device_id, public_key, assigned_ip, config) VALUES (?,?,?,?)",
+            (device_id, public_key, assigned_ip, config_template),
+        )
+    conn.execute(
+        "UPDATE devices SET has_config=1, config_created_at=datetime('now') WHERE id=?",
+        (device_id,),
+    )
+    conn.commit()
     conn.close()
 
-    response = make_response(config_to_download)
-    response.headers["Content-Type"] = "text/plain"
-    response.headers["Content-Disposition"] = f'attachment; filename={device["name"]}_privana.conf'
-    return response
+    return jsonify({"success": True, "config": config_template})
 
 @dashboard_bp.route('/show-qr/<int:device_id>')
 def show_qr(device_id):
@@ -733,116 +709,11 @@ def ensure_config_then_show_qr(device_id):
 
 @dashboard_bp.route("/mobile-config/<int:device_id>")
 def mobile_config(device_id):
+    """Redirects to the QR flow which handles mobile config display securely."""
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
+    return redirect(url_for("dashboard.show_qr", device_id=device_id))
 
-    user_id = session["user_id"]
-    conn = get_db()
-    device = conn.execute(
-        "SELECT * FROM devices WHERE id = ? AND user_id = ?",
-        (device_id, user_id),
-    ).fetchone()
-
-    if not device:
-        conn.close()
-        flash("Device not found.", "error")
-        return redirect(url_for("dashboard.dashboard"))
-
-    cfg_row = conn.execute(
-        "SELECT config FROM device_configs WHERE device_id = ?",
-        (device_id,),
-    ).fetchone()
-
-    if not cfg_row:
-        conn.close()
-        flash("Configuration not found for device", "error")
-        return redirect(url_for("dashboard.dashboard"))
-
-    config = cfg_row[0]
-    conn.close()
-
-    # QR creation (same as show_qr; duplicated for stand-alone mobile page)
-    try:
-        lines = config.strip().split("\n")
-        private_key = address = public_key = endpoint = None
-        for line in lines:
-            s = line.strip()
-            if s.startswith("PrivateKey = "):
-                private_key = s.split(" = ")[1]
-            elif s.startswith("Address = "):
-                address = s.split(" = ")[1]
-            elif s.startswith("PublicKey = "):
-                public_key = s.split(" = ")[1]
-            elif s.startswith("Endpoint = "):
-                endpoint = s.split(" = ")[1]
-
-        if private_key and address and public_key and endpoint:
-            simple = f"{private_key},{address},{public_key},{endpoint}"
-        else:
-            simple = config[:500]
-
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(simple)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-    except Exception:
-        img_str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-
-    html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Privana Configuration for {device["name"]}</title>
-  <style>
-    body {{ font-family: Arial, sans-serif; text-align: center; margin: 40px; }}
-    .qr-container {{ margin: 20px auto; display: inline-block; }}
-    .instructions {{ max-width: 600px; margin: 20px auto; text-align: left; }}
-    .download-btn {{ background: #4a6fa5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px; }}
-  </style>
-</head>
-<body>
-  <h1>Privana Configuration for {device["name"]}</h1>
-  <div class="qr-container">
-    <img src="data:image/png;base64,{img_str}" alt="WireGuard Configuration QR Code">
-  </div>
-  <div class="instructions">
-    <h2>Instructions:</h2>
-    <ol>
-      <li>Install the WireGuard app from your app store</li>
-      <li>Open the WireGuard app</li>
-      <li>Tap the "+" button to add a new tunnel</li>
-      <li>Choose "Scan from QR code"</li>
-      <li>Scan the QR code shown above</li>
-      <li>Name the tunnel "{device["name"]}"</li>
-      <li>Toggle the tunnel to connect</li>
-    </ol>
-  </div>
-  <a href="#" class="download-btn" onclick="downloadConfig()">Download Config File</a>
-
-  <script>
-  function downloadConfig() {{
-    const configData = `{base64.b64encode(config.encode()).decode()}`;
-    const blob = new Blob([atob(configData)], {{type: 'text/plain'}});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '{device["name"]}_privana.conf';
-    a.click();
-    URL.revokeObjectURL(url);
-  }}
-  </script>
-</body>
-</html>
-"""
-    return html_content
 
 @dashboard_bp.route("/update-device-status/<int:device_id>/<int:status>", methods=["POST"])
 def update_device_status(device_id, status):

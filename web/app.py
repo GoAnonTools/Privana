@@ -1,5 +1,6 @@
 # web/app.py
 import os
+import secrets
 from pathlib import Path
 from datetime import timedelta
 
@@ -34,13 +35,42 @@ app.config["SECURITY_PASSWORD_SALT"] = os.getenv("SECURITY_PASSWORD_SALT", "dev-
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "True").lower() != "false"  # defaults to True; set SESSION_COOKIE_SECURE=false only for local http dev
 
 # --------------------------------------------------------------------------------------
 # Rate limiter
 # --------------------------------------------------------------------------------------
 from rate_limit import limiter
 limiter.init_app(app)
+
+# --------------------------------------------------------------------------------------
+# CSRF protection (lightweight, no extra dependency)
+# --------------------------------------------------------------------------------------
+import hmac
+from flask import g
+
+def _csrf_token() -> str:
+    """Generate (once per session) or return the existing CSRF token."""
+    if "_csrf_token" not in session:
+        session["_csrf_token"] = secrets.token_hex(32)
+    return session["_csrf_token"]
+
+@app.before_request
+def _csrf_check():
+    """Validate CSRF token on every state-changing request."""
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return
+    # Skip CSRF for JSON API endpoints (they use HMAC auth instead)
+    if request.is_json:
+        return
+    expected = session.get("_csrf_token")
+    submitted = request.form.get("_csrf_token", "")
+    if not expected or not hmac.compare_digest(expected, submitted):
+        from flask import abort
+        abort(403)
+
+# Expose csrf_token() as a template global so every template can call it
+app.jinja_env.globals["csrf_token"] = _csrf_token
 
 @app.errorhandler(429)
 def _handle_ratelimit(e):
@@ -134,4 +164,3 @@ def service_worker():
     # avoid sticky caching while iterating
     resp.headers["Cache-Control"] = "no-cache"
     return resp
-

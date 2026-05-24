@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Recover Account{% endblock %}
+
+{% block content %}
+<main class="flex-grow container mx-auto px-4 py-14 max-w-md">
+    <div class="rounded-2xl border border-slate-200/70 bg-white/80 shadow-xl p-6 dark:border-white/10 dark:bg-white/5">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm">
+            <h1
+                class="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">
+                Recover Account</h1>
+        </div>
+        <p class="text-center text-slate-600 mb-6 dark:text-slate-300 text-sm">
+            Enter your recovery code to regain access. A new account number and recovery code will be issued.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2 mb-4">
+            {% for category, message in messages %}
+            <div class="rounded-xl px-3 py-2 text-sm font-semibold
+                        {% if category == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-800/40
+                        {% elif category == 'error' %} bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800/40
+                        {% else %} bg-slate-50 text-slate-700 border border-slate-200 dark:bg-white/5 dark:text-slate-200 dark:border-white/10
+                        {% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.recover') }}" class="space-y-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label for="recovery_code"
+                    class="block text-sm font-bold text-slate-800 mb-1 dark:text-slate-100">Recovery Code</label>
+                <input id="recovery_code" name="recovery_code" type="text" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                    autocomplete="off" autocorrect="off" spellcheck="false" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500
+                      dark:border-white/10 dark:bg-white/5 dark:text-slate-100" required>
+                <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">The recovery code shown when you created your
+                    account.</p>
+            </div>
+            <button type="submit" class="btn btn-qp w-full">Recover Account</button>
+        </form>
+
+        <p class="text-center text-sm text-slate-600 mt-4 dark:text-slate-300">
+            Remember your account number?
+            <a href="{{ url_for('auth.login') }}"
+                class="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Log in</a>
+        </p>
+    </div>
+
+    <div class="mt-6 text-center">
+        <a href="/"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+            ← Back to Home
+        </a>
+    </div>
+</main>
+{% endblock %}

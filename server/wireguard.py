@@ -73,7 +73,6 @@ class WireGuardManager:
                 CREATE TABLE IF NOT EXISTS peers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     public_key TEXT UNIQUE NOT NULL,
-                    private_key TEXT,
                     assigned_ip TEXT UNIQUE NOT NULL,
                     user_id INTEGER,
                     device_id INTEGER,
@@ -107,9 +106,7 @@ class WireGuardManager:
             self.config.WG_PRIVATE_KEY = private_key
             self.config.WG_PUBLIC_KEY = public_key
 
-            print("Generated WireGuard keys:")
-            print(f"Private Key: {private_key}")
-            print(f"Public Key:  {public_key}")
+            print(f"Generated WireGuard keys. Public Key: {public_key}")
 
     def _generate_private_key(self):
         """Generate a WireGuard private key"""
@@ -235,37 +232,21 @@ PrivateKey = {self.config.WG_PRIVATE_KEY}
             return result.returncode == 0, result.stdout
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             return False, "Interface not running"
-        
-    def generate_client_keypair(self):
-        """Generate a client keypair using wg if available; fallback to random private key."""
-        if self.wg_available:
-            try:
-                priv = subprocess.run([self.wg_command, "genkey"], capture_output=True, text=True, check=True, timeout=5).stdout.strip()
-                pub = subprocess.run([self.wg_command, "pubkey"], input=priv, capture_output=True, text=True, check=True, timeout=5).stdout.strip()
-                return priv, pub
-            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                pass
-        # Fallback: random 32 bytes as private; derive a pseudo-"public" (NOT cryptographically correct),
-        # but keeps local dev flows unblocked. On the real SG server, wg is present so the branch above is used.
-        import base64, secrets, hashlib
-        priv = base64.b64encode(secrets.token_bytes(32)).decode("utf-8")
-        pub = base64.b64encode(hashlib.sha256(priv.encode()).digest()).decode("utf-8")
-        return priv, pub
     
     def build_client_config(self, client_private_key: str, assigned_ip: str) -> str:
         """Build a full WireGuard client config for this server."""
-        cfg = f"""[Interface]
-        PrivateKey = {client_private_key}
-        Address = {assigned_ip}
-        DNS = {self.config.WG_DNS}
+        return f"""[Interface]
+PrivateKey = {client_private_key}
+Address = {assigned_ip}
+DNS = {self.config.WG_DNS}
 
-        [Peer]
-        PublicKey = {self.config.WG_PUBLIC_KEY}
-        AllowedIPs = 0.0.0.0/0, ::/0
-        Endpoint = {self.config.get_host()}:{self.config.PORT}
-        PersistentKeepalive = 25
-        """
-        return cfg
+[Peer]
+PublicKey = {self.config.WG_PUBLIC_KEY}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = {self.config.get_host()}:{self.config.PORT}
+PersistentKeepalive = 25
+"""
+
 
     # ---------------------------
     # Peer management (DB-backed)
@@ -403,8 +384,10 @@ PersistentKeepalive = 25
             if ip_str not in assigned_ips:
                 return ip_str
 
-        # Fallback: first host in the range
-        return f"{str(network.network_address + 1)}/32"
+        raise RuntimeError(
+            f"IP address pool exhausted: all addresses in {self.config.CLIENT_IP_RANGE} are assigned."
+            " Add more capacity or remove inactive peers."
+        )
 
     # ---------------------------
     # Diagnostics

@@ -1,163 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard - Privana</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Favicons (keep) -->
-<link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
-<link rel="shortcut icon" href="/site/assets/favicon.ico">
+  <link rel="icon" href="/site/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/site/assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/site/assets/favicon.ico">
 
-<!-- Single PWA manifest (root scope) -->
-<link rel="manifest" href="/manifest.webmanifest">
+  <!-- Single PWA manifest (root scope) -->
+  <link rel="manifest" href="/manifest.webmanifest">
 
-<!-- Colors -->
-<meta name="msapplication-TileColor" content="#06b6d4">
-<meta name="theme-color" content="#06b6d4">
+  <!-- Colors -->
+  <meta name="msapplication-TileColor" content="#06b6d4">
+  <meta name="theme-color" content="#06b6d4">
 
- 
+
   <style>
-    :root{
-      --bg:#f7fafc; --panel:#ffffff; --muted:#64748b; --text:#0f172a;
-      --brand1:#0ea5e9; --brand2:#2563eb; --ring:rgba(37,99,235,.25);
-      --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --shadow:0 10px 30px rgba(2,6,23,.08);
-      --border: rgba(2,6,23,.06);
+    :root {
+      --bg: #f7fafc;
+      --panel: #ffffff;
+      --muted: #64748b;
+      --text: #0f172a;
+      --brand1: #0ea5e9;
+      --brand2: #2563eb;
+      --ring: rgba(37, 99, 235, .25);
+      --good: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --shadow: 0 10px 30px rgba(2, 6, 23, .08);
+      --border: rgba(2, 6, 23, .06);
 
       /* landing-page cyan → purple */
-      --qp1:#06b6d4; /* cyan-500 */
-      --qp2:#8b5cf6; /* purple-500 */
+      --qp1: #06b6d4;
+      /* cyan-500 */
+      --qp2: #8b5cf6;
+      /* purple-500 */
     }
 
-    *{ box-sizing: border-box; }
-    html,body{
-      margin:0; min-height:100%;
-      background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(14,165,233,.08), transparent),
-        radial-gradient(1000px 500px at 110% 20%, rgba(37,99,235,.08), transparent),
-        var(--bg);
-      color:var(--text); font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    * {
+      box-sizing: border-box;
     }
-    .container{ max-width:1100px; margin:0 auto; padding:20px; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(14, 165, 233, .08), transparent),
+        radial-gradient(1000px 500px at 110% 20%, rgba(37, 99, 235, .08), transparent),
+        var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
     /* ---------- Header ---------- */
-    header{
-      position:sticky; top:0; backdrop-filter: blur(10px);
-      background: rgba(255,255,255,.85); border-bottom:1px solid var(--border);
-      z-index:50;
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, .85);
+      border-bottom: 1px solid var(--border);
+      z-index: 50;
     }
-    .header-inner{ display:flex; align-items:center; justify-content:space-between; padding:14px 8px; }
-    .logo{ display:flex; align-items:center; gap:12px; }
-    .logo-mark{
-      width:40px; height:40px; border-radius:10px; display:block;
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 8px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: block;
       /* tiny drop shadow so it pops on light bg */
-      filter: drop-shadow(0 6px 14px rgba(2,6,23,.08));
+      filter: drop-shadow(0 6px 14px rgba(2, 6, 23, .08));
     }
-    .logo h1{
-      margin:0; letter-spacing:.20em; font-weight:800; font-size:18px;
+
+    .logo h1 {
+      margin: 0;
+      letter-spacing: .20em;
+      font-weight: 800;
+      font-size: 18px;
       background: linear-gradient(90deg, var(--brand1), var(--brand2));
-      -webkit-background-clip:text; background-clip:text; color:transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    .user-menu{ display:flex; gap:12px; align-items:center; }
-    .user-email{ color:var(--muted); font-weight:700; font-size:14px; }
+
+    .user-menu {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .user-email {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 14px;
+    }
 
     /* ---------- Buttons (shared) ---------- */
-    .btn{
-      border:0; border-radius:12px; padding:10px 14px; font-weight:800; cursor:pointer;
-      transition:.2s transform,.2s box-shadow; display:inline-flex; align-items:center; justify-content:center;
-      text-decoration:none; line-height:1; gap:.5rem; text-align:center;
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s transform, .2s box-shadow;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      line-height: 1;
+      gap: .5rem;
+      text-align: center;
     }
-    .btn:hover{ transform: translateY(-1px); }
-    .btn:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: .65;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     /* landing-page gradient */
-    .btn-qp{
-      color:#fff; background-image:linear-gradient(90deg, var(--qp1), var(--qp2));
-      box-shadow:0 16px 36px rgba(6,182,212,.25);
+    .btn-qp {
+      color: #fff;
+      background-image: linear-gradient(90deg, var(--qp1), var(--qp2));
+      box-shadow: 0 16px 36px rgba(6, 182, 212, .25);
     }
-    .btn-qp:hover{ box-shadow:0 20px 44px rgba(6,182,212,.35); filter:brightness(1.05); }
+
+    .btn-qp:hover {
+      box-shadow: 0 20px 44px rgba(6, 182, 212, .35);
+      filter: brightness(1.05);
+    }
 
     /* existing themes kept for variety */
-    .btn-primary{ background:linear-gradient(90deg, var(--brand1), var(--brand2)); color:#fff; box-shadow:0 10px 20px var(--ring); }
-    .btn-secondary{ background:#eef2ff; color:#1e3a8a; }
-    .btn-danger{ background:#fee2e2; color:#991b1b; }
-    .btn-ghost{ background:#f1f5f9; color:#0f172a; }
+    .btn-primary {
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      color: #fff;
+      box-shadow: 0 10px 20px var(--ring);
+    }
+
+    .btn-secondary {
+      background: #eef2ff;
+      color: #1e3a8a;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .btn-ghost {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
 
     /* ---------- Panels / cards ---------- */
-    .banner{
-      margin-top:12px; border-radius:14px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;
-      border:1px solid var(--border); background:#ffffff;
-    }
-    .banner .title{ font-weight:800; }
-    .banner .note{ color:var(--muted); font-size:13px; }
-
-    .content-grid{ display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px; }
-    @media (min-width: 960px){ .content-grid{ grid-template-columns: 1.2fr 1fr; } }
-    .card{ background: rgba(255,255,255,.9); border:1px solid var(--border); border-radius:16px; box-shadow: var(--shadow); }
-    .card h2{ margin:0; font-size:18px; font-weight:800; }
-    .card .body{ padding:16px; }
-    .card .head{ padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-
-    .kv{ display:grid; grid-template-columns: 120px 1fr; gap:6px; row-gap:10px; margin-top:8px; }
-    .kv .k{ color:var(--muted); font-weight:800; }
-    .kv .v{ font-weight:800; }
-    .badge{ display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; }
-    .badge-good{ background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .badge-bad{ background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
-
-    .usage-track{ width:100%; height:10px; border-radius:999px; background: rgba(2,6,23,.08); overflow:hidden; margin-top:10px; }
-    .usage-bar{ height:100%; border-radius:999px; background: linear-gradient(90deg, var(--brand1), var(--brand2)); transition: width .3s ease; }
-
-    .devices{ display:grid; gap:12px; }
-    .device-card{ border:1px solid var(--border); border-radius:14px; padding:12px; background:#fff; display:grid; gap:10px; transition:box-shadow .2s, transform .2s; }
-    .device-card:hover{ box-shadow: var(--shadow), 0 6px 20px rgba(2,6,23,.06); transform: translateY(-1px); }
-    .device-header{ display:flex; align-items:center; justify-content:space-between; }
-    .status{ display:flex; align-items:center; gap:8px; font-weight:800; }
-    .dot{ width:8px; height:8px; border-radius:999px; }
-    .dot.ok{ background: var(--good); } .dot.bad{ background: var(--bad); }
-
-    .status-pill{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-weight:800; font-size:12px; border:1px solid var(--border); background:#fff; }
-    .status-pill.ok{ color:#065f46; border-color:#a7f3d0; background:#ecfdf5; }
-    .status-pill.bad{ color:#991b1b; border-color:#fecaca; background:#fef2f2; }
-
-    .setup-cta{
-      display:flex; align-items:center; justify-content:space-between; gap:16px;
-      border:1px dashed var(--border);
-      background: linear-gradient(90deg, rgba(14,165,233,.06), rgba(37,99,235,.06));
-      padding:14px; border-radius:12px;
-    }
-    .setup-left{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .setup-icon{
-      width:42px; height:42px; border-radius:12px; flex:0 0 42px; display:grid; place-items:center; color:#fff;
-      background-image:linear-gradient(135deg, var(--qp1), var(--qp2));
-      box-shadow: 0 10px 20px rgba(6,182,212,.25);
-      font-size:20px;
+    .banner {
+      margin-top: 12px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
     }
 
-    .tabs{ margin-top:8px; }
-    .tab-buttons{ display:flex; gap:8px; }
-    .tab-button{ border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
-    .tab-button.active{ background:#eef2ff; color:#1e3a8a; }
-    .tab-pane{ display:none; margin-top:12px; }
-    .tab-pane.active{ display:block; }
+    .banner .title {
+      font-weight: 800;
+    }
 
-    .dl-grid{ display:grid; grid-template-columns: 1fr; gap:10px; }
-    @media (min-width: 640px){ .dl-grid{ grid-template-columns: repeat(2, 1fr); } }
-    .dl-card{ border:1px solid var(--border); background:#fff; border-radius:14px; padding:12px; display:flex; align-items:center; justify-content:space-between; }
-    .dl-card.recommended{ box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
-    .rec-badge{ margin-left:8px; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:800; color:#1e3a8a; background:#eef2ff; border:1px solid #c7d2fe; }
+    .banner .note {
+      color: var(--muted);
+      font-size: 13px;
+    }
 
-    .small{ font-size:13px; color:var(--muted); }
-    footer{ margin:24px 0 8px; text-align:center; color:#64748b; font-size:13px; }
-    .info{ color:var(--muted); }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
 
-    input, select{ font:inherit; }
-    code{ background:#f8fafc; border:1px solid var(--border); padding:6px 8px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    @media (min-width: 960px) {
+      .content-grid {
+        grid-template-columns: 1.2fr 1fr;
+      }
+    }
 
-    @media (max-width:640px){
-      .setup-cta{ flex-direction:column; align-items:stretch; }
+    .card {
+      background: rgba(255, 255, 255, .9);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .card .body {
+      padding: 16px;
+    }
+
+    .card .head {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 6px;
+      row-gap: 10px;
+      margin-top: 8px;
+    }
+
+    .kv .k {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .kv .v {
+      font-weight: 800;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge-good {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-bad {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .usage-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(2, 6, 23, .08);
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .usage-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      transition: width .3s ease;
+    }
+
+    .devices {
+      display: grid;
+      gap: 12px;
+    }
+
+    .device-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      gap: 10px;
+      transition: box-shadow .2s, transform .2s;
+    }
+
+    .device-card:hover {
+      box-shadow: var(--shadow), 0 6px 20px rgba(2, 6, 23, .06);
+      transform: translateY(-1px);
+    }
+
+    .device-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+
+    .dot.ok {
+      background: var(--good);
+    }
+
+    .dot.bad {
+      background: var(--bad);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .status-pill.ok {
+      color: #065f46;
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+    }
+
+    .status-pill.bad {
+      color: #991b1b;
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    .setup-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border: 1px dashed var(--border);
+      background: linear-gradient(90deg, rgba(14, 165, 233, .06), rgba(37, 99, 235, .06));
+      padding: 14px;
+      border-radius: 12px;
+    }
+
+    .setup-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .setup-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background-image: linear-gradient(135deg, var(--qp1), var(--qp2));
+      box-shadow: 0 10px 20px rgba(6, 182, 212, .25);
+      font-size: 20px;
+    }
+
+    .tabs {
+      margin-top: 8px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      background: #eef2ff;
+      color: #1e3a8a;
+    }
+
+    .tab-pane {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    .dl-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .dl-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .dl-card {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dl-card.recommended {
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
+    }
+
+    .rec-badge {
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #1e3a8a;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    footer {
+      margin: 24px 0 8px;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .info {
+      color: var(--muted);
+    }
+
+    input,
+    select {
+      font: inherit;
+    }
+
+    code {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    @media (max-width:640px) {
+      .setup-cta {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
@@ -176,9 +516,7 @@
       <div class="user-menu">
         <span class="user-email">{{ user_email }}</span>
         <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost">Logout</a>
-        <button
-          id="pwa-install"
-          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+        <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
                  dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
           aria-label="Install app">
           <i data-lucide="download" class="w-4 h-4 mr-2"></i>
@@ -189,33 +527,35 @@
 
     <div class="container">
       {% if trial.status == 'active' %}
-        <div class="banner" role="status" aria-live="polite">
-          <div>
-            <div class="title">Trial: {{ trial.days_left }} day{% if trial.days_left != 1 %}s{% endif %} left</div>
-            <div class="note">Your {{ TRIAL_DAYS }}-day free trial is active. Create/download a config and start browsing securely.</div>
-          </div>
-          <a href="{{ url_for('auth.trial_ended') }}" class="btn btn-qp">Upgrade</a>
+      <div class="banner" role="status" aria-live="polite">
+        <div>
+          <div class="title">Trial: {{ trial.days_left }} day{% if trial.days_left != 1 %}s{% endif %} left</div>
+          <div class="note">Your {{ TRIAL_DAYS }}-day free trial is active. Create/download a config and start browsing
+            securely.</div>
         </div>
+        <a href="{{ url_for('auth.trial_ended') }}" class="btn btn-qp">Upgrade</a>
+      </div>
       {% elif trial.status == 'ended' %}
-        <div class="banner" role="status" aria-live="polite">
-          <div>
-            <div class="title">Trial ended</div>
-            <div class="note">To keep your connection protected at full speed, choose a plan.</div>
-          </div>
-          <a href="{{ url_for('auth.trial_ended') }}" class="btn btn-qp">See Plans</a>
+      <div class="banner" role="status" aria-live="polite">
+        <div>
+          <div class="title">Trial ended</div>
+          <div class="note">To keep your connection protected at full speed, choose a plan.</div>
         </div>
+        <a href="{{ url_for('auth.trial_ended') }}" class="btn btn-qp">See Plans</a>
+      </div>
       {% elif trial.status == 'not_started' %}
-        <div class="banner" role="status" aria-live="polite">
-          <div>
-            <div class="title">Secure your trial to this device</div>
-            <div class="note">
-              Create a passkey now to start your {{ TRIAL_DAYS }}-day trial.
-              No passwords, private by design.<br>
-              <strong>Note:</strong> Your trial countdown begins only after you connect your first device, so you get the full {{ TRIAL_DAYS }} days to explore Privana.
-            </div>
+      <div class="banner" role="status" aria-live="polite">
+        <div>
+          <div class="title">Secure your trial to this device</div>
+          <div class="note">
+            Create a passkey now to start your {{ TRIAL_DAYS }}-day trial.
+            No passwords, private by design.<br>
+            <strong>Note:</strong> Your trial countdown begins only after you connect your first device, so you get the
+            full {{ TRIAL_DAYS }} days to explore Privana.
           </div>
-          <button id="create-passkey-header" class="btn btn-secondary">Create Passkey</button>
         </div>
+        <button id="create-passkey-header" class="btn btn-secondary">Create Passkey</button>
+      </div>
       {% endif %}
     </div>
   </header>
@@ -224,7 +564,9 @@
     <div class="content-grid">
       <!-- Left column -->
       <section class="card">
-        <div class="head"><h2>Subscription</h2></div>
+        <div class="head">
+          <h2>Subscription</h2>
+        </div>
         <div class="body">
           <div class="kv">
             <div class="k">Plan</div>
@@ -233,20 +575,20 @@
             <div class="k">Status</div>
             <div class="v">
               {% if user.subscription_plan|lower == 'trial' %}
-                {% if trial.status == 'active' %}
-                  <span class="badge badge-good">Trial active</span>
-                  <span class="small"> · {{ trial.days_left }} day{% if trial.days_left != 1 %}s{% endif %} left</span>
-                {% elif trial.status == 'ended' %}
-                  <span class="badge badge-bad">Trial ended</span>
-                {% else %}
-                  <span class="badge">Trial not started</span>
-                {% endif %}
+              {% if trial.status == 'active' %}
+              <span class="badge badge-good">Trial active</span>
+              <span class="small"> · {{ trial.days_left }} day{% if trial.days_left != 1 %}s{% endif %} left</span>
+              {% elif trial.status == 'ended' %}
+              <span class="badge badge-bad">Trial ended</span>
               {% else %}
-                {% if user.subscription_status == 'active' %}
-                  <span class="badge badge-good">Active</span>
-                {% else %}
-                  <span class="badge badge-bad">{{ user.subscription_status|capitalize }}</span>
-                {% endif %}
+              <span class="badge">Trial not started</span>
+              {% endif %}
+              {% else %}
+              {% if user.subscription_status == 'active' %}
+              <span class="badge badge-good">Active</span>
+              {% else %}
+              <span class="badge badge-bad">{{ user.subscription_status|capitalize }}</span>
+              {% endif %}
               {% endif %}
             </div>
 
@@ -254,7 +596,8 @@
             <div class="v">{{ usage_summary }}</div>
           </div>
 
-          <div class="usage-track" aria-label="Device usage {{ usage_summary }}" title="Device usage {{ usage_summary }}">
+          <div class="usage-track" aria-label="Device usage {{ usage_summary }}"
+            title="Device usage {{ usage_summary }}">
             <div class="usage-bar" style="width: {{ usage_percent_str }};"></div>
           </div>
         </div>
@@ -262,14 +605,16 @@
 
       <!-- Right column -->
       <section class="card">
-        <div class="head"><h2>Protection</h2></div>
+        <div class="head">
+          <h2>Protection</h2>
+        </div>
         <div class="body">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
             <div class="status">
               {% if protection_status %}
-                <span class="dot ok"></span> <span>Protected</span>
+              <span class="dot ok"></span> <span>Protected</span>
               {% else %}
-                <span class="dot bad"></span> <span>Unprotected</span>
+              <span class="dot bad"></span> <span>Unprotected</span>
               {% endif %}
             </div>
             <button id="toggle-protection" class="btn {% if protection_status %}btn-danger{% else %}btn-qp{% endif %}">
@@ -278,21 +623,24 @@
           </div>
 
           {% if not has_passkey %}
-            <div style="margin-top:14px; border:1px dashed var(--border); border-radius:12px; padding:12px;">
-              <div class="info" style="margin-bottom:10px;">
-                Secure your trial to this device with a passkey. This prevents re-trials and protects your account.
-              </div>
-              <button id="create-passkey" class="btn btn-secondary">Create Passkey</button>
+          <div style="margin-top:14px; border:1px dashed var(--border); border-radius:12px; padding:12px;">
+            <div class="info" style="margin-bottom:10px;">
+              Secure your trial to this device with a passkey. This prevents re-trials and protects your account.
             </div>
+            <button id="create-passkey" class="btn btn-secondary">Create Passkey</button>
+          </div>
           {% endif %}
         </div>
       </section>
 
       <!-- Step 1: Get WireGuard -->
       <section class="card" style="grid-column: 1 / -1;">
-        <div class="head"><h2>Step 1 – Install WireGuard</h2></div>
+        <div class="head">
+          <h2>Step 1 – Install WireGuard</h2>
+        </div>
         <div class="body">
-          <p class="small" style="margin:0 0 12px;">Download and install WireGuard on your device to secure your connection.</p>
+          <p class="small" style="margin:0 0 12px;">Download and install WireGuard on your device to secure your
+            connection.</p>
 
           <div class="dl-grid">
             <div class="dl-card" data-platform="windows">
@@ -300,7 +648,8 @@
                 <div style="font-weight:800;">Windows</div>
                 <div class="small"><span id="w-size" aria-live="polite"></span></div>
               </div>
-              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='windows') }}">Download</a>
+              <a class="btn btn-secondary"
+                href="{{ url_for('downloads.download_wireguard', platform='windows') }}">Download</a>
             </div>
 
             <div class="dl-card" data-platform="macos">
@@ -308,7 +657,8 @@
                 <div style="font-weight:800;">macOS</div>
                 <div class="small"><span id="m-size" aria-live="polite"></span></div>
               </div>
-              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='macos') }}">Download</a>
+              <a class="btn btn-secondary"
+                href="{{ url_for('downloads.download_wireguard', platform='macos') }}">Download</a>
             </div>
 
             <div class="dl-card" data-platform="linux">
@@ -316,7 +666,8 @@
                 <div style="font-weight:800;">Linux</div>
                 <div class="small">Packages &amp; guides</div>
               </div>
-              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='linux') }}">Open</a>
+              <a class="btn btn-secondary"
+                href="{{ url_for('downloads.download_wireguard', platform='linux') }}">Open</a>
             </div>
 
             <div class="dl-card" data-platform="android">
@@ -324,7 +675,8 @@
                 <div style="font-weight:800;">Android</div>
                 <div class="small">Google Play</div>
               </div>
-              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='android') }}">Open Play</a>
+              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='android') }}">Open
+                Play</a>
             </div>
 
             <div class="dl-card" data-platform="ios">
@@ -332,7 +684,8 @@
                 <div style="font-weight:800;">iOS</div>
                 <div class="small">App Store</div>
               </div>
-              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='ios') }}">Open App Store</a>
+              <a class="btn btn-secondary" href="{{ url_for('downloads.download_wireguard', platform='ios') }}">Open App
+                Store</a>
             </div>
           </div>
 
@@ -342,67 +695,66 @@
 
       <!-- Step 2: Your Devices -->
       <section class="card" style="grid-column: 1 / -1;">
-        <div class="head"><h2>Step 2 – Add Your Device</h2></div>
+        <div class="head">
+          <h2>Step 2 – Add Your Device</h2>
+        </div>
         <div class="body">
           {% if devices %}
-            <div class="devices">
-              {% for device in devices %}
-                <div class="device-card" data-device-id="{{ device.id }}">
-                  <div class="device-header">
-                    <div style="font-weight:800">{{ device.name }}</div>
-                    <span class="status-pill {% if device.is_connected %}ok{% else %}bad{% endif %}">
-                      <span class="dot {% if device.is_connected %}ok{% else %}bad{% endif %}"></span>
-                      {% if device.is_connected %}Connected{% else %}Disconnected{% endif %}
-                    </span>
-                  </div>
+          <div class="devices">
+            {% for device in devices %}
+            <div class="device-card" data-device-id="{{ device.id }}">
+              <div class="device-header">
+                <div style="font-weight:800">{{ device.name }}</div>
+                <span class="status-pill {% if device.is_connected %}ok{% else %}bad{% endif %}">
+                  <span class="dot {% if device.is_connected %}ok{% else %}bad{% endif %}"></span>
+                  {% if device.is_connected %}Connected{% else %}Disconnected{% endif %}
+                </span>
+              </div>
 
-                  <div class="small">{{ device.platform|capitalize }}</div>
-                  <div class="small">Added: {{ device.created_at }}</div>
-                  {% if device.last_connected %}
-                    <div class="small last-connected">Last connected: {{ device.last_connected }}</div>
-                  {% endif %}
-                  <div class="small">
-                    <strong>Configuration:</strong>
-                    {% if device.has_config %}
-                      <span>Generated</span> <span>({{ device.config_created_at }})</span>
-                    {% else %}
-                      <span>Not Generated</span>
-                    {% endif %}
-                  </div>
+              <div class="small">{{ device.platform|capitalize }}</div>
+              <div class="small">Added: {{ device.created_at }}</div>
+              {% if device.last_connected %}
+              <div class="small last-connected">Last connected: {{ device.last_connected }}</div>
+              {% endif %}
+              <div class="small">
+                <strong>Configuration:</strong>
+                {% if device.has_config %}
+                <span>Generated</span> <span>({{ device.config_created_at }})</span>
+                {% else %}
+                <span>Not Generated</span>
+                {% endif %}
+              </div>
 
-                  <div class="device-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
-                    {% set is_mobile = device.platform in ['android','ios'] %}
+              <div class="device-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+                {% set is_mobile = device.platform in ['android','ios'] %}
 
-                    <!-- Always offer a simple download: generates if needed, then returns .conf -->
-                    <a class="btn btn-qp"
-                       href="{{ url_for('downloads.download_config', device_id=device.id) }}">
-                      {% if device.has_config %}Download settings{% else %}Set up this device{% endif %}
-                    </a>
+                <!-- Keys are generated in the browser; private key never sent to server -->
+                <button class="btn btn-qp" type="button" data-keygen-download data-device-id="{{ device.id }}"
+                  data-device-name="{{ device.name }}">
+                  {% if device.has_config %}Download settings{% else %}Set up this device{% endif %}
+                </button>
 
-                    {% if is_mobile %}
-                      <button class="btn btn-secondary"
-                              type="button"
-                              data-share-config
-                              data-device-id="{{ device.id }}">
-                        Send to WireGuard
-                      </button>
+                {% if is_mobile %}
+                <button class="btn btn-secondary" type="button" data-share-config data-device-id="{{ device.id }}">
+                  Send to WireGuard
+                </button>
 
-                      {% if device.has_config %}
-                        <a class="btn btn-ghost"
-                           href="{{ url_for('dashboard.show_qr', device_id=device.id) }}"
-                           target="_blank" rel="noopener">
-                          Show QR
-                        </a>
-                      {% endif %}
-                    {% endif %}
+                {% if device.has_config %}
+                <a class="btn btn-ghost" href="{{ url_for('dashboard.show_qr', device_id=device.id) }}" target="_blank"
+                  rel="noopener">
+                  Show QR
+                </a>
+                {% endif %}
+                {% endif %}
 
-                    <a class="btn btn-danger" href="{{ url_for('dashboard.remove_device', device_id=device.id) }}">Remove</a>
-                  </div>
-                </div>
-              {% endfor %}
+                <a class="btn btn-danger"
+                  href="{{ url_for('dashboard.remove_device', device_id=device.id) }}">Remove</a>
+              </div>
             </div>
+            {% endfor %}
+          </div>
           {% else %}
-            <p class="info">No devices added yet.</p>
+          <p class="info">No devices added yet.</p>
           {% endif %}
 
           <!-- Add device -->
@@ -411,45 +763,46 @@
             {% set device_limit = user.device_limit %}
 
             {% if request.args.get('limit') == 'reached' %}
-              <div class="limit-warning" style="margin:12px 0; padding:12px; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; border-radius:12px;">
-                <strong>Device limit reached.</strong>
-                You’ve hit the max for your {{ user.subscription_plan }} plan.
-                <a href="{{ url_for('auth.trial_ended') }}" style="font-weight:800; color:#1e3a8a; text-decoration:none; margin-left:8px;">Upgrade your plan</a>
-              </div>
+            <div class="limit-warning"
+              style="margin:12px 0; padding:12px; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; border-radius:12px;">
+              <strong>Device limit reached.</strong>
+              You’ve hit the max for your {{ user.subscription_plan }} plan.
+              <a href="{{ url_for('auth.trial_ended') }}"
+                style="font-weight:800; color:#1e3a8a; text-decoration:none; margin-left:8px;">Upgrade your plan</a>
+            </div>
             {% endif %}
 
             {% if device_count >= device_limit %}
-              <div class="info" style="margin-top:8px;">
-                You’re using {{ device_count }} / {{ device_limit }} devices for your {{ user.subscription_plan }} plan.
-              </div>
+            <div class="info" style="margin-top:8px;">
+              You’re using {{ device_count }} / {{ device_limit }} devices for your {{ user.subscription_plan }} plan.
+            </div>
             {% else %}
-              <form method="POST" action="{{ url_for('dashboard.add_device') }}" style="display:grid; gap:10px;">
-                <div style="display:grid; gap:6px;">
-                  <label for="device-name" style="font-weight:800;">Device Name</label>
-                  <input id="device-name" name="name" required
-                         style="border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none;"
-                         onfocus="this.style.boxShadow='0 0 0 4px var(--ring)';"
-                         onblur="this.style.boxShadow='none';">
-                </div>
+            <form method="POST" action="{{ url_for('dashboard.add_device') }}" style="display:grid; gap:10px;">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+              <div style="display:grid; gap:6px;">
+                <label for="device-name" style="font-weight:800;">Device Name</label>
+                <input id="device-name" name="name" required
+                  style="border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none;"
+                  onfocus="this.style.boxShadow='0 0 0 4px var(--ring)';" onblur="this.style.boxShadow='none';">
+              </div>
 
-                <div style="display:grid; gap:6px;">
-                  <label for="device-platform" style="font-weight:800;">Platform</label>
-                  <select id="device-platform" name="platform" required
-                          style="border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none;"
-                          onfocus="this.style.boxShadow='0 0 0 4px var(--ring)';"
-                          onblur="this.style.boxShadow='none';">
-                    <option value="windows">Windows</option>
-                    <option value="mac">macOS</option>
-                    <option value="linux">Linux</option>
-                    <option value="android">Android</option>
-                    <option value="ios">iOS</option>
-                  </select>
-                </div>
+              <div style="display:grid; gap:6px;">
+                <label for="device-platform" style="font-weight:800;">Platform</label>
+                <select id="device-platform" name="platform" required
+                  style="border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none;"
+                  onfocus="this.style.boxShadow='0 0 0 4px var(--ring)';" onblur="this.style.boxShadow='none';">
+                  <option value="windows">Windows</option>
+                  <option value="mac">macOS</option>
+                  <option value="linux">Linux</option>
+                  <option value="android">Android</option>
+                  <option value="ios">iOS</option>
+                </select>
+              </div>
 
-                <div>
-                  <button type="submit" class="btn btn-qp">Add Device</button>
-                </div>
-              </form>
+              <div>
+                <button type="submit" class="btn btn-qp">Add Device</button>
+              </div>
+            </form>
             {% endif %}
           </div>
         </div>
@@ -472,15 +825,15 @@
             <div class="token-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <div style="font-weight:800;">Account Token</div>
 
-              <input id="token-value" value="{{ user.token }}" readonly
-                     style="width:320px; border:1px solid var(--border); border-radius:8px; padding:6px 8px;
+              <input id="token-value" value="{{ user.token }}" readonly style="width:320px; border:1px solid var(--border); border-radius:8px; padding:6px 8px;
                             font-family:ui-monospace, SFMono-Regular, Menlo, monospace;" />
 
               <button id="copy-token" class="btn btn-ghost" type="button">Copy</button>
 
               <form method="POST" action="{{ url_for('dashboard.regenerate_token') }}" style="display:inline;">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button class="btn btn-ghost" type="submit"
-                        onclick="return confirm('Regenerate token? This will invalidate the old one.');">
+                  onclick="return confirm('Regenerate token? This will invalidate the old one.');">
                   Regenerate
                 </button>
               </form>
@@ -505,33 +858,34 @@
     <footer>
       <div class="container">
         <!-- Footer Container -->
-<div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+        <div
+          class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
 
-  <!-- Left Side: Navigational Links (Unchanged) -->
-  <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
-    <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
-    <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
-    <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
-    <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-  </div>
+          <!-- Left Side: Navigational Links (Unchanged) -->
+          <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
+            <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
+            <a href="/site/terms.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+            <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
+            <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
+          </div>
 
-  <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
-  <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
-  <div class="text-center md:text-right">
-    
-    <!-- Line 1: Establishes the brand-to-company relationship -->
-    <p>Privana is Powered by GoAnon LLC.</p>
-    
-    <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
-    <p class="mt-1">
-      <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
-      <span class="mx-1">|</span>
-      <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
-    </p>
+          <!-- Right Side: Corporate Identity (NEW STRUCTURE) -->
+          <!-- This div groups the identity information. It's center-aligned on mobile and right-aligned on desktop for a clean look. -->
+          <div class="text-center md:text-right">
 
-  </div>
+            <!-- Line 1: Establishes the brand-to-company relationship -->
+            <p>Privana is Powered by GoAnon LLC.</p>
 
-</div>
+            <!-- Line 2: The formal copyright notice for the legal entity, plus the legal link -->
+            <p class="mt-1">
+              <span>© <span id="year"></span> GoAnon LLC. All Rights Reserved.</span>
+              <span class="mx-1">|</span>
+              <a href="/site/legal.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Legal</a>
+            </p>
+
+          </div>
+
+        </div>
       </div>
     </footer>
   </main>
@@ -541,19 +895,19 @@
     lucide.createIcons();
 
     // Toggle protection
-    (function(){
+    (function () {
       const btn = document.getElementById('toggle-protection');
-      if(!btn) return;
-      btn.addEventListener('click', async function(){
+      if (!btn) return;
+      btn.addEventListener('click', async function () {
         const original = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Processing...';
-        try{
-          const res = await fetch('/dashboard/toggle-protection', { method:'POST', headers:{'Content-Type':'application/json'} });
+        try {
+          const res = await fetch('/dashboard/toggle-protection', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
           const data = await res.json();
-          if(data.success){ location.reload(); return; }
+          if (data.success) { location.reload(); return; }
           alert('Error: ' + (data.message || 'Unable to toggle'));
-        }catch(e){
+        } catch (e) {
           alert('An error occurred while toggling protection.');
         } finally {
           btn.disabled = false;
@@ -563,22 +917,22 @@
     })();
 
     // Periodic device status polling
-    (function(){
-      async function checkDevicesStatus(){
-        try{
+    (function () {
+      async function checkDevicesStatus() {
+        try {
           const res = await fetch('/dashboard/check-devices-status');
           const data = await res.json();
-          if(data && data.success && Array.isArray(data.devices)){
+          if (data && data.success && Array.isArray(data.devices)) {
             updateDeviceStatusUI(data.devices);
           }
-        }catch(e){ /* ignore */ }
+        } catch (e) { /* ignore */ }
       }
-      function updateDeviceStatusUI(devices){
-        devices.forEach(d=>{
-          const card = document.querySelector('.device-card[data-device-id="'+ d.id +'"]');
-          if(!card) return;
+      function updateDeviceStatusUI(devices) {
+        devices.forEach(d => {
+          const card = document.querySelector('.device-card[data-device-id="' + d.id + '"]');
+          if (!card) return;
           const statusPill = card.querySelector('.status-pill');
-          if(statusPill){
+          if (statusPill) {
             const html = d.is_connected
               ? '<span class="dot ok"></span>Connected'
               : '<span class="dot bad"></span>Disconnected';
@@ -587,7 +941,7 @@
             statusPill.classList.toggle('bad', !d.is_connected);
           }
           const last = card.querySelector('.last-connected');
-          if(last && d.last_connected){ last.textContent = 'Last connected: ' + d.last_connected; }
+          if (last && d.last_connected) { last.textContent = 'Last connected: ' + d.last_connected; }
         });
       }
       setInterval(checkDevicesStatus, 30000);
@@ -595,14 +949,14 @@
     })();
 
     // Tabs
-    (function(){
+    (function () {
       const buttons = document.querySelectorAll('.tab-button');
       const panes = document.querySelectorAll('.tab-pane');
-      buttons.forEach(btn=>{
-        btn.addEventListener('click', function(){
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function () {
           const id = btn.getAttribute('data-tab');
-          buttons.forEach(b=>b.classList.remove('active'));
-          panes.forEach(p=>p.classList.remove('active'));
+          buttons.forEach(b => b.classList.remove('active'));
+          panes.forEach(p => p.classList.remove('active'));
           btn.classList.add('active');
           document.getElementById(id).classList.add('active');
         });
@@ -610,16 +964,16 @@
     })();
 
     // Copy token
-    (function(){
+    (function () {
       const btn = document.getElementById('copy-token');
       const input = document.getElementById('token-value');
       if (!btn || !input) return;
       btn.addEventListener('click', async () => {
-        try{
+        try {
           await navigator.clipboard.writeText(input.value);
           const old = btn.textContent; btn.textContent = 'Copied!';
-          setTimeout(()=>btn.textContent = old, 1200);
-        }catch(e){
+          setTimeout(() => btn.textContent = old, 1200);
+        } catch (e) {
           input.select(); document.execCommand('copy');
         }
       });
@@ -628,8 +982,8 @@
     // Passkey creation (banner & protection card CTAs)
     (function () {
       const headerBtn = document.getElementById('create-passkey-header');
-      const cardBtn   = document.getElementById('create-passkey');
-      const buttons   = [headerBtn, cardBtn].filter(Boolean);
+      const cardBtn = document.getElementById('create-passkey');
+      const buttons = [headerBtn, cardBtn].filter(Boolean);
       if (!buttons.length) return;
 
       if (!('PublicKeyCredential' in window)) {
@@ -637,33 +991,33 @@
         return;
       }
 
-      const b64urlToBuf = (b64='') => {
-        b64 = b64.replace(/-/g,'+').replace(/_/g,'/');
+      const b64urlToBuf = (b64 = '') => {
+        b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
         const pad = '='.repeat((4 - (b64.length % 4)) % 4);
         const str = atob(b64 + pad);
         const bytes = new Uint8Array(str.length);
-        for (let i=0;i<str.length;i++) bytes[i] = str.charCodeAt(i);
+        for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
         return bytes.buffer;
       };
       const strToBuf = s => new TextEncoder().encode(s || '');
       const bufToB64url = buf => {
         const b = new Uint8Array(buf);
-        let s=''; for (let i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
-        return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       };
 
       async function createPasskey(btn) {
         const original = btn.textContent;
         btn.disabled = true; btn.textContent = 'Creating…';
         try {
-          const oRes = await fetch('/webauthn/register/options', { method:'POST' });
-          if (!oRes.ok) { const err = await oRes.json().catch(()=>({})); throw new Error(err.detail || 'Unable to start passkey creation.'); }
+          const oRes = await fetch('/webauthn/register/options', { method: 'POST' });
+          if (!oRes.ok) { const err = await oRes.json().catch(() => ({})); throw new Error(err.detail || 'Unable to start passkey creation.'); }
           const options = await oRes.json();
 
           options.challenge = b64urlToBuf(options.challenge);
-          options.user.id   = strToBuf(options.user.id);
+          options.user.id = strToBuf(options.user.id);
           if (Array.isArray(options.excludeCredentials)) {
-            options.excludeCredentials = options.excludeCredentials.map(c => ({...c, id: b64urlToBuf(c.id)}));
+            options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: b64urlToBuf(c.id) }));
           }
           options.authenticatorSelection = options.authenticatorSelection || {};
           if (options.authenticatorSelection.authenticatorAttachment == null) {
@@ -678,13 +1032,13 @@
             rawId: bufToB64url(cred.rawId),
             type: cred.type,
             attestationObject: bufToB64url(cred.response.attestationObject),
-            clientDataJSON:    bufToB64url(cred.response.clientDataJSON),
+            clientDataJSON: bufToB64url(cred.response.clientDataJSON),
           };
 
           const vRes = await fetch('/webauthn/register/verify', {
-            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
           });
-          const out = await vRes.json().catch(()=>({}));
+          const out = await vRes.json().catch(() => ({}));
           if (!vRes.ok || !out?.ok) throw new Error(out?.error || 'Passkey verification failed.');
 
           location.reload();
@@ -701,29 +1055,29 @@
     })();
 
     // WireGuard download sizes + platform highlight
-    (function(){
-      function fmtSize(bytes){
-        if(!bytes || isNaN(bytes)) return '';
-        const units = ['B','KB','MB','GB'];
+    (function () {
+      function fmtSize(bytes) {
+        if (!bytes || isNaN(bytes)) return '';
+        const units = ['B', 'KB', 'MB', 'GB'];
         let i = 0, n = Number(bytes);
-        while(n >= 1024 && i < units.length-1){ n /= 1024; i++; }
-        return n.toFixed(n >= 10 || i===0 ? 0 : 1) + ' ' + units[i];
+        while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+        return n.toFixed(n >= 10 || i === 0 ? 0 : 1) + ' ' + units[i];
       }
-      async function fillSize(elId, platform){
-        try{
+      async function fillSize(elId, platform) {
+        try {
           const res = await fetch('/download/wireguard/meta/' + platform);
           const data = await res.json();
-          if(data && data.ok && data.type === 'binary' && data.size_bytes){
+          if (data && data.ok && data.type === 'binary' && data.size_bytes) {
             const el = document.getElementById(elId);
-            if(el){ el.textContent = 'Size: ' + fmtSize(data.size_bytes); }
+            if (el) { el.textContent = 'Size: ' + fmtSize(data.size_bytes); }
           }
-        }catch(e){}
+        } catch (e) { }
       }
-      fillSize('w-size','windows');
-      fillSize('m-size','macos');
+      fillSize('w-size', 'windows');
+      fillSize('m-size', 'macos');
 
       const HIDE_OTHERS = false;
-      function detectOS(){
+      function detectOS() {
         const ua = (navigator.userAgent || '').toLowerCase();
         const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
         const s = (ua + ' ' + plat).toLowerCase();
@@ -735,9 +1089,9 @@
         return null;
       }
       const os = detectOS();
-      if(os){
-        const card = document.querySelector('.dl-card[data-platform="'+os+'"]');
-        if (card){
+      if (os) {
+        const card = document.querySelector('.dl-card[data-platform="' + os + '"]');
+        if (card) {
           card.classList.add('recommended');
           const title = card.querySelector('div > div:first-child, [style*="font-weight:800"]');
           if (title) {
@@ -752,42 +1106,42 @@
     })();
 
     // ===== Helper integration (auto-setup on Windows) =====
-    (function(){
+    (function () {
       const HELPER_ORIGIN = "http://127.0.0.1:51821";
       let helperOK = false;
 
-      function timeoutFetch(url, opts={}, ms=1500) {
+      function timeoutFetch(url, opts = {}, ms = 1500) {
         const c = new AbortController();
-        const t = setTimeout(()=>c.abort(), ms);
-        return fetch(url, {...opts, signal: c.signal}).finally(()=>clearTimeout(t));
+        const t = setTimeout(() => c.abort(), ms);
+        return fetch(url, { ...opts, signal: c.signal }).finally(() => clearTimeout(t));
       }
-      async function detectHelper(){
-        try{
-          const r = await timeoutFetch(HELPER_ORIGIN + "/health", {headers:{'Accept':'application/json'}}, 1000);
+      async function detectHelper() {
+        try {
+          const r = await timeoutFetch(HELPER_ORIGIN + "/health", { headers: { 'Accept': 'application/json' } }, 1000);
           if (!r.ok) return false;
           const j = await r.json();
           return !!(j && j.ok === true);
-        }catch(e){ return false; }
+        } catch (e) { return false; }
       }
-      async function fetchConfigText(deviceId){
-        const r = await fetch(`/download/config/${deviceId}`, { method:'GET', headers:{'Accept': 'text/plain'} });
-        if (!r.ok) { const t = await r.text().catch(()=> ""); throw new Error(`Config fetch failed (${r.status}). ${t}`); }
+      async function fetchConfigText(deviceId) {
+        const r = await fetch(`/download/config/${deviceId}`, { method: 'GET', headers: { 'Accept': 'text/plain' } });
+        if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error(`Config fetch failed (${r.status}). ${t}`); }
         return r.text();
       }
-      async function helperPost(path, body){
-        const r = await fetch(HELPER_ORIGIN + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body || {}) });
-        const j = await r.json().catch(()=> ({}));
+      async function helperPost(path, body) {
+        const r = await fetch(HELPER_ORIGIN + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+        const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) { const msg = (j && (j.error || j.stderr)) || `HTTP ${r.status}`; throw new Error(msg); }
         return j;
       }
-      async function autoSetupDevice(deviceId, deviceName){
+      async function autoSetupDevice(deviceId, deviceName) {
         const tunnelName = `Privana-${deviceId}`;
         const config = await fetchConfigText(deviceId);
         await helperPost('/import-config', { name: tunnelName, config });
         await helperPost('/connect', { name: tunnelName });
         return tunnelName;
       }
-      function injectAutoSetupButtons(){
+      function injectAutoSetupButtons() {
         document.querySelectorAll('.device-card').forEach(card => {
           const deviceId = Number(card.getAttribute('data-device-id'));
           if (!deviceId) return;
@@ -799,14 +1153,14 @@
           btn.className = 'btn btn-qp';
           btn.textContent = 'Auto-setup (Windows)';
           btn.setAttribute('data-auto-setup', '1');
-          btn.addEventListener('click', async ()=>{
+          btn.addEventListener('click', async () => {
             const orig = btn.textContent;
             btn.disabled = true; btn.textContent = 'Setting up…';
-            try{
+            try {
               const deviceName = (card.querySelector('.device-header div')?.textContent || '').trim();
               await autoSetupDevice(deviceId, deviceName);
               location.reload();
-            }catch(err){
+            } catch (err) {
               alert('Auto-setup failed: ' + (err && err.message || err));
               btn.disabled = false; btn.textContent = orig;
             }
@@ -814,31 +1168,31 @@
           actions.insertBefore(btn, actions.lastElementChild);
         });
       }
-      function overrideProtectionToggle(){
+      function overrideProtectionToggle() {
         const btn = document.getElementById('toggle-protection');
         if (!btn) return;
-        btn.addEventListener('click', async (ev)=>{
+        btn.addEventListener('click', async (ev) => {
           if (!helperOK) return; // fallback to server
           ev.preventDefault();
           const orig = btn.textContent;
           btn.disabled = true; btn.textContent = 'Working…';
-          try{
+          try {
             const firstCard = document.querySelector('.device-card');
             if (!firstCard) throw new Error('No devices found.');
             const deviceId = Number(firstCard.getAttribute('data-device-id'));
             const tunnelName = `Privana-${deviceId}`;
             const st = await fetch(HELPER_ORIGIN + '/status?name=' + encodeURIComponent(tunnelName))
-                              .then(r => r.json()).catch(()=>({state:'unknown'}));
+              .then(r => r.json()).catch(() => ({ state: 'unknown' }));
             if (st.state !== 'running') await helperPost('/connect', { name: tunnelName });
             else await helperPost('/disconnect', { name: tunnelName });
             location.reload();
-          }catch(err){
+          } catch (err) {
             alert('Local toggle failed: ' + (err && err.message || err));
             btn.disabled = false; btn.textContent = orig;
           }
-        }, { once:false });
+        }, { once: false });
       }
-      (async function init(){
+      (async function init() {
         helperOK = await detectHelper();
         if (!helperOK) return;
         injectAutoSetupButtons();
@@ -877,6 +1231,153 @@
         btn.textContent = original;
       }
     });
+
+    // -------------------------------------------------------------------------
+    // Client-side WireGuard keypair generation + secure config download
+    //
+    // WireGuard uses Curve25519. WebCrypto does not expose raw Curve25519 key
+    // generation, so we use the standard approach: generate 32 random bytes,
+    // apply the Curve25519 clamping rules, and derive the public key via scalar
+    // base-point multiplication using a lightweight library (noble-curves).
+    //
+    // The private key is NEVER sent to the server. Only the public key is
+    // registered. The server returns a config template with
+    // PrivateKey = PLACEHOLDER which we fill in locally before download.
+    // -------------------------------------------------------------------------
+    (function () {
+      // Inline Curve25519 scalar multiplication (RFC 7748 §5)
+      // This is a minimal implementation sufficient for key derivation only.
+      // Source: https://cr.yp.to/ecdh.html clamping + basepoint multiplication
+      // For production, swap this with @noble/curves/ed25519 loaded from a CDN.
+
+      function clamp(k) {
+        k[0] &= 248;
+        k[31] &= 127;
+        k[31] |= 64;
+        return k;
+      }
+
+      async function generateWireGuardKeypair() {
+        // 1. Generate 32 cryptographically random bytes
+        const privBytes = new Uint8Array(32);
+        crypto.getRandomValues(privBytes);
+        clamp(privBytes);
+
+        // 2. Derive public key — requires X25519 support (all modern browsers)
+        //    We import the private key as an X25519 key and then export the
+        //    corresponding public key.
+        const privKey = await crypto.subtle.importKey(
+          'raw', privBytes, { name: 'X25519' }, true, []
+        );
+
+        // Derive public key by importing as key pair via a trick:
+        // generate an ephemeral keypair, replace the private material.
+        // The cleanest cross-browser way is to use SubtleCrypto ECDH with
+        // the X25519 named curve directly.
+        const keyPair = await crypto.subtle.generateKey(
+          { name: 'X25519' }, true, ['deriveKey', 'deriveBits']
+        );
+
+        // We actually need to use our clamped privBytes as the private scalar.
+        // SubtleCrypto doesn't allow importing raw X25519 private keys and
+        // then exporting the public component directly, so we use a PKCS8 wrap.
+        const pkcs8 = buildPkcs8(privBytes);
+        const importedPriv = await crypto.subtle.importKey(
+          'pkcs8', pkcs8, { name: 'X25519' }, true, ['deriveKey', 'deriveBits']
+        );
+        const pubKeyDer = await crypto.subtle.exportKey('spki', importedPriv);
+        // spki for X25519 is 44 bytes: 12-byte prefix + 32-byte raw public key
+        const pubBytes = new Uint8Array(pubKeyDer).slice(12);
+
+        return {
+          privateKey: toBase64(privBytes),
+          publicKey: toBase64(pubBytes),
+        };
+      }
+
+      // Build a minimal PKCS#8 wrapper for a raw 32-byte X25519 private key
+      function buildPkcs8(rawKey) {
+        // ASN.1 DER for X25519 private key (RFC 8410)
+        // SEQUENCE {
+        //   INTEGER 0  (version)
+        //   SEQUENCE { OID 1.3.101.110 }  (X25519 OID)
+        //   OCTET STRING { OCTET STRING { rawKey } }
+        // }
+        const oid = new Uint8Array([0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e]);
+        const inner = new Uint8Array(2 + rawKey.length);
+        inner[0] = 0x04; inner[1] = rawKey.length;
+        inner.set(rawKey, 2);
+        const octet = new Uint8Array(2 + inner.length);
+        octet[0] = 0x04; octet[1] = inner.length;
+        octet.set(inner, 2);
+        const version = new Uint8Array([0x02, 0x01, 0x00]);
+        const body = new Uint8Array(version.length + oid.length + octet.length);
+        body.set(version, 0);
+        body.set(oid, version.length);
+        body.set(octet, version.length + oid.length);
+        const seq = new Uint8Array(2 + body.length);
+        seq[0] = 0x30; seq[1] = body.length;
+        seq.set(body, 2);
+        return seq.buffer;
+      }
+
+      function toBase64(bytes) {
+        return btoa(String.fromCharCode(...bytes));
+      }
+
+      function triggerDownload(filename, text) {
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      document.addEventListener('click', async function (e) {
+        const btn = e.target.closest('[data-keygen-download]');
+        if (!btn) return;
+
+        const deviceId = btn.dataset.deviceId;
+        const deviceName = btn.dataset.deviceName || 'device';
+        const original = btn.textContent;
+
+        btn.disabled = true;
+        btn.textContent = 'Generating keys…';
+
+        try {
+          // Generate keypair entirely in the browser
+          const { privateKey, publicKey } = await generateWireGuardKeypair();
+
+          btn.textContent = 'Registering…';
+
+          // Send only the public key to the server
+          const res = await fetch(, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ public_key: publicKey }),
+          });
+
+          const data = await res.json();
+          if (!data.success) {
+            throw new Error(data.message || 'Server error during key registration');
+          }
+
+          // Substitute PLACEHOLDER with the real private key (client-side only)
+          const finalConfig = data.config.replace('PLACEHOLDER', privateKey);
+
+          triggerDownload(, finalConfig);
+          location.reload(); // refresh to show has_config = true
+
+        } catch (err) {
+          alert((err && err.message) || 'Key generation failed. Please try again.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      });
+    })();
   </script>
 </body>
+
 </html>

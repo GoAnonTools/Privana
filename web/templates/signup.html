@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en" class="">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -24,10 +25,10 @@
       theme: {
         extend: {
           colors: {
-            slate: { 950:'#020617' },
-            cyan:  { 300:'#67e8f9', 400:'#22d3ee', 500:'#06b6d4' },
-            purple:{ 400:'#a78bfa', 500:'#8b5cf6' },
-            blue:  { 50:'#eff6ff', 900:'#0b1b3b', 950:'#020a1a' }
+            slate: { 950: '#020617' },
+            cyan: { 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4' },
+            purple: { 400: '#a78bfa', 500: '#8b5cf6' },
+            blue: { 50: '#eff6ff', 900: '#0b1b3b', 950: '#020a1a' }
           }
         }
       }
@@ -71,24 +72,24 @@
     .btn-qp {
       color: #fff;
       background-image: linear-gradient(90deg, #06b6d4, #8b5cf6);
-      box-shadow: 0 16px 36px rgba(6,182,212,.25);
+      box-shadow: 0 16px 36px rgba(6, 182, 212, .25);
     }
 
     .btn-qp:hover {
       filter: brightness(1.05);
-      box-shadow: 0 20px 44px rgba(6,182,212,.35);
+      box-shadow: 0 20px 44px rgba(6, 182, 212, .35);
     }
 
     .btn-outline {
       background: #eef2ff;
       color: #1e3a8a;
-      border: 1px solid rgba(30,58,138,.2);
+      border: 1px solid rgba(30, 58, 138, .2);
     }
 
     html.dark .btn-outline {
-      background: rgba(30,41,59,.8);
+      background: rgba(30, 41, 59, .8);
       color: #93c5fd;
-      border: 1px solid rgba(147,197,253,.2);
+      border: 1px solid rgba(147, 197, 253, .2);
     }
 
     .btn-sm {
@@ -101,7 +102,8 @@
     }
 
     /* Fix layout to prevent footer spacing issues */
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       min-height: 100vh;
@@ -109,30 +111,38 @@
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
+<body
+  class="bg-gradient-to-br from-slate-50 to-blue-50 text-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 dark:text-slate-100 min-h-screen flex flex-col">
   <!-- Header (same look/behavior as Terms page) -->
-  <header id="site-header" class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
+  <header id="site-header"
+    class="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-slate-950/50">
     <div class="mx-auto container px-4 h-16 flex items-center justify-between">
       <a href="/" class="flex items-center space-x-3 group">
-        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 select-none drop-shadow-sm" loading="eager" decoding="async">
-        <span class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 select-none drop-shadow-sm"
+          loading="eager" decoding="async">
+        <span
+          class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</span>
       </a>
 
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
-        <a href="/site/quantum.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum Security</a>
-        <a href="/site/index.html#pricing" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
+        <a href="/site/quantum.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Quantum
+          Security</a>
+        <a href="/site/index.html#pricing"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">Pricing</a>
         <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
-        <a href="/site/faq.html" class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
+        <a href="/site/faq.html"
+          class="text-slate-600 hover:text-cyan-700 transition dark:text-slate-300 dark:hover:text-cyan-300">FAQ</a>
       </nav>
 
       <div class="flex items-center gap-2">
-        <button id="themeToggle" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10" aria-label="Toggle theme">
+        <button id="themeToggle"
+          class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
+          aria-label="Toggle theme">
           <i id="iconSun" data-lucide="sun" class="w-4 h-4"></i>
           <i id="iconMoon" data-lucide="moon" class="w-4 h-4 hidden"></i>
         </button>
-        <button
-          id="pwa-install"
-          class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
+        <button id="pwa-install" class="hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white/70 hover:bg-white px-3 py-2 text-sm font-semibold text-slate-700
                  dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
           aria-label="Install app">
           <i data-lucide="download" class="w-4 h-4 mr-2"></i>
@@ -146,64 +156,61 @@
   <main class="flex-grow container mx-auto px-4 py-14 max-w-md">
     <div class="rounded-2xl border border-slate-200/70 bg-white/80 shadow-xl p-6 dark:border-white/10 dark:bg-white/5">
       <div class="flex items-center justify-center gap-3 mb-2">
-        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="eager" decoding="async">
-        <h1 class="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">Sign Up</h1>
+        <img src="/site/assets/privana-mark.png" alt="Privana" class="h-10 w-10 drop-shadow-sm" loading="eager"
+          decoding="async">
+        <h1
+          class="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-sky-300">
+          Sign Up</h1>
       </div>
       <p class="text-center text-slate-600 mb-6 dark:text-slate-300">
-        You've selected the <strong>{{ plan|capitalize }}</strong> plan.
+        You've selected the <strong>{{ plan|capitalize }}</strong> plan. No email needed — ever.
       </p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="space-y-2 mb-4">
-            {% for category, message in messages %}
-              <div class="rounded-xl px-3 py-2 text-sm font-semibold
+      {% if messages %}
+      <div class="space-y-2 mb-4">
+        {% for category, message in messages %}
+        <div class="rounded-xl px-3 py-2 text-sm font-semibold
                           {% if category == 'success' %} bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-200 dark:border-emerald-800/40
                           {% elif category == 'error' %} bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-200 dark:border-red-800/40
                           {% else %} bg-slate-50 text-slate-700 border border-slate-200 dark:bg-white/5 dark:text-slate-200 dark:border-white/10
                           {% endif %}">
-                {{ message }}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% endwith %}
 
-      {% if request.args.get('sent') %}
-        <div class="rounded-xl p-4 border border-emerald-200 bg-emerald-50 dark:border-emerald-800/40 dark:bg-emerald-900/20">
-          <h3 class="font-bold mb-1 text-emerald-800 dark:text-emerald-200">Check your email</h3>
-          <p class="text-sm mb-4 text-emerald-700 dark:text-emerald-300">
-            We sent a confirmation link to
-            <strong>{{ request.args.get('email') }}</strong>. Click it to activate your account.
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <a class="btn-outline btn-sm" href="{{ url_for('auth.signup', plan=plan) }}">Use a different email</a>
-            <a class="btn-qp btn-sm" href="{{ url_for('auth.resend_confirmation', email=request.args.get('email')) }}">Resend link</a>
-            <a class="btn-outline btn-sm" href="{{ url_for('auth.login') }}">Go to Login</a>
-          </div>
-        </div>
-      {% else %}
-        <form id="signup-form" method="POST" action="{{ url_for('auth.signup') }}" class="space-y-4">
-          <input type="hidden" name="plan" value="{{ plan }}">
-          <div>
-            <label for="email" class="block text-sm font-bold text-slate-800 mb-1 dark:text-slate-100">Email address</label>
-            <input id="email" name="email" type="email" autocomplete="email" required
-                   class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500
-                          dark:border-white/10 dark:bg-white/5 dark:text-slate-100" />
-            <p class="text-xs text-slate-500 mt-1 dark:text-slate-400">We'll send you a verification link.</p>
-          </div>
-          <button type="submit" class="btn-qp btn w-full">Sign Up</button>
-        </form>
+      <!-- No email, no confirmation — just click and get your account number -->
+      <div
+        class="rounded-xl p-4 border border-slate-200/60 bg-slate-50/60 dark:border-white/10 dark:bg-white/5 mb-4 text-sm text-slate-600 dark:text-slate-300 space-y-1">
+        <p>🔒 <strong>No email required.</strong> We generate a random account number for you.</p>
+        <p>📋 You will be shown your account number and a recovery code — <strong>save them both.</strong></p>
+        <p>🗓️ Your trial lasts <strong>7 days</strong>.</p>
+      </div>
 
-        <p class="text-center text-sm text-slate-600 mt-4 dark:text-slate-300">
-          Already have an account?
-          <a href="{{ url_for('auth.login') }}" class="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Log in</a>
-        </p>
-      {% endif %}
+      <form id="signup-form" method="POST" action="{{ url_for('auth.signup') }}" class="space-y-4">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="plan" value="{{ plan }}">
+        <button type="submit" class="btn-qp btn w-full">Create Anonymous Account</button>
+      </form>
+
+      <p class="text-center text-sm text-slate-600 mt-4 dark:text-slate-300">
+        Already have an account?
+        <a href="{{ url_for('auth.login') }}" class="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Log
+          in</a>
+      </p>
+      <p class="text-center text-sm text-slate-600 mt-2 dark:text-slate-300">
+        Lost your account number?
+        <a href="{{ url_for('auth.recover') }}"
+          class="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Recover account</a>
+      </p>
     </div>
 
     <div class="mt-6 text-center">
-      <a href="/" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+      <a href="/"
+        class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
         ← Back to Home
       </a>
     </div>
@@ -214,16 +221,21 @@
     <div class="container mx-auto px-4">
       <div class="text-center mb-10">
         <div class="flex items-center justify-center space-x-3 mb-6">
-          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy" decoding="async">
-          <h3 class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">Privana</h3>
+          <img src="/site/assets/privana-mark.png" alt="Privana" class="h-12 w-12 drop-shadow-sm" loading="lazy"
+            decoding="async">
+          <h3
+            class="text-2xl font-bold bg-gradient-to-r from-slate-900 to-sky-700 bg-clip-text text-transparent dark:from-white dark:to-cyan-300">
+            Privana</h3>
         </div>
-        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs, quantum-ready hardening, Panama jurisdiction.</p>
+        <p class="text-slate-600 max-w-2xl mx-auto mb-6 dark:text-slate-300">A VPN that's truly yours. No logs,
+          quantum-ready hardening, Panama jurisdiction.</p>
       </div>
 
-      <div class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
+      <div
+        class="border-t border-slate-200/70 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm dark:border-white/10 dark:text-slate-400">
         <div class="flex flex-wrap justify-center space-x-4 md:space-x-6">
           <a href="/site/policy.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Privacy Policy</a>
-          <a href="/site/terms.html"  class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
+          <a href="/site/terms.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Terms of Service</a>
           <a href="/site/cookie.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Cookie Policy</a>
           <a href="/site/affiliates.html" class="hover:text-cyan-700 dark:hover:text-cyan-300">Affiliates</a>
         </div>
@@ -268,7 +280,8 @@
 
     // Icons & year
     document.getElementById('year').textContent = new Date().getFullYear();
-    if (window.lucide) { try { lucide.createIcons(); } catch(e){} syncIcons(); }
+    if (window.lucide) { try { lucide.createIcons(); } catch (e) { } syncIcons(); }
   </script>
 </body>
+
 </html>

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Save Your Account Details{% endblock %}
+
+{% block content %}
+<main class="flex-grow container mx-auto px-4 py-14 max-w-lg">
+    <div
+        class="rounded-2xl border border-amber-300/60 bg-amber-50/80 shadow-xl p-6 dark:border-amber-500/30 dark:bg-amber-900/20 mb-6">
+        <div class="flex items-center gap-3 mb-3">
+            <span class="text-2xl">⚠️</span>
+            <h2 class="text-lg font-extrabold text-amber-800 dark:text-amber-200">Save these now — they won't be shown
+                again</h2>
+        </div>
+        <p class="text-sm text-amber-700 dark:text-amber-300">
+            We don't store your account number or recovery code in a way that can be recovered by us.
+            Write them down or store them in a password manager before continuing.
+        </p>
+    </div>
+
+    <div
+        class="rounded-2xl border border-slate-200/70 bg-white/80 shadow-xl p-6 dark:border-white/10 dark:bg-white/5 space-y-6">
+
+        <!-- Account Number -->
+        <div>
+            <label
+                class="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Your
+                Account Number</label>
+            <div class="flex items-center gap-3">
+                <code id="account-number"
+                    class="flex-1 text-2xl font-mono font-bold tracking-widest rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-3 text-slate-900 dark:text-white select-all">
+          {{ account_number }}
+        </code>
+                <button onclick="copyText('account-number', this)" class="shrink-0 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700
+                       dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+                    Copy
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">This is your login credential. Keep it secret.
+            </p>
+        </div>
+
+        <!-- Recovery Code -->
+        <div>
+            <label
+                class="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Recovery
+                Code</label>
+            <div class="flex items-center gap-3">
+                <code id="recovery-code"
+                    class="flex-1 text-base font-mono font-bold tracking-widest rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-3 text-slate-900 dark:text-white select-all break-all">
+          {{ recovery_code }}
+        </code>
+                <button onclick="copyText('recovery-code', this)" class="shrink-0 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700
+                       dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10">
+                    Copy
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Use this to recover your account if you lose your
+                account number. A new code will be issued each time you use it.</p>
+        </div>
+
+        <!-- Confirm saved checkbox + proceed -->
+        <div class="pt-2 border-t border-slate-200/60 dark:border-white/10">
+            <label class="flex items-center gap-3 cursor-pointer mb-4">
+                <input type="checkbox" id="confirm-saved" class="w-4 h-4 rounded accent-cyan-500">
+                <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">I have saved both my account
+                    number and recovery code</span>
+            </label>
+            <a id="proceed-btn" href="{{ url_for('dashboard.dashboard') }}" onclick="return checkSaved(event)"
+                class="btn btn-qp w-full text-center block opacity-50 pointer-events-none">
+                Go to Dashboard →
+            </a>
+        </div>
+    </div>
+</main>
+
+<script>
+    function copyText(elementId, btn) {
+        const text = document.getElementById(elementId).innerText.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => btn.textContent = orig, 1500);
+        });
+    }
+
+    const checkbox = document.getElementById('confirm-saved');
+    const btn = document.getElementById('proceed-btn');
+
+    checkbox.addEventListener('change', () => {
+        btn.classList.toggle('opacity-50', !checkbox.checked);
+        btn.classList.toggle('pointer-events-none', !checkbox.checked);
+    });
+
+    function checkSaved(e) {
+        if (!checkbox.checked) {
+            e.preventDefault();
+            checkbox.closest('label').classList.add('text-red-500');
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}

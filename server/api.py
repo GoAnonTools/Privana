@@ -8,9 +8,9 @@ import hashlib
 import time
 import logging
 import pathlib
+from pathlib import Path
 
 from dotenv import load_dotenv
-from pathlib import Path
 import config
 
 # -------------------------------------------------------------------
@@ -65,12 +65,17 @@ def _purge_nonces(now: int) -> None:
 # -------------------------------------------------------------------
 wg_manager = None
 try:
-    import wireguard
-    wg_manager = wireguard.WireGuardManager()
+    try:
+        from server.wireguard import WireGuardManager
+    except (ImportError, ModuleNotFoundError):
+        from wireguard import WireGuardManager
+
+    wg_manager = WireGuardManager()
     print("✅ WireGuard manager initialized successfully")
 except Exception as e:
     print(f"❌ Failed to initialize WireGuard manager: {e}")
     wg_manager = None
+
 
 # -------------------------------------------------------------------
 # HMAC auth middleware
@@ -149,21 +154,6 @@ def auth_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
-# Initialize WireGuard manager with error handling
-wg_manager = None
-try:
-    # If your file is server/wireguard.py
-    try:
-        from server.wireguard import WireGuardManager
-    except Exception:
-        from wireguard import WireGuardManager  # fallback if running from server/ directly
-
-    wg_manager = WireGuardManager()
-    print("✅ WireGuard manager initialized successfully")
-except Exception as e:
-    print(f"❌ Failed to initialize WireGuard manager: {e}")
-    wg_manager = None
 
 # -------------------------------------------------------------------
 # Routes
@@ -260,45 +250,6 @@ def add_peer():
             })
         else:
             return jsonify({"success": False, "message": result_or_message})
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
-    
-@app.route("/api/peer/issue-config", methods=["POST"])
-@auth_required
-def issue_config():
-    """
-    Server generates a client keypair, binds a peer to (user_id, device_id),
-    and returns a complete WireGuard client config.
-    """
-    if not wg_manager:
-        return jsonify({"success": False, "message": "WireGuard manager not available"})
-
-    data = request.get_json(silent=True) or {}
-    if "user_id" not in data or "device_id" not in data:
-        return jsonify({"success": False, "message": "Missing user_id/device_id"}), 400
-
-    user_id = data["user_id"]
-    device_id = data["device_id"]
-
-    try:
-        # Generate client keys (private never stored on server DB; only included in config for delivery)
-        client_priv, client_pub = wg_manager.generate_client_keypair()
-
-        # Create/Bind peer with the generated public key
-        ok, peer_or_msg, assigned_ip = wg_manager.add_peer(client_pub, user_id, device_id)
-        if not ok:
-            return jsonify({"success": False, "message": peer_or_msg}), 400
-
-        # Build client config with client private key + assigned IP + server details
-        client_cfg = wg_manager.build_client_config(client_priv, assigned_ip)
-
-        return jsonify({
-            "success": True,
-            "peer_id": peer_or_msg,
-            "assigned_ip": assigned_ip,
-            "public_key": client_pub,
-            "config": client_cfg
-        })
     except Exception as e:
         return jsonify({"success": False, "message": f"Error: {str(e)}"})
 
