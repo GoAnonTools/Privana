@@ -23,6 +23,11 @@ from web.utils.api_client import (
     sg_update_peer_last_connected,
     sg_stats,
 )
+from web.utils.guards import (
+    user_has_passkey,
+    require_passkey_for_sensitive_action,
+    require_passkey_for_sensitive_action_json
+)
 
 
 
@@ -349,6 +354,10 @@ def toggle_protection():
     if guard:
         return guard
 
+    guard = require_passkey_for_sensitive_action_json()
+    if guard:
+        return guard
+
     is_connected = check_wireguard_status()
     try:
         if is_connected:
@@ -421,6 +430,10 @@ def regenerate_token():
     guard = require_active_dashboard()
     if guard:
         return guard
+
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
     import secrets
     new_token = secrets.token_urlsafe(32)
     conn = get_db()
@@ -435,6 +448,10 @@ def regenerate_token():
 @dashboard_bp.route("/add-device", methods=["POST"])
 def add_device():
     guard = require_active_dashboard()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action()
     if guard:
         return guard
 
@@ -466,6 +483,10 @@ def add_device():
 @dashboard_bp.route("/remove-device/<int:device_id>", methods=["POST"])
 def remove_device(device_id):
     guard = require_active_dashboard()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action()
     if guard:
         return guard
 
@@ -502,6 +523,10 @@ def register_key(device_id):
     Returns JSON: { "success": true, "config": "<.conf text with PLACEHOLDER>" }
     """
     guard = require_active_dashboard_json()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action_json()
     if guard:
         return guard
 
@@ -583,6 +608,10 @@ PersistentKeepalive = 25
 @dashboard_bp.route('/show-qr/<int:device_id>')
 def show_qr(device_id):
     guard = require_active_dashboard()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action()
     if guard:
         return guard
 
@@ -737,6 +766,10 @@ def ensure_config_then_show_qr(device_id):
     if guard:
         return guard
 
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
+
     user_id = session["user_id"]
     conn = get_db()
 
@@ -772,12 +805,21 @@ def mobile_config(device_id):
     guard = require_active_dashboard()
     if guard:
         return guard
+
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
+
     return redirect(url_for("dashboard.show_qr", device_id=device_id))
 
 
 @dashboard_bp.route("/update-device-status/<int:device_id>/<int:status>", methods=["POST"])
 def update_device_status(device_id, status):
     guard = require_active_dashboard_json()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action_json()
     if guard:
         return guard
 
@@ -830,6 +872,10 @@ def ui_peer_add():
     if guard:
         return guard
 
+    guard = require_passkey_for_sensitive_action_json()
+    if guard:
+        return guard
+
     data = request.get_json(silent=True) or {}
     public_key = (data.get("public_key") or "").strip()
     device_id = data.get("device_id")
@@ -846,12 +892,20 @@ def ui_peer_config(public_key):
     guard = require_active_dashboard_json()
     if guard:
         return guard
+
+    guard = require_passkey_for_sensitive_action_json()
+    if guard:
+        return guard
     r = sg_get_peer_config(public_key)
     return jsonify(r.json()), r.status_code
 
 @dashboard_bp.post("/peer/remove")
 def ui_peer_remove():
     guard = require_active_dashboard_json()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action_json()
     if guard:
         return guard
     data = request.get_json(silent=True) or {}
@@ -870,6 +924,10 @@ def ui_peer_heartbeat():
     guard = require_active_dashboard_json()
     if guard:
         return guard
+
+    guard = require_passkey_for_sensitive_action_json()
+    if guard:
+        return guard
     data = request.get_json(silent=True) or {}
     public_key = (data.get("public_key") or "").strip()
     if not public_key:
@@ -880,6 +938,10 @@ def ui_peer_heartbeat():
 @dashboard_bp.get("/sg-stats")
 def ui_sg_stats():
     guard = require_active_dashboard_json()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action_json()
     if guard:
         return guard
     r = sg_stats()

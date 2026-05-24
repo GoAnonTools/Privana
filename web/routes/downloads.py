@@ -16,6 +16,7 @@ from flask import (
     Blueprint, request, jsonify, session, send_file,
     redirect, Response, stream_with_context, url_for, abort, flash, current_app
 )
+from web.utils.guards import require_passkey_for_sensitive_action
 
 # Local or remote depending on your API_MODE wiring
 # sg_issue_config removed - use manual registration flow if not in stub mode
@@ -164,6 +165,10 @@ def download_config(device_id: int):
     if "user_id" not in session:
         flash("Please log in first.", "error")
         return redirect(url_for("auth.login"))
+
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
 
     user_id = int(session["user_id"])
 
@@ -404,6 +409,11 @@ def download_config_by_token(token: str):
 def bootstrap_windows(device_id: int):
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
+
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
+
     user_id = int(session["user_id"])
 
     u = _get_user(user_id)
@@ -450,6 +460,11 @@ Write-Host "Installed. The tunnel will run in the background and auto-start on b
 def bootstrap_linux(device_id: int):
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
+
+    guard = require_passkey_for_sensitive_action()
+    if guard:
+        return guard
+
     user_id = int(session["user_id"])
 
     u = _get_user(user_id)
