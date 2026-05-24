@@ -58,7 +58,7 @@ pip install flask requests
 # Set environment variables
 export ENVIRONMENT=production
 export WG_HOST=$(curl -s https://api.ipify.org)  # Auto-detect Panama IP
-export API_SECRET="your-super-secure-secret-key-here"
+export API_SECRET="$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')"
 
 # Generate and set WireGuard keys (optional - can auto-generate)
 WG_PRIVATE_KEY=$(wg genkey)
@@ -67,7 +67,7 @@ export WG_PRIVATE_KEY=$WG_PRIVATE_KEY
 export WG_PUBLIC_KEY=$WG_PUBLIC_KEY
 
 echo "Generated keys:"
-echo "Private: $WG_PRIVATE_KEY"
+echo "Private key generated and stored in environment."
 echo "Public: $WG_PUBLIC_KEY"
 ```
 
@@ -114,7 +114,7 @@ User=wireguard
 WorkingDirectory=/home/wireguard/privana-server
 Environment=ENVIRONMENT=production
 Environment=WG_HOST=YOUR_Panama_IP
-Environment=API_SECRET=your-super-secure-secret-key
+EnvironmentFile=/etc/privana/server.env
 ExecStart=/home/wireguard/privana-server/venv/bin/python start_prod.py
 Restart=always
 RestartSec=10

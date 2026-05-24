@@ -195,7 +195,7 @@ class ProductionConfig(Config):
 3. Environment Setup:
    export ENVIRONMENT=production
    export WG_HOST=YOUR_Panama_SERVER_IP
-   export API_SECRET=your-super-secure-secret-key
+   export API_SECRET=$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')
    export WG_PRIVATE_KEY=your-generated-private-key
    export WG_PUBLIC_KEY=your-generated-public-key
    
