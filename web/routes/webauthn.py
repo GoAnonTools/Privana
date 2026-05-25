@@ -31,37 +31,6 @@ from web.db import DB_PATH, get_db
 
 
 # ---------- Tables ----------
-def init_tables():
-    conn = get_db()
-    cur = conn.cursor()
-
-    # authenticators table
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS authenticators (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        credential_id BLOB UNIQUE NOT NULL,
-        credential_id_hash TEXT UNIQUE,
-        public_key BLOB NOT NULL,
-        sign_count INTEGER DEFAULT 0,
-        aaguid TEXT,
-        first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-    )
-    """)
-
-    # Ensure users table has user-bound trial columns
-    cur.execute("PRAGMA table_info(users)")
-    cols = {r[1] for r in cur.fetchall()}
-    if "trial_started_at" not in cols:
-        cur.execute("ALTER TABLE users ADD COLUMN trial_started_at TIMESTAMP")
-    if "trial_consumed_at" not in cols:
-        cur.execute("ALTER TABLE users ADD COLUMN trial_consumed_at TIMESTAMP")
-
-    conn.commit()
-    conn.close()
-
-init_tables()
 
 # ---------- FIDO2 ----------
 rp = PublicKeyCredentialRpEntity(id=RP_ID, name=RP_NAME)
