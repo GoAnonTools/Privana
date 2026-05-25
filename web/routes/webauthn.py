@@ -1,6 +1,6 @@
 # web/routes/webauthn.py
 from flask import Blueprint, request, jsonify, session
-import base64, hashlib, sqlite3, os
+import base64, hashlib, sqlite3, os, time
 from datetime import datetime, timezone, timedelta
 from web.routes.auth import TRIAL_DAYS
 
@@ -16,6 +16,7 @@ from fido2.webauthn import (
 
 # ---------- Config ----------
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+PASSKEY_RESET_FRESH_SECONDS = int(os.getenv("PASSKEY_RESET_FRESH_SECONDS", "300"))
 
 RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost").strip()
 RP_NAME = "Privana"
@@ -310,6 +311,7 @@ def register_verify():
         conn.close()
 
         session["has_passkey"] = True
+        session["passkey_verified_at"] = int(time.time())
 
         return jsonify({"ok": True})
 
@@ -422,6 +424,7 @@ def login_verify():
         session.pop("webauthn_login_state", None)
         session["user_id"] = int(pending_user_id)
         session["has_passkey"] = True
+        session["passkey_verified_at"] = int(time.time())
         session.permanent = True
 
         redirect_url = "/dashboard"
@@ -536,9 +539,20 @@ def reset_authenticators_for_user():
     if not user_id:
         return jsonify({"ok": False, "error": "Not authenticated"}), 401
 
+    verified_at = int(session.get("passkey_verified_at") or 0)
+    if int(time.time()) - verified_at > PASSKEY_RESET_FRESH_SECONDS:
+        return jsonify({
+            "ok": False,
+            "error": "Fresh passkey verification required before resetting passkeys."
+        }), 403
+
     conn = get_db()
     cur = conn.cursor()
     cur.execute("DELETE FROM authenticators WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
+
+    session.pop("has_passkey", None)
+    session.pop("passkey_verified_at", None)
+
     return jsonify({"ok": True})
