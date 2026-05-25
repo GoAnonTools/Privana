@@ -77,17 +77,7 @@ def validate_platform(value: str) -> str:
 
     return "macos" if value == "mac" else value
 
-# ---- DB helper (use your local version to keep behavior) ----
-# Ensure users.token column exists (runs once, harmless later)
-def _ensure_user_token_column():
-    conn = get_db()
-    cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
-    if "token" not in cols:
-        conn.execute("ALTER TABLE users ADD COLUMN token TEXT")
-        conn.commit()
-    conn.close()
-
-_ensure_user_token_column()
+# ---- User token helper ----
 
 import secrets
 
