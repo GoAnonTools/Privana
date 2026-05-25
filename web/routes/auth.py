@@ -2,6 +2,7 @@
 from markupsafe import Markup
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 import os
+import logging
 import secrets
 import hashlib
 import sqlite3
@@ -56,7 +57,7 @@ def log_event(event_type: str, user_id=None, details: str | None = None, severit
         )
         conn.commit()
     except Exception:
-        pass
+        log.exception("Failed to write security event")
     finally:
         try: conn.close()
         except Exception: pass
@@ -229,7 +230,7 @@ def consume_trial_if_expired(user_id: int) -> None:
             conn.commit()
 
     except Exception:
-        pass
+        log.exception("Failed to consume expired trial for user_id=%s", user_id)
     finally:
         conn.close()
 
