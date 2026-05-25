@@ -59,8 +59,10 @@ def log_event(event_type: str, user_id=None, details: str | None = None, severit
     except Exception:
         log.exception("Failed to write security event")
     finally:
-        try: conn.close()
-        except Exception: pass
+        try:
+            conn.close()
+        except Exception:
+            log.exception("Failed to close security event DB connection")
 
 def recent_count(event_types: tuple[str, ...], ip: str, minutes: int) -> int:
     """
