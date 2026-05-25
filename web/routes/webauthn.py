@@ -28,6 +28,7 @@ if ENVIRONMENT == "production":
         raise RuntimeError("WEBAUTHN_ORIGIN must be set to your HTTPS production origin in production.")
 
 from web.db import DB_PATH, get_db
+from rate_limit import limiter
 
 
 # ---------- Tables ----------
@@ -95,6 +96,7 @@ def options_to_json(options):
 # =========================================================
 
 @webauthn_bp.route("/register/options", methods=["POST"])
+@limiter.limit("5 per minute")
 def register_options():
     try:
         user_id = session.get("user_id")
@@ -156,6 +158,7 @@ def register_options():
 
 
 @webauthn_bp.route("/register/verify", methods=["POST"])
+@limiter.limit("5 per minute")
 def register_verify():
     """
     Completes registration. On success:
@@ -321,6 +324,7 @@ def register_verify():
 # =========================================================
 
 @webauthn_bp.route("/login/options", methods=["POST"])
+@limiter.limit("10 per minute")
 def login_options():
     try:
         pending_user_id = session.get("pending_login_user_id")
@@ -359,6 +363,7 @@ def login_options():
 
 
 @webauthn_bp.route("/login/verify", methods=["POST"])
+@limiter.limit("10 per minute")
 def login_verify():
     try:
         pending_user_id = session.get("pending_login_user_id")
@@ -443,6 +448,7 @@ def login_verify():
 # =====================================================================
 
 @webauthn_bp.route("/assert/options-precheck", methods=["POST"])
+@limiter.limit("10 per minute")
 def assert_options_precheck():
     try:
         options, state = fido_server.authenticate_begin(
@@ -459,6 +465,7 @@ def assert_options_precheck():
 
 
 @webauthn_bp.route("/assert/verify-precheck", methods=["POST"])
+@limiter.limit("10 per minute")
 def assert_verify_precheck():
     try:
         state = session.get("webauthn_assert_state_precheck")
@@ -523,6 +530,7 @@ def assert_verify_precheck():
 # ===========================================
 
 @webauthn_bp.route("/reset", methods=["POST"])
+@limiter.limit("3 per minute")
 def reset_authenticators_for_user():
     user_id = session.get("user_id")
     if not user_id:
