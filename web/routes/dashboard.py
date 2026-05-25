@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 import sqlite3
 import os
+import logging
 import stat
 import re
 from markupsafe import escape
@@ -54,6 +55,8 @@ def public_app_url() -> str:
 
 # Blueprint
 dashboard_bp = Blueprint("dashboard", __name__)
+
+log = logging.getLogger("privana.web.dashboard")
 
 ALLOWED_PLATFORMS = {"windows", "macos", "mac", "linux", "android", "ios"}
 
@@ -165,6 +168,7 @@ def _trial_context(user_id: int):
             trial["days_left"] = days_left
 
     except Exception:
+        log.exception("Failed to calculate trial context for user_id=%s", user_id)
         trial["status"] = "active"
         trial["days_left"] = TRIAL_DAYS
 
