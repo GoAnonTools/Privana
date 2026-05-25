@@ -133,8 +133,8 @@ def _stub_issue_config(user_id: int, device_id: int) -> dict:
     Generate a placeholder client config. This will NOT connect anywhere,
     it’s only for exercising the UI before the real server exists.
     """
-    # fake 32-byte key (base64) so it "looks" like a WG key
-    priv_b64 = base64.b64encode(os.urandom(32)).decode("ascii")
+    # Obvious placeholder: never generate realistic-looking private keys in stub mode.
+    private_key_placeholder = "PLACEHOLDER_CLIENT_PRIVATE_KEY"
 
     # pick a stable-ish IP from WG_CIDR based on device_id
     try:
@@ -148,7 +148,7 @@ def _stub_issue_config(user_id: int, device_id: int) -> dict:
 
     conf = f"""# STUB CONFIG — for UI testing only. Will not connect until server is deployed.
 [Interface]
-PrivateKey = {priv_b64}
+PrivateKey = {private_key_placeholder}
 Address = {ip}/32
 DNS = {WG_DNS}
 
@@ -158,7 +158,11 @@ Endpoint = {WG_HOST}:{WG_PORT}
 AllowedIPs = {WG_ALLOWED}
 PersistentKeepalive = 25
 """
-    return {"success": True, "public_key": "STUBPUBLICKEY", "config": conf}
+    return {
+        "success": True,
+        "public_key": "PLACEHOLDER_CLIENT_PUBLIC_KEY",
+        "config": conf,
+    }
 
 # -----------------------------------------------------------------------------
 # 1) One-click config (generates + downloads client .conf)
