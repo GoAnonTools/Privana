@@ -240,9 +240,7 @@ def register_options():
         return jsonify(data)
 
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn register options failed")
         return jsonify({"error": "register_options_failed"}), 500
 
 
@@ -407,9 +405,7 @@ def register_verify():
         return jsonify({"ok": True})
 
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn register verify failed")
         return jsonify({"error": "register_verify_failed"}), 500
 
 # =========================================================
@@ -454,9 +450,7 @@ def login_options():
         return jsonify(options_to_json(options))
 
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn login options failed")
         return jsonify({"error": "login_options_failed"}), 500
 
 
@@ -541,9 +535,7 @@ def login_verify():
         return jsonify({"ok": True, "redirect": redirect_url})
 
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn login verify failed")
         return jsonify({"ok": False, "error": "login_verify_failed"}), 500
 
 # =====================================================================
@@ -561,9 +553,7 @@ def assert_options_precheck():
         session["webauthn_assert_state_precheck"] = state
         return jsonify(options)
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn assert options failed")
         return jsonify({"error": "assert_options_failed"}), 500
 
 
@@ -631,9 +621,7 @@ def assert_verify_precheck():
         return jsonify({"ok": True, "allowed": allowed})
 
     except Exception:
-        if ENVIRONMENT != "production":
-            import traceback
-            print(traceback.format_exc())
+        log.exception("WebAuthn assert verify precheck failed")
         return jsonify({"error": "assert_options_failed"}), 500
 
 
