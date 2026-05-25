@@ -229,6 +229,11 @@ def auth_required(f):
 # -------------------------------------------------------------------
 # Routes
 # -------------------------------------------------------------------
+def _api_error_response(client_message: str = "Internal server error", status: int = 500):
+    """Return a generic API error without leaking internal exception details."""
+    return jsonify({"success": False, "message": client_message}), status
+
+
 @app.route("/api/status", methods=["GET"])
 @auth_required
 def get_status():
@@ -254,7 +259,8 @@ def get_status():
             "peers": peers
         })
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error getting status: {str(e)}"})
+        api_log.exception("status endpoint failed")
+        return _api_error_response("Failed to get status")
 
 @app.route("/api/start", methods=["POST"])
 @auth_required
@@ -266,7 +272,8 @@ def start_server():
         success, message = wg_manager.start_interface()
         return jsonify({"success": success, "message": message})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/stop", methods=["POST"])
 @auth_required
@@ -278,7 +285,8 @@ def stop_server():
         success, message = wg_manager.stop_interface()
         return jsonify({"success": success, "message": message})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/restart", methods=["POST"])
 @auth_required
@@ -291,7 +299,8 @@ def restart_server():
         success, message = wg_manager.start_interface()
         return jsonify({"success": success, "message": message})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/peer/add", methods=["POST"])
 @auth_required
@@ -322,7 +331,8 @@ def add_peer():
         else:
             return jsonify({"success": False, "message": result_or_message})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 
 @app.route("/api/peer/remove", methods=["POST"])
@@ -341,7 +351,8 @@ def remove_peer():
         success, message = wg_manager.remove_peer(public_key)
         return jsonify({"success": success, "message": message})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/peer/config/<path:public_key>", methods=["GET"])
 @auth_required
@@ -356,7 +367,8 @@ def get_peer_config(public_key):
         else:
             return jsonify({"success": False, "message": "Peer not found"})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/peer/update", methods=["POST"])
 @auth_required
@@ -374,7 +386,8 @@ def update_peer():
         wg_manager.update_peer_last_connected(public_key)
         return jsonify({"success": True, "message": "Peer updated successfully"})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/stats", methods=["GET"])
 @auth_required
@@ -389,7 +402,8 @@ def get_stats():
         else:
             return jsonify({"success": False, "message": "Failed to get stats"})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 @app.route("/api/config", methods=["GET"])
 @auth_required
@@ -400,7 +414,8 @@ def get_server_config():
     try:
         return jsonify({"success": True, "config": wg_manager.generate_config(include_private_key=False)})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
 
 # Optional: simple health snapshot (still HMAC-protected)
 @app.route("/api/health", methods=["GET"])
@@ -417,7 +432,8 @@ def api_health():
             "peers_count": len(peers)
         })
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"})
+        api_log.exception("API endpoint failed")
+        return _api_error_response()
     
 @app.get("/healthz")
 def healthz():
