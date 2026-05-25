@@ -9,6 +9,7 @@ import ipaddress
 from datetime import datetime
 import hashlib
 import threading
+from pathlib import Path
 import config
 
 # WireGuard base64 public key format: 43 chars plus "="
@@ -33,6 +34,28 @@ def sanitize_wg_config(config_text: str) -> str:
         lambda m: "# REMOVED FOR SECURITY: " + m.group(0).strip(),
         config_text,
     )
+
+def validate_wg_config_path(config_path: str, config_dir: str) -> str:
+    """
+    Resolve and validate a server WireGuard config path before writing or
+    passing it to wg-quick.
+
+    Only *.conf files directly inside WG_CONFIG_DIR are allowed.
+    """
+    if not config_path:
+        raise ValueError("Missing WireGuard config path.")
+
+    base_dir = Path(config_dir).expanduser().resolve(strict=False)
+    target = Path(config_path).expanduser().resolve(strict=False)
+
+    if target.suffix != ".conf":
+        raise ValueError("WireGuard config path must end with .conf.")
+
+    if target.parent != base_dir:
+        raise ValueError("WireGuard config path must be inside WG_CONFIG_DIR.")
+
+    return str(target)
+
 
 def secure_write_file(path: str, content: str) -> None:
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -196,11 +219,14 @@ PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED 
         return cfg
 
     def save_config(self, config_path=None):
-        """Save the WireGuard configuration to a file"""
+        """Save the WireGuard configuration to a validated file path."""
         if not config_path:
-            config_path = os.path.join(os.path.expanduser("~"), f"{self.config.WG_INTERFACE}.conf")
+            config_path = os.path.join(
+                self.config.WG_CONFIG_DIR,
+                f"{self.config.WG_INTERFACE}.conf",
+            )
 
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        config_path = validate_wg_config_path(config_path, self.config.WG_CONFIG_DIR)
         config_content = sanitize_wg_config(self.generate_config(include_private_key=True))
         secure_write_file(config_path, config_content)
         return config_path
