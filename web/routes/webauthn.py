@@ -470,6 +470,16 @@ def assert_options_precheck():
 @webauthn_bp.route("/assert/verify-precheck", methods=["POST"])
 @limiter.limit("10 per minute")
 def assert_verify_precheck():
+    """
+    Verify a signup/trial precheck assertion without leaking whether the
+    authenticator is known or whether its owner has consumed a trial.
+
+    Response is intentionally uniform:
+      { "ok": true, "allowed": true|false }
+
+    No recognized/blocked details are returned to avoid passkey/account
+    enumeration.
+    """
     try:
         state = session.get("webauthn_assert_state_precheck")
         if not state:
@@ -484,12 +494,13 @@ def assert_verify_precheck():
         cur.execute("SELECT * FROM authenticators WHERE credential_id_hash = ?", (credential_id_hash,))
         rec = cur.fetchone()
 
-        # Unknown authenticator → allow trial
+        # Unknown authenticator: do not reveal recognition status.
+        # For the signup gate, this means the user may continue.
         if not rec:
             conn.close()
-            return jsonify({"ok": True, "recognized": False, "blocked": False})
+            return jsonify({"ok": True, "allowed": True})
 
-        # Verify signature using stored public key
+        # Known authenticator: verify signature before applying trial rules.
         from fido2.cose import CoseKey
         public_key = CoseKey.from_cose(rec["public_key"])
 
@@ -506,20 +517,18 @@ def assert_verify_precheck():
             signature=signature,
         )
 
-        # Update sign count
         cur.execute("UPDATE authenticators SET sign_count = ? WHERE id = ?", (auth_data.sign_count, rec["id"]))
 
-        # Block if the owning user has consumed trial
-        blocked = False
+        allowed = True
         if rec["user_id"]:
             cur.execute("SELECT trial_consumed_at FROM users WHERE id = ?", (rec["user_id"],))
             u = cur.fetchone()
-            blocked = bool(u and u["trial_consumed_at"])
+            allowed = not bool(u and u["trial_consumed_at"])
 
         conn.commit()
         conn.close()
 
-        return jsonify({"ok": True, "recognized": True, "blocked": blocked})
+        return jsonify({"ok": True, "allowed": allowed})
 
     except Exception:
         if ENVIRONMENT != "production":
