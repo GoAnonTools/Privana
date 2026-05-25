@@ -373,6 +373,7 @@ def download_config_by_token(token: str):
             if exp.tzinfo is None:
                 exp = exp.replace(tzinfo=timezone.utc)
         except Exception:
+            current_app.logger.exception("Invalid config download token expiry")
             exp = datetime.now(timezone.utc)
         if datetime.now(timezone.utc) > exp:
             return jsonify({"success": False, "message": "token expired"}), 400
