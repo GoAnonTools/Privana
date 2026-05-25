@@ -132,6 +132,14 @@ def _is_subscription_ok(u: sqlite3.Row) -> bool:
 
     return datetime.now(timezone.utc) < created + timedelta(days=TRIAL_DAYS)
 
+
+def _require_https_upstream(url: str) -> None:
+    """Installer proxy upstreams must use HTTPS."""
+    parsed = urlparse(url)
+    if parsed.scheme.lower() != "https":
+        raise ValueError("Installer upstream must use HTTPS.")
+
+
 # -----------------------------------------------------------------------------
 # Utility for upstream filename detection
 # -----------------------------------------------------------------------------
@@ -277,6 +285,12 @@ def download_wireguard(platform: str):
 
     upstream = UPSTREAMS[platform]
 
+    try:
+        _require_https_upstream(upstream)
+    except ValueError:
+        current_app.logger.error("Blocked non-HTTPS WireGuard upstream for platform=%s", platform)
+        return jsonify({"ok": False, "error": "invalid upstream"}), 500
+
     # Stores/docs must open externally
     if platform in ("android", "ios", "linux"):
         return redirect(upstream, code=302)
@@ -312,6 +326,12 @@ def download_meta(platform: str):
     url = UPSTREAMS.get(platform)
     if not url:
         return jsonify({"ok": False, "error": "unknown platform"}), 404
+
+    try:
+        _require_https_upstream(url)
+    except ValueError:
+        current_app.logger.error("Blocked non-HTTPS WireGuard metadata upstream for platform=%s", platform)
+        return jsonify({"ok": False, "error": "invalid upstream"}), 500
 
     # For store/docs, just say it's a redirect target
     if platform in ("android", "ios", "linux"):
