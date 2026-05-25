@@ -384,7 +384,7 @@ def toggle_protection():
                 return jsonify({"success": False, "message": "No device configuration found"}), 400
 
             # Save config temporarily (same behavior as your code)
-            config_path = os.path.join(os.path.expanduser("~"), "privana.conf")
+            config_path = os.path.join(os.path.expanduser("~"), ".privana", "privana.conf")
             fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
             try:
                 os.write(fd, config.encode("utf-8"))

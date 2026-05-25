@@ -10,6 +10,7 @@ import base64
 from datetime import datetime
 import qrcode
 import io
+from pathlib import Path
 
 
 log = logging.getLogger("privana.web.wireguard")
@@ -28,7 +29,30 @@ def sanitize_wg_config(config_text: str) -> str:
         config_text,
     )
 
+def validate_wg_config_path(config_path: str) -> str:
+    """
+    Resolve and validate a WireGuard config path before passing it to wg-quick.
+
+    Only ~/.privana/*.conf is allowed. This prevents accidental execution of
+    attacker-controlled paths or unexpected files through wg-quick.
+    """
+    if not config_path:
+        raise ValueError("Missing WireGuard config path.")
+
+    base_dir = (Path.home() / ".privana").resolve()
+    target = Path(config_path).expanduser().resolve(strict=False)
+
+    if target.suffix != ".conf":
+        raise ValueError("WireGuard config path must end with .conf.")
+
+    if target.parent != base_dir:
+        raise ValueError("WireGuard config path must be inside ~/.privana.")
+
+    return str(target)
+
+
 def secure_write_file(path: str, content: str) -> None:
+    path = validate_wg_config_path(path)
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
     try:
@@ -102,6 +126,8 @@ def check_wireguard_status():
 def toggle_wireguard_protection(config_path, enable=True):
     """Start or stop WireGuard protection"""
     try:
+        config_path = validate_wg_config_path(config_path)
+
         if enable:
             # Start WireGuard
             if os.path.exists(config_path):
