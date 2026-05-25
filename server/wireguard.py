@@ -118,12 +118,12 @@ class WireGuardManager:
                         if wg_path.endswith("wg.exe")
                         else "wg-quick"
                     )
-                    print(f"WireGuard found at: {wg_path}")
+                    log.info("WireGuard found")
                     return True
             except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
                 continue
 
-        print("WireGuard not found. Please install from https://www.wireguard.com/install/")
+        log.warning("WireGuard not found. Please install WireGuard tools.")
         return False
 
     # ---------------------------
@@ -171,7 +171,7 @@ class WireGuardManager:
             self.config.WG_PRIVATE_KEY = private_key
             self.config.WG_PUBLIC_KEY = public_key
 
-            print(f"Generated WireGuard keys. Public Key: {public_key}")
+            log.info("Generated WireGuard keypair")
 
     def _generate_private_key(self):
         """Generate a real WireGuard private key using wg."""
@@ -241,17 +241,17 @@ PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED 
 
         # Skip interface management in development on Windows
         if os.name == "nt" and os.environ.get("ENVIRONMENT") == "development":
-            print("🚀 Development Mode: Skipping WireGuard interface management on Windows")
-            print("   - API server will run for testing")
-            print("   - Peer management and config generation will work")
-            print("   - Actual VPN server will run on your Panama production server")
+            log.info("Development mode: skipping WireGuard interface management on Windows")
+            log.info("Development mode: API server will run for testing")
+            log.info("Development mode: peer management and config generation will work")
+            log.info("Development mode: actual VPN server runs on production server")
             return True, "Development mode - interface management skipped"
 
         try:
             config_path = self.save_config()
             try:
                 subprocess.run([self.wg_quick_command, "up", config_path], check=True, timeout=30)
-                print(f"WireGuard interface {self.config.WG_INTERFACE} started successfully")
+                log.info("WireGuard interface started successfully")
                 return True, "Interface started successfully"
             except (subprocess.CalledProcessError, FileNotFoundError):
                 return False, "WireGuard interface management failed"
@@ -268,7 +268,7 @@ PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED 
 
         try:
             subprocess.run([self.wg_quick_command, "down", self.config.WG_INTERFACE], check=True, timeout=30)
-            print(f"WireGuard interface {self.config.WG_INTERFACE} stopped successfully")
+            log.info("WireGuard interface stopped successfully")
             return True, "Interface stopped successfully"
         except subprocess.CalledProcessError:
             log.exception("WireGuard interface stop command failed")
