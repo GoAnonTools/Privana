@@ -550,7 +550,12 @@ def assert_options_precheck():
             credentials=None,  # allow any resident credential for this RP
             user_verification="required",
         )
-        session["webauthn_assert_state_precheck"] = state
+        session["webauthn_assert_state_precheck_id"] = _store_webauthn_state(
+            0,
+            "assert_precheck",
+            state,
+        )
+        session.pop("webauthn_assert_state_precheck", None)  # cleanup legacy client-side state
         return jsonify(options)
     except Exception:
         log.exception("WebAuthn assert options failed")
@@ -571,7 +576,10 @@ def assert_verify_precheck():
     enumeration.
     """
     try:
-        state = session.get("webauthn_assert_state_precheck")
+        state_id = session.pop("webauthn_assert_state_precheck_id", None)
+        state = _pop_webauthn_state(0, "assert_precheck", state_id)
+        session.pop("webauthn_assert_state_precheck", None)  # cleanup legacy client-side state
+
         if not state:
             return jsonify({"error": "Bad state"}), 400
 
