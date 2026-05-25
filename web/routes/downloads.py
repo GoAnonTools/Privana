@@ -17,6 +17,7 @@ from flask import (
     redirect, Response, stream_with_context, url_for, abort, flash, current_app
 )
 from web.utils.guards import require_passkey_for_sensitive_action
+from rate_limit import limiter
 from web.db import get_db as central_get_db
 
 
@@ -73,8 +74,13 @@ WG_ALLOWED = os.getenv("WG_ALLOWED_IPS", "0.0.0.0/0,::/0")
 TRIAL_DAYS = 7
 
 
-def _db():
-    return central_get_db()
+
+def _client_ip() -> str:
+    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return forwarded or request.remote_addr or "unknown"
+
+
+def _db():    return central_get_db()
 
 
 
@@ -330,16 +336,27 @@ def download_meta(platform: str):
 def _mint_config_token(user_id: int, device_id: int, minutes: int = 10) -> str:
     token = secrets.token_urlsafe(32)
     exp = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+    requester_ip = _client_ip()
     with _db() as conn:
         conn.execute(
-            "INSERT INTO config_download_tokens (user_id, device_id, token, expires_at) VALUES (?,?,?,?)",
-            (user_id, device_id, token, exp),
+            """
+            INSERT INTO config_download_tokens (
+                user_id,
+                device_id,
+                token,
+                requester_ip,
+                expires_at
+            )
+            VALUES (?,?,?,?,?)
+            """,
+            (user_id, device_id, token, requester_ip, exp),
         )
         conn.commit()
     return token
 
 
 @downloads_bp.get("/download/config/by-token/<token>")
+@limiter.limit("10 per minute")
 def download_config_by_token(token: str):
     # Validate token & get user/device
     with _db() as conn:
@@ -358,6 +375,13 @@ def download_config_by_token(token: str):
             exp = datetime.now(timezone.utc)
         if datetime.now(timezone.utc) > exp:
             return jsonify({"success": False, "message": "token expired"}), 400
+
+        requester_ip = row["requester_ip"]
+        current_ip = _client_ip()
+        if requester_ip and requester_ip != current_ip:
+            conn.execute("UPDATE config_download_tokens SET used = 1 WHERE id = ?", (row["id"],))
+            conn.commit()
+            return jsonify({"success": False, "message": "invalid or used token"}), 400
 
         user_id = int(row["user_id"])
         device_id = int(row["device_id"])

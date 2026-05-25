@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS config_download_tokens (
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   device_id  INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
   token      TEXT NOT NULL UNIQUE,
+  requester_ip TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   used       INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -116,6 +117,15 @@ def init_db():
         conn.execute("PRAGMA busy_timeout=5000")
         conn.execute("PRAGMA foreign_keys=ON")
         conn.executescript(SCHEMA_SQL)
+
+        # Migration: config_download_tokens.requester_ip was added after the
+        # original token table. Existing local dev DBs may not have it yet.
+        cols = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(config_download_tokens)").fetchall()
+        }
+        if "requester_ip" not in cols:
+            conn.execute("ALTER TABLE config_download_tokens ADD COLUMN requester_ip TEXT NOT NULL DEFAULT ''")
 
 def reset_db():
     """Drop known tables so we can recreate the schema without deleting the file."""
