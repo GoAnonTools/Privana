@@ -422,7 +422,7 @@ def toggle_protection():
             config_path = os.path.join(os.path.expanduser("~"), ".privana", "privana.conf")
             fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
             try:
-                os.write(fd, config.encode("utf-8"))
+                os.write(fd, cfg["config"].encode("utf-8"))
             finally:
                 os.close(fd)
 
