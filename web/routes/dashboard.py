@@ -104,6 +104,33 @@ def _qr_serializer() -> URLSafeSerializer:
     return URLSafeSerializer(current_app.config["SECRET_KEY"], salt="qr-config")
 
 
+
+def _upsert_dashboard_device_config(
+    conn,
+    device_id: int,
+    public_key: str,
+    assigned_ip: str,
+    config_template: str,
+) -> None:
+    """Insert or update an encrypted dashboard-generated WireGuard config."""
+    encrypted_config = encrypt_text(config_template)
+    existing = conn.execute(
+        "SELECT id FROM device_configs WHERE device_id = ?",
+        (device_id,),
+    ).fetchone()
+
+    if existing:
+        conn.execute(
+            "UPDATE device_configs SET public_key=?, assigned_ip=?, config=?, created_at=datetime('now') WHERE device_id=?",
+            (public_key, assigned_ip, encrypted_config, device_id),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO device_configs (device_id, public_key, assigned_ip, config) VALUES (?,?,?,?)",
+            (device_id, public_key, assigned_ip, encrypted_config),
+        )
+
+
 # ---- Trial helper for banner/CTA ----
 def _trial_context(user_id: int):
     """
@@ -615,19 +642,13 @@ PersistentKeepalive = 25
 """
 
     # Upsert into device_configs — no private key stored
-    existing = conn.execute(
-        "SELECT id FROM device_configs WHERE device_id = ?", (device_id,)
-    ).fetchone()
-    if existing:
-        conn.execute(
-            "UPDATE device_configs SET public_key=?, assigned_ip=?, config=?, created_at=datetime('now') WHERE device_id=?",
-            (public_key, assigned_ip, encrypt_text(config_template), device_id),
-        )
-    else:
-        conn.execute(
-            "INSERT INTO device_configs (device_id, public_key, assigned_ip, config) VALUES (?,?,?,?)",
-            (device_id, public_key, assigned_ip, encrypt_text(config_template)),
-        )
+    _upsert_dashboard_device_config(
+        conn,
+        device_id,
+        public_key,
+        assigned_ip,
+        config_template,
+    )
     conn.execute(
         "UPDATE devices SET has_config=1, config_created_at=datetime('now') WHERE id=?",
         (device_id,),
