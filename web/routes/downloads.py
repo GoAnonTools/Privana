@@ -97,17 +97,23 @@ def _db():    return central_get_db()
 
 
 def _get_user(user_id: int):
-    with _db() as conn:
+    conn = _db()
+    try:
         return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    finally:
+        conn.close()
 
 
 def _device_belongs(user_id: int, device_id: int) -> bool:
-    with _db() as conn:
+    conn = _db()
+    try:
         row = conn.execute(
             "SELECT id FROM devices WHERE id = ? AND user_id = ?",
             (device_id, user_id)
         ).fetchone()
         return row is not None
+    finally:
+        conn.close()
 
 
 def _is_subscription_ok(u: sqlite3.Row) -> bool:
