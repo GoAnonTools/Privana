@@ -17,6 +17,7 @@ This module is registered in api.py with:
 
 import base64
 import hashlib
+import logging
 import os
 import secrets
 import sqlite3
@@ -29,6 +30,8 @@ from flask import Blueprint, jsonify, request
 from kyber_py.kyber import Kyber768
 
 pqc_bp = Blueprint("pqc", __name__)
+
+log = logging.getLogger("privana.server.pqc")
 
 # ---------------------------------------------------------------------------
 # Durable PQC session store
@@ -232,6 +235,7 @@ def pqc_init():
     try:
         shared_secret, kem_ct = Kyber768.encaps(client_pub)
     except Exception:
+        log.exception("PQC KEM encapsulation failed")
         return jsonify({"success": False, "message": "KEM encapsulation failed"}), 500
 
     session_id = secrets.token_hex(32)

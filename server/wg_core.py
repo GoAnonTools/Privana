@@ -4,6 +4,8 @@ import os, sqlite3, subprocess, ipaddress, json
 from pathlib import Path
 from datetime import datetime
 
+log = logging.getLogger("privana.server.wg_core")
+
 # --- env / defaults ---
 WG_IFACE   = os.getenv("WG_INTERFACE", "wg0")
 WG_HOST    = os.getenv("WG_HOST", "127.0.0.1")
@@ -58,7 +60,7 @@ def _server_public_key():
             if os.path.exists(p):
                 return open(p,"r",encoding="utf-8").read().strip()
         except Exception:
-            pass
+            log.exception("Failed to read WireGuard public key file: %s", p)
     # fallback: wg show
     code, out, err = _wg(["show", WG_IFACE, "public-key"])
     return out.strip() if code==0 and out.strip() else None
