@@ -1,5 +1,6 @@
 # web/db.py
 from pathlib import Path
+import os
 import sqlite3
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -126,6 +127,52 @@ def init_db():
         }
         if "requester_ip" not in cols:
             conn.execute("ALTER TABLE config_download_tokens ADD COLUMN requester_ip TEXT NOT NULL DEFAULT ''")
+
+    cleanup_privacy_retention()
+
+
+def cleanup_privacy_retention():
+    """
+    Minimize retained IP data.
+
+    Privana needs recent IPs for anti-abuse, rate limiting, token binding, and
+    security review, but raw IPs should not remain linked to anonymous accounts
+    indefinitely.
+
+    Defaults:
+    - security_events.ip is nulled after 24 hours.
+    - used/old config download tokens are deleted after 24 hours.
+    """
+    security_ip_hours = int(os.getenv("PRIVANA_SECURITY_IP_RETENTION_HOURS", "24"))
+    token_hours = int(os.getenv("PRIVANA_CONFIG_TOKEN_RETENTION_HOURS", "24"))
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA busy_timeout=5000")
+
+        if security_ip_hours >= 0:
+            conn.execute(
+                """
+                UPDATE security_events
+                SET ip = NULL
+                WHERE ip IS NOT NULL
+                  AND created_at < DATETIME('now', ?)
+                """,
+                (f"-{security_ip_hours} hours",),
+            )
+
+        if token_hours >= 0:
+            conn.execute(
+                """
+                DELETE FROM config_download_tokens
+                WHERE used = 1
+                   OR expires_at < DATETIME('now', ?)
+                """,
+                (f"-{token_hours} hours",),
+            )
+
+        conn.commit()
+
+
 
 def reset_db():
     """Drop known tables so we can recreate the schema without deleting the file."""
