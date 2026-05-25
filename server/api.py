@@ -454,7 +454,17 @@ try:
     except (ImportError, ModuleNotFoundError):
         from pqc_routes import pqc_bp
     app.register_blueprint(pqc_bp)
-    print("✅ PQC blueprint registered (/api/pqc/init)")
+
+    # Protect the PQC KEM endpoint with the same HMAC+nonce auth as the rest
+    # of the API. Wrapping after blueprint registration avoids a circular import
+    # between server/api.py and server/pqc_routes.py.
+    pqc_endpoint = "pqc.pqc_init"
+    if pqc_endpoint in app.view_functions:
+        app.view_functions[pqc_endpoint] = auth_required(app.view_functions[pqc_endpoint])
+    else:
+        raise RuntimeError("PQC endpoint was not registered as expected.")
+
+    print("✅ PQC blueprint registered and protected (/api/pqc/init)")
 except Exception as e:
     print(f"❌ Failed to register PQC blueprint: {e}")
 
