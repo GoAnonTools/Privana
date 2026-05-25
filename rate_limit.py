@@ -26,13 +26,10 @@ _ENV = os.getenv("ENVIRONMENT", "development").lower()
 
 # Warn loudly if running in production without a persistent storage backend.
 # In-memory limits reset on every restart and don't work across multiple workers.
-if _STORAGE_URI == "memory://" and _ENV == "production":
-    warnings.warn(
-        "Rate limiter is using in-memory storage in a production environment. "
-        "Limits will reset on restart and won't work across workers. "
-        "Set RATELIMIT_STORAGE_URI=redis://localhost:6379/0 in your .env file.",
-        RuntimeWarning,
-        stacklevel=2,
+if _STORAGE_URI == "memory://" and _ENV != "development":
+    raise RuntimeError(
+        "RATELIMIT_STORAGE_URI must be set to a shared backend outside development. "
+        "Use Redis, for example: redis://localhost:6379/0"
     )
 
 limiter = Limiter(
