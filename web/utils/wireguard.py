@@ -96,22 +96,15 @@ def generate_wireguard_keys():
         raise RuntimeError("WireGuard key generation failed.") from exc
 
 def generate_wireguard_config(user_id, device_name, private_key, server_public_key, server_endpoint):
-    """Generate a complete WireGuard configuration for a device"""
-    # Generate a unique IP address for this device
-    ip_address = f"10.0.{(user_id % 256)}.{uuid.uuid4().bytes[0] % 254 + 1}/32"
-    
-    config = f'''[Interface]
-PrivateKey = PLACEHOLDER
-Address = {ip_address}
-DNS = 1.1.1.1, 1.0.0.1
+    """
+    Deprecated unsafe local config generator.
 
-[Peer]
-PublicKey = {server_public_key}
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = {server_endpoint}
-PersistentKeepalive = 25
-'''
-    return config
+    Production config allocation must go through the server-side WireGuard API
+    so IP assignment is centralized and private keys never leave the client.
+    """
+    raise NotImplementedError(
+        "Local WireGuard config generation is disabled; use the server-side registration flow."
+    )
 
 def check_wireguard_status():
     """Check if WireGuard is currently active"""
@@ -150,116 +143,12 @@ def toggle_wireguard_protection(config_path, enable=True):
         return False, "WireGuard protection could not be toggled."
     
 def generate_platform_config(user_id, device_name, private_key, server_public_key, server_endpoint, platform):
-    """Generate platform-specific WireGuard configuration"""
-    
-    # Generate a unique IP address for this device
-    ip_address = f"10.0.{(user_id % 256)}.{uuid.uuid4().bytes[0] % 254 + 1}/32"
-    
-    if platform in ['windows', 'linux', 'mac']:
-        # Standard INI format for desktop platforms
-        config = f'''[Interface]
-PrivateKey = PLACEHOLDER
-Address = {ip_address}
-DNS = 1.1.1.1, 1.0.0.1
+    """
+    Deprecated unsafe platform config generator.
 
-[Peer]
-PublicKey = {server_public_key}
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = {server_endpoint}
-PersistentKeepalive = 25
-'''
-        return config, 'text/plain'
-    
-    elif platform in ['android', 'ios']:
-        # Mobile platforms need a different format
-        mobile_config = {
-            "interface": {
-                "privateKey": private_key,
-                "addresses": [ip_address],
-                "dns": ["1.1.1.1", "1.0.0.1"]
-            },
-            "peer": {
-                "publicKey": server_public_key,
-                "allowedIPs": ["0.0.0.0/0", "::/0"],
-                "endpoint": server_endpoint,
-                "persistentKeepalive": 25
-            }
-        }
-        
-        # Generate QR code for mobile
-        qr_img = qrcode.make(str(mobile_config))
-        qr_buffer = io.BytesIO()
-        qr_img.save(qr_buffer)
-        qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode()
-        
-        # Capitalize the platform name properly
-        platform_capitalized = platform.capitalize()
-        
-        safe_device_name = escape(device_name)
-        safe_platform = escape(platform)
-        safe_platform_capitalized = escape(platform_capitalized)
-        safe_download_name = re.sub(r"[^A-Za-z0-9_.-]+", "_", device_name or "device")
-        safe_download_name_js = json.dumps(f"{safe_download_name}_privana.conf")
-
-        # Create HTML page with QR code and download option
-        html_content = f'''<!DOCTYPE html>
-<html>
-<head>
-    <title>Privana Configuration for {safe_device_name}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; text-align: center; margin: 40px; }}
-        .qr-container {{ margin: 20px auto; display: inline-block; }}
-        .instructions {{ max-width: 600px; margin: 20px auto; text-align: left; }}
-        .download-btn {{ background: #4a6fa5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px; }}
-    </style>
-</head>
-<body>
-    <h1>Privana Configuration for {safe_device_name}</h1>
-    <div class="qr-container">
-        <img src="data:image/png;base64,{qr_base64}" alt="WireGuard Configuration QR Code">
-    </div>
-    <div class="instructions">
-        <h2>Instructions for {safe_platform_capitalized}:</h2>
-        <ol>
-            <li>Install the WireGuard app from your app store</li>
-            <li>Open the WireGuard app</li>
-            <li>Tap the "+" button to add a new tunnel</li>
-            <li>Choose "Scan from QR code"</li>
-            <li>Scan the QR code shown above</li>
-            <li>Name the tunnel "{safe_device_name}"</li>
-            <li>Toggle the tunnel to connect</li>
-        </ol>
-    </div>
-    <a href="#" class="download-btn" onclick="downloadConfig()">Download Config File</a>
-    
-    <script>
-    function downloadConfig() {{
-        const configData = `{base64.b64encode(str(mobile_config).encode()).decode()}`;
-        const blob = new Blob([atob(configData)], {{type: 'application/json'}});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = {safe_download_name_js};
-        a.click();
-        URL.revokeObjectURL(url);
-    }}
-    </script>
-</body>
-</html>
-'''
-        return html_content, 'text/html'
-    
-    else:
-        # Fallback to standard format
-        config = f'''[Interface]
-PrivateKey = PLACEHOLDER
-Address = {ip_address}
-DNS = 1.1.1.1, 1.0.0.1
-
-[Peer]
-PublicKey = {server_public_key}
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = {server_endpoint}
-PersistentKeepalive = 25
-'''
-        return config, 'text/plain'
+    This legacy helper could embed private keys in mobile/QR output and used
+    non-authoritative IP assignment. Use the server-side registration flow.
+    """
+    raise NotImplementedError(
+        "Platform-specific local WireGuard config generation is disabled; use the server-side registration flow."
+    )
