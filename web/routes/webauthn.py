@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, session
 import logging
 import base64, hashlib, sqlite3, os, time, secrets, pickle
 from datetime import datetime, timezone, timedelta
-from web.routes.auth import TRIAL_DAYS
+from web.routes.auth import TRIAL_DAYS, log_event
 
 from fido2.server import Fido2Server
 from fido2.webauthn import (
@@ -503,7 +503,25 @@ def login_verify():
             signature=signature,
         )
 
-        cur.execute("UPDATE authenticators SET sign_count = ? WHERE id = ?", (auth_data.sign_count, rec["id"]))
+        stored_sign_count = rec["sign_count"] or 0
+        new_sign_count = getattr(auth_data, "sign_count", 0) or 0
+
+        if stored_sign_count > 0 and new_sign_count <= stored_sign_count:
+            log.warning(
+                "Possible cloned authenticator detected for user_id=%s credential_id_hash=%s",
+                pending_user_id,
+                credential_id_hash,
+            )
+            log_event(
+                "possible_cloned_authenticator",
+                int(pending_user_id),
+                "passkey sign_count did not increase during login",
+                severity="warn",
+            )
+            conn.close()
+            return jsonify({"ok": False, "error": "passkey_replay_detected"}), 403
+
+        cur.execute("UPDATE authenticators SET sign_count = ? WHERE id = ?", (new_sign_count, rec["id"]))
 
         user = cur.execute(
             "SELECT * FROM users WHERE id = ?",
