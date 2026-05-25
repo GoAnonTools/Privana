@@ -10,5 +10,5 @@ pycryptodome>=3.23.0
 python-dotenv==1.0.1
 qrcode[pil]==7.4.2
 redis>=5.0.0
-requests>=2.32.0
+requests>=2.32.4
 Werkzeug>=3.0.0
