@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import os
 import stat
@@ -45,6 +46,9 @@ def secure_write_file(path: str, content: str) -> None:
     except Exception:
         pass
 
+
+
+log = logging.getLogger("privana.server.wireguard")
 
 
 class WireGuardManager:
@@ -227,8 +231,9 @@ PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED 
                 return False, "WireGuard interface management failed"
         except subprocess.TimeoutExpired:
             return False, "Timeout starting interface"
-        except Exception as e:
-            return False, f"Error starting interface: {str(e)}"
+        except Exception:
+            log.exception("Unexpected error starting WireGuard interface")
+            return False, "Error starting interface"
 
     def stop_interface(self):
         """Stop the WireGuard interface"""
@@ -239,12 +244,14 @@ PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED 
             subprocess.run([self.wg_quick_command, "down", self.config.WG_INTERFACE], check=True, timeout=30)
             print(f"WireGuard interface {self.config.WG_INTERFACE} stopped successfully")
             return True, "Interface stopped successfully"
-        except subprocess.CalledProcessError as e:
-            return False, f"Failed to stop interface: {str(e)}"
+        except subprocess.CalledProcessError:
+            log.exception("WireGuard interface stop command failed")
+            return False, "Failed to stop interface"
         except subprocess.TimeoutExpired:
             return False, "Timeout stopping interface"
-        except Exception as e:
-            return False, f"Error stopping interface: {str(e)}"
+        except Exception:
+            log.exception("Unexpected error stopping WireGuard interface")
+            return False, "Error stopping interface"
 
     def get_interface_status(self):
         """Check if the WireGuard interface is running"""
@@ -319,9 +326,10 @@ PersistentKeepalive = 25
             except sqlite3.IntegrityError:
                 conn.rollback()
                 return False, "Peer with this public key already exists"
-            except Exception as e:
+            except Exception:
                 conn.rollback()
-                return False, f"Error adding peer: {str(e)}"
+                log.exception("Unexpected error adding WireGuard peer")
+                return False, "Error adding peer"
 
     def remove_peer(self, public_key):
         """Soft-remove a peer (mark inactive) and detach from interface"""
@@ -342,9 +350,10 @@ PersistentKeepalive = 25
                 cur.execute("UPDATE peers SET is_active = 0 WHERE public_key = ?", (public_key,))
                 conn.commit()
                 return True, "Peer removed successfully"
-            except Exception as e:
+            except Exception:
                 conn.rollback()
-                return False, f"Error removing peer: {str(e)}"
+                log.exception("Unexpected error removing WireGuard peer")
+                return False, "Error removing peer"
 
     def get_peer_config(self, public_key):
         """Get the configuration for a specific peer"""
