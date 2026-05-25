@@ -146,6 +146,26 @@ except Exception as e:
     wg_manager = None
 
 
+
+def _validate_api_wg_public_key(value):
+    """
+    Validate WireGuard public keys at the API boundary.
+
+    WireGuard public keys are base64 strings with 43 base64 characters plus
+    one trailing "=" padding character. Rejecting invalid values here prevents
+    malformed input from reaching wg subprocess calls or peer lookups.
+    """
+    try:
+        try:
+            from server.wireguard import validate_wg_public_key
+        except (ImportError, ModuleNotFoundError):
+            from wireguard import validate_wg_public_key
+
+        return validate_wg_public_key(value)
+    except ValueError:
+        return None
+
+
 # -------------------------------------------------------------------
 # HMAC auth middleware
 #   - Authorization: <hex sha256 hmac>
@@ -313,7 +333,10 @@ def add_peer():
     if "public_key" not in data or "user_id" not in data:
         return jsonify({"success": False, "message": "Missing required parameters"}), 400
 
-    public_key = data["public_key"]
+    public_key = _validate_api_wg_public_key(data["public_key"])
+    if not public_key:
+        return jsonify({"success": False, "message": "Invalid WireGuard public key"}), 400
+
     user_id = data["user_id"]
     device_id = data.get("device_id")
 
@@ -346,7 +369,10 @@ def remove_peer():
     if "public_key" not in data:
         return jsonify({"success": False, "message": "Missing public key"}), 400
 
-    public_key = data["public_key"]
+    public_key = _validate_api_wg_public_key(data["public_key"])
+    if not public_key:
+        return jsonify({"success": False, "message": "Invalid WireGuard public key"}), 400
+
     try:
         success, message = wg_manager.remove_peer(public_key)
         return jsonify({"success": success, "message": message})
@@ -360,6 +386,11 @@ def get_peer_config(public_key):
     """Get the configuration for a specific peer"""
     if not wg_manager:
         return jsonify({"success": False, "message": "WireGuard manager not available"})
+
+    public_key = _validate_api_wg_public_key(public_key)
+    if not public_key:
+        return jsonify({"success": False, "message": "Invalid WireGuard public key"}), 400
+
     try:
         peer_config = wg_manager.get_peer_config(public_key)
         if peer_config:
@@ -381,7 +412,10 @@ def update_peer():
     if "public_key" not in data:
         return jsonify({"success": False, "message": "Missing public key"}), 400
 
-    public_key = data["public_key"]
+    public_key = _validate_api_wg_public_key(data["public_key"])
+    if not public_key:
+        return jsonify({"success": False, "message": "Invalid WireGuard public key"}), 400
+
     try:
         wg_manager.update_peer_last_connected(public_key)
         return jsonify({"success": True, "message": "Peer updated successfully"})
