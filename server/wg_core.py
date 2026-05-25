@@ -59,7 +59,8 @@ def _server_public_key():
     for p in cand:
         try:
             if os.path.exists(p):
-                return open(p,"r",encoding="utf-8").read().strip()
+                with open(p, "r", encoding="utf-8") as f:
+                    return f.read().strip()
         except Exception:
             log.exception("Failed to read WireGuard public key file: %s", p)
     # fallback: wg show
