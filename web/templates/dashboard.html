@@ -839,10 +839,10 @@
             <div class="token-row" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <div style="font-weight:800;">Account Token</div>
 
-              <input id="token-value" value="{{ user.token }}" readonly style="width:320px; border:1px solid var(--border); border-radius:8px; padding:6px 8px;
+              <input id="token-value" value="Hidden until revealed" readonly data-token-loaded="false" style="width:320px; border:1px solid var(--border); border-radius:8px; padding:6px 8px;
                             font-family:ui-monospace, SFMono-Regular, Menlo, monospace;" />
 
-              <button id="copy-token" class="btn btn-ghost" type="button">Copy</button>
+              <button id="copy-token" class="btn btn-ghost" type="button">Reveal token</button>
 
               <form method="POST" action="{{ url_for('dashboard.regenerate_token') }}" style="display:inline;">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -984,18 +984,45 @@
       });
     })();
 
-    // Copy token
+    // Reveal + copy token on demand
     (function () {
       const btn = document.getElementById('copy-token');
       const input = document.getElementById('token-value');
       if (!btn || !input) return;
+
+      async function revealToken() {
+        const res = await fetch('{{ url_for("dashboard.reveal_token") }}', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': CSRF_TOKEN }
+        });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok || !out.success || !out.token) {
+          throw new Error(out.message || out.error || 'Unable to reveal token.');
+        }
+        input.value = out.token;
+        input.dataset.tokenLoaded = 'true';
+        return out.token;
+      }
+
       btn.addEventListener('click', async () => {
+        const old = btn.textContent;
+        btn.disabled = true;
         try {
-          await navigator.clipboard.writeText(input.value);
-          const old = btn.textContent; btn.textContent = 'Copied!';
-          setTimeout(() => btn.textContent = old, 1200);
+          const token = input.dataset.tokenLoaded === 'true' ? input.value : await revealToken();
+          await navigator.clipboard.writeText(token);
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy token'; btn.disabled = false; }, 1200);
         } catch (e) {
-          input.select(); document.execCommand('copy');
+          if (input.dataset.tokenLoaded === 'true') {
+            input.select();
+            document.execCommand('copy');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy token'; btn.disabled = false; }, 1200);
+          } else {
+            alert(String(e && e.message || 'Unable to reveal token.'));
+            btn.textContent = old;
+            btn.disabled = false;
+          }
         }
       });
     })();

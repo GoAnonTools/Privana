@@ -277,8 +277,8 @@ def dashboard():
         return redirect(url_for("auth.logout"))
     user = dict(user_row)
 
-    user["token"] = ensure_user_token(user_id)
-
+    # Do not render the account token into dashboard HTML. It can be revealed
+    # through a protected POST endpoint only when explicitly requested.
 
     # Ensure device_limit exists (fallback from plan)
     if user.get("device_limit") is None:
@@ -433,6 +433,21 @@ def check_devices_status():
         for r in rows
     ]
     return jsonify({"success": True, "devices": devices})
+
+
+@dashboard_bp.route("/account/token/reveal", methods=["POST"])
+def reveal_token():
+    guard = require_active_dashboard()
+    if guard:
+        return guard
+
+    guard = require_passkey_for_sensitive_action_json()
+    if guard:
+        return guard
+
+    token = ensure_user_token(int(session["user_id"]))
+    return jsonify({"success": True, "token": token})
+
 
 @dashboard_bp.route("/account/token/regenerate", methods=["POST"])
 def regenerate_token():
