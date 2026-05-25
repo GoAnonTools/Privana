@@ -111,18 +111,6 @@ class PostQuantumCrypto:
         return Dilithium3.keygen()
 
 
-    def _allow_test_key_embedding(self) -> bool:
-        """
-        Key-embedding mode is only allowed for tests/backward compatibility.
-
-        Production code must pass an explicit 32-byte AES key.
-        """
-        return (
-            os.getenv("PRIVANA_ALLOW_TEST_KEY_EMBEDDING", "false").lower() == "true"
-            or os.getenv("ENVIRONMENT", "").lower() == "test"
-            or "PYTEST_CURRENT_TEST" in os.environ
-        )
-
     # ------------------------------------------------------------------
     # AES-256-GCM helpers
     # ------------------------------------------------------------------
@@ -151,33 +139,26 @@ class PostQuantumCrypto:
     # Simple symmetric encrypt/decrypt
     # ------------------------------------------------------------------
 
-    def encrypt(self, data: bytes, key: Optional[bytes] = None) -> bytes:
+    def encrypt(self, data: bytes, key: bytes) -> bytes:
         """
         Encrypt data with AES-256-GCM.
 
-        Production callers must provide a 32-byte key. The legacy no-key mode
-        embeds the key in the ciphertext and is only allowed in tests.
+        A caller-provided 32-byte key is always required. Privana never embeds
+        encryption keys inside ciphertext.
         """
         if key is None:
-            if not self._allow_test_key_embedding():
-                raise ValueError("encrypt(key=None) is disabled outside tests.")
-            key = self.qrng.generate_quantum_key(32)
-            blob = self._aes_encrypt(data, key)
-            return struct.pack(">H", len(key)) + key + blob
+            raise ValueError("encrypt() requires an explicit 32-byte key.")
         return self._aes_encrypt(data, key)
 
-    def decrypt(self, ciphertext: bytes, key: Optional[bytes] = None) -> bytes:
+    def decrypt(self, ciphertext: bytes, key: bytes) -> bytes:
+        """
+        Decrypt data with AES-256-GCM.
+
+        A caller-provided 32-byte key is always required. Embedded-key ciphertext
+        is intentionally unsupported.
+        """
         if key is None:
-            if not self._allow_test_key_embedding():
-                raise ValueError("decrypt(key=None) is disabled outside tests.")
-            if len(ciphertext) < 2:
-                raise ValueError("Ciphertext too short.")
-            key_len = struct.unpack(">H", ciphertext[:2])[0]
-            if key_len != 32 or len(ciphertext) < 2 + key_len + 28:
-                raise ValueError("Invalid embedded-key ciphertext.")
-            key = ciphertext[2:2 + key_len]
-            blob = ciphertext[2 + key_len:]
-            return self._aes_decrypt(blob, key)
+            raise ValueError("decrypt() requires an explicit 32-byte key.")
         return self._aes_decrypt(ciphertext, key)
 
     # ------------------------------------------------------------------

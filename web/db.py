@@ -87,3 +87,16 @@ def reset_db():
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA busy_timeout=5000")
         conn.executescript(drops)
+
+def get_db():
+    """
+    Centralized SQLite connection factory.
+
+    All web routes must use this function so every module resolves the same
+    absolute database path regardless of current working directory.
+    """
+    conn = sqlite3.connect(DB_PATH, timeout=5)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn

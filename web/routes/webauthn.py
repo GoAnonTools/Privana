@@ -27,12 +27,8 @@ if ENVIRONMENT == "production":
     if not ORIGIN.startswith("https://") or "localhost" in ORIGIN or "127.0.0.1" in ORIGIN:
         raise RuntimeError("WEBAUTHN_ORIGIN must be set to your HTTPS production origin in production.")
 
-DB_PATH = os.path.join(os.getcwd(), "privana.db")
+from web.db import DB_PATH, get_db
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 # ---------- Tables ----------
 def init_tables():

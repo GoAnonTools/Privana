@@ -34,7 +34,7 @@ app.config["ENVIRONMENT"] = os.getenv("ENVIRONMENT", app.config.get("ENVIRONMENT
 sec = app.config.get("API_SECRET", "")
 print("🔍 Flask app config loaded:")
 print("   Environment:", app.config.get("ENVIRONMENT"))
-print("   API_SECRET set:", bool(sec), "| first8:", (sec[:8] if sec else "None"))
+print("   API_SECRET configured:", bool(sec))
 
 
 # -------------------------------------------------------------------
@@ -421,10 +421,13 @@ def api_health():
     
 @app.get("/healthz")
 def healthz():
-    # Be robust even if wg_manager isn't defined yet / import path differs
-    mgr = globals().get("wg_manager", None)
-    wg_ok = bool(mgr and getattr(mgr, "wg_available", False))
-    return jsonify({"ok": True, "wg_available": wg_ok})
+    """
+    Public liveness endpoint.
+
+    Security: keep this intentionally minimal. Do not expose WireGuard,
+    filesystem, dependency, or infrastructure state here.
+    """
+    return jsonify({"ok": True})
 
 # -------------------------------------------------------------------
 # PQC blueprint

@@ -18,15 +18,7 @@ TRIAL_DAYS  = 7
 # -----------------------------------------------------------------------------
 # DB helpers
 # -----------------------------------------------------------------------------
-DB_PATH = os.path.join(os.getcwd(), "privana.db")
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=5)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+from web.db import DB_PATH, get_db
 
 def table_exists(conn, table: str) -> bool:
     return conn.execute(
@@ -69,13 +61,40 @@ def log_event(event_type: str, user_id=None, details: str | None = None, severit
         try: conn.close()
         except Exception: pass
 
-def recent_count(event_types: tuple, ip: str, minutes: int) -> int:
+def recent_count(event_types: tuple[str, ...], ip: str, minutes: int) -> int:
+    """
+    Count recent security events for one IP.
+
+    event_types must be a static tuple/list of simple event names. SQL values
+    are always parameterized; only the placeholder count is generated.
+    """
+    if not event_types:
+        return 0
+
+    clean_event_types = []
+    for event_type in event_types:
+        if not isinstance(event_type, str) or not event_type.replace("_", "").isalnum():
+            raise ValueError("Invalid event type.")
+        clean_event_types.append(event_type)
+
+    minutes = int(minutes)
+    if minutes <= 0 or minutes > 24 * 60:
+        raise ValueError("Invalid lookback window.")
+
+    placeholders = ",".join(["?"] * len(clean_event_types))
+    sql = (
+        "SELECT COUNT(*) AS c "
+        "FROM security_events "
+        "WHERE ip = ? "
+        f"AND event_type IN ({placeholders}) "
+        "AND created_at >= DATETIME('now', ?)"
+    )
+
     conn = get_db()
     try:
         row = conn.execute(
-            "SELECT COUNT(*) AS c FROM security_events WHERE ip=? AND event_type IN (%s) AND created_at>=DATETIME('now',?)"
-            % ",".join("?" * len(event_types)),
-            (ip, f"-{minutes} minutes", *event_types),
+            sql,
+            (ip, *clean_event_types, f"-{minutes} minutes"),
         ).fetchone()
         return int(row["c"] if row and row["c"] is not None else 0)
     finally:

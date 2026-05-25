@@ -5,10 +5,10 @@ import os
 
 public_bp = Blueprint("public", __name__)
 
-DB_PATH = os.path.join(os.getcwd(), "privana.db")
+from web.db import get_db
 
 def _get_user(user_id):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db()
     conn.row_factory = sqlite3.Row
     user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     conn.close()

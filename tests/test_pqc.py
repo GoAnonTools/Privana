@@ -79,13 +79,12 @@ class TestPostQuantumCrypto(unittest.TestCase):
         self.assertEqual(decrypted, test_data)
     
     def test_encrypt_without_key(self):
-        """Test encryption without providing a key."""
+        """Encryption without an explicit key must be refused."""
         test_data = b"Test data without explicit key"
-        
-        encrypted = self.pqc.encrypt(test_data)
-        self.assertIsInstance(encrypted, bytes)
-        self.assertNotEqual(encrypted, test_data)
-    
+
+        with self.assertRaises((TypeError, ValueError)):
+            self.pqc.encrypt(test_data)
+
     def test_hybrid_encrypt_decrypt(self):
         """Test hybrid encryption and decryption."""
         test_data = b"This is test data for hybrid encryption"

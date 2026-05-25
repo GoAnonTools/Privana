@@ -17,6 +17,7 @@ from flask import (
     redirect, Response, stream_with_context, url_for, abort, flash, current_app
 )
 from web.utils.guards import require_passkey_for_sensitive_action
+from web.db import get_db as central_get_db
 
 
 def public_app_url() -> str:
@@ -67,17 +68,13 @@ WG_DNS     = os.getenv("WG_DNS", "1.1.1.1")
 WG_ALLOWED = os.getenv("WG_ALLOWED_IPS", "0.0.0.0/0,::/0")
 
 # -----------------------------------------------------------------------------
-# DB helpers (resolve DB from project root)
+# DB helpers
 # -----------------------------------------------------------------------------
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DB_PATH = str(ROOT_DIR / "privana.db")
 TRIAL_DAYS = 7
 
 
 def _db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return central_get_db()
 
 
 def _ensure_device_configs_table(conn: sqlite3.Connection) -> None:

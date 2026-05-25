@@ -24,6 +24,7 @@ from web.utils.api_client import (
     sg_update_peer_last_connected,
     sg_stats,
 )
+from web.db import get_db
 from web.utils.guards import (
     user_has_passkey,
     require_passkey_for_sensitive_action,
@@ -77,14 +78,6 @@ def validate_platform(value: str) -> str:
     return "macos" if value == "mac" else value
 
 # ---- DB helper (use your local version to keep behavior) ----
-def get_db():
-    conn = sqlite3.connect("privana.db", timeout=5)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=5000")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
-
 # Ensure users.token column exists (runs once, harmless later)
 def _ensure_user_token_column():
     conn = get_db()
