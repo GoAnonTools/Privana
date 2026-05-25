@@ -316,6 +316,128 @@ def register_verify():
             print(traceback.format_exc())
         return jsonify({"error": "register_verify_failed"}), 500
 
+# =========================================================
+# Login assertion - completes pending account-number login
+# =========================================================
+
+@webauthn_bp.route("/login/options", methods=["POST"])
+def login_options():
+    try:
+        pending_user_id = session.get("pending_login_user_id")
+        if not pending_user_id:
+            return jsonify({"error": "No pending login"}), 401
+
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT credential_id FROM authenticators WHERE user_id = ?",
+            (pending_user_id,),
+        ).fetchall()
+        conn.close()
+
+        if not rows:
+            return jsonify({"error": "No passkey registered for this account"}), 403
+
+        credentials = []
+        for row in rows:
+            try:
+                credentials.append(PublicKeyCredentialDescriptor(id=row["credential_id"], type="public-key"))
+            except TypeError:
+                credentials.append(PublicKeyCredentialDescriptor(row["credential_id"]))
+
+        options, state = fido_server.authenticate_begin(
+            credentials=credentials,
+            user_verification="required",
+        )
+        session["webauthn_login_state"] = state
+        return jsonify(options_to_json(options))
+
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"error": "login_options_failed"}), 500
+
+
+@webauthn_bp.route("/login/verify", methods=["POST"])
+def login_verify():
+    try:
+        pending_user_id = session.get("pending_login_user_id")
+        state = session.get("webauthn_login_state")
+        if not pending_user_id or not state:
+            return jsonify({"ok": False, "error": "Bad login state"}), 400
+
+        data = request.get_json(force=True)
+        raw_id = b64url_decode(data["rawId"])
+        credential_id_hash = sha256_hex(raw_id)
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT *
+            FROM authenticators
+            WHERE credential_id_hash = ?
+              AND user_id = ?
+            """,
+            (credential_id_hash, pending_user_id),
+        )
+        rec = cur.fetchone()
+
+        if not rec:
+            conn.close()
+            return jsonify({"ok": False, "error": "Passkey not recognized for this account"}), 403
+
+        from fido2.cose import CoseKey
+        public_key = CoseKey.from_cose(rec["public_key"])
+
+        client_data = CollectedClientData(b64url_decode(data["clientDataJSON"]))
+        auth_data = AuthenticatorData(b64url_decode(data["authenticatorData"]))
+        signature = b64url_decode(data["signature"])
+
+        fido_server.authenticate_complete(
+            state=state,
+            credentials=[{"id": raw_id, "public_key": public_key, "sign_count": rec["sign_count"]}],
+            credential_id=raw_id,
+            client_data=client_data,
+            auth_data=auth_data,
+            signature=signature,
+        )
+
+        cur.execute("UPDATE authenticators SET sign_count = ? WHERE id = ?", (auth_data.sign_count, rec["id"]))
+
+        user = cur.execute(
+            "SELECT * FROM users WHERE id = ?",
+            (pending_user_id,),
+        ).fetchone()
+        conn.commit()
+        conn.close()
+
+        session.pop("pending_login_user_id", None)
+        session.pop("pending_login_account_hint", None)
+        session.pop("webauthn_login_state", None)
+        session["user_id"] = int(pending_user_id)
+        session["has_passkey"] = True
+        session.permanent = True
+
+        redirect_url = "/dashboard"
+        if user and user["subscription_plan"] == "trial" and user["trial_expires_at"]:
+            try:
+                expires = datetime.fromisoformat(user["trial_expires_at"])
+                if expires.tzinfo is None:
+                    expires = expires.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) > expires:
+                    redirect_url = "/auth/trial-ended"
+            except Exception:
+                pass
+
+        return jsonify({"ok": True, "redirect": redirect_url})
+
+    except Exception:
+        if ENVIRONMENT != "production":
+            import traceback
+            print(traceback.format_exc())
+        return jsonify({"ok": False, "error": "login_verify_failed"}), 500
+
 # =====================================================================
 # Assertion PRECHECK (signup gate) — no login side-effects, trial guard
 # =====================================================================

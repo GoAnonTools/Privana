@@ -406,7 +406,13 @@
       </div>
 
       <h2>Login to Privana</h2>
-      <p class="subtitle">Enter your 16-digit account number to log in.</p>
+      {% if passkey_required %}
+      <p class="subtitle">Account {{ account_hint }} found. Verify your passkey to finish login.</p>
+      {% else %}
+      <p class="subtitle">Enter your 16-digit account number. A passkey is required to finish login.</p>
+      {% endif %}
+
+      <input type="hidden" id="csrf-token-global" value="{{ csrf_token() }}">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -416,6 +422,7 @@
       {% endif %}
       {% endwith %}
 
+      {% if not passkey_required %}
       <form method="POST" action="{{ url_for('auth.login') }}"
         onsubmit="this.querySelector('button[type=submit]').disabled=true">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -430,6 +437,14 @@
           <button type="submit" class="btn btn-qp">Log In</button>
         </div>
       </form>
+      {% else %}
+      <div class="actions">
+        <button id="passkey-login" type="button" class="btn btn-qp">Verify Passkey</button>
+      </div>
+      <p class="text-xs text-slate-500 mt-3 dark:text-slate-400">
+        Your account number alone is not enough to log in.
+      </p>
+      {% endif %}
 
       <div class="auth-links">
         Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign Up</a>
@@ -521,6 +536,97 @@
     // Re-sync after Lucide potentially replaces <i> with <svg>
     syncIcons();
   </script>
+
+  {% if passkey_required %}
+  <script>
+    (function () {
+      const btn = document.getElementById('passkey-login');
+      if (!btn) return;
+
+      const csrfInput = document.getElementById('csrf-token-global');
+      const CSRF_TOKEN = csrfInput ? csrfInput.value : '';
+
+      const b64urlToBuf = (b64 = '') => {
+        b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+        const str = atob(b64 + pad);
+        const bytes = new Uint8Array(str.length);
+        for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
+        return bytes.buffer;
+      };
+
+      const bufToB64url = buf => {
+        const b = new Uint8Array(buf);
+        let s = '';
+        for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      };
+
+      async function verifyPasskey() {
+        if (!('PublicKeyCredential' in window)) {
+          alert('This browser does not support Passkeys / WebAuthn.');
+          return;
+        }
+
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Verifying…';
+
+        try {
+          const oRes = await fetch('/webauthn/login/options', {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': CSRF_TOKEN }
+          });
+          const options = await oRes.json();
+          if (!oRes.ok) throw new Error(options.error || 'Unable to start passkey login.');
+
+          options.challenge = b64urlToBuf(options.challenge);
+          if (Array.isArray(options.allowCredentials)) {
+            options.allowCredentials = options.allowCredentials.map(c => ({
+              ...c,
+              id: b64urlToBuf(c.id)
+            }));
+          }
+
+          const cred = await navigator.credentials.get({ publicKey: options });
+          if (!cred?.response) throw new Error('Passkey verification was cancelled.');
+
+          const payload = {
+            id: cred.id,
+            rawId: bufToB64url(cred.rawId),
+            type: cred.type,
+            authenticatorData: bufToB64url(cred.response.authenticatorData),
+            clientDataJSON: bufToB64url(cred.response.clientDataJSON),
+            signature: bufToB64url(cred.response.signature),
+            userHandle: cred.response.userHandle ? bufToB64url(cred.response.userHandle) : null
+          };
+
+          const vRes = await fetch('/webauthn/login/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+          });
+          const out = await vRes.json();
+          if (!vRes.ok || !out.ok) throw new Error(out.error || 'Passkey login failed.');
+
+          window.location.href = out.redirect || '/dashboard';
+        } catch (err) {
+          const msg = String(err && err.message || '');
+          if (msg.includes('NotAllowedError')) alert('Passkey verification was cancelled or timed out.');
+          else alert(msg || 'Passkey login failed.');
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      }
+
+      btn.addEventListener('click', verifyPasskey);
+    })();
+  </script>
+  {% endif %}
+
 </body>
 
 </html>

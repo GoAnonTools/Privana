@@ -308,9 +308,13 @@ def reveal():
 @auth_bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute", methods=["POST"])
 def login():
-    """Login with account number only."""
+    """
+    Start login with account number, then require WebAuthn/passkey assertion.
+
+    The account number alone never creates an authenticated user session.
+    """
     if request.method == "GET":
-        return render_template("login.html")
+        return render_template("login.html", passkey_required=False)
 
     ip = _client_ip()
     if is_ip_temporarily_locked(ip):
@@ -322,36 +326,43 @@ def login():
 
     if len(account_stored) != 16 or not account_stored.isdigit():
         flash("Please enter a valid 16-digit account number.", "error")
-        return render_template("login.html"), 400
+        return render_template("login.html", passkey_required=False), 400
 
     conn = get_db()
-    user = conn.execute("SELECT * FROM users WHERE account_number=?", (account_stored,)).fetchone()
-    conn.close()
+    try:
+        user = conn.execute("SELECT * FROM users WHERE account_number=?", (account_stored,)).fetchone()
+        if user:
+            has_passkey = conn.execute(
+                "SELECT 1 FROM authenticators WHERE user_id = ? LIMIT 1",
+                (user["id"],),
+            ).fetchone() is not None
+        else:
+            has_passkey = False
+    finally:
+        conn.close()
 
     if not user:
         flash("Account not found.", "error")
         log_event("login_invalid_account", None, f"account={account_stored[:4]}xxxx")
         flag_suspicious_if_needed(ip)
-        return render_template("login.html"), 404
+        return render_template("login.html", passkey_required=False), 404
 
-    # Check trial
-    if user["subscription_plan"] == "trial" and user["trial_expires_at"]:
-        try:
-            expires = datetime.fromisoformat(user["trial_expires_at"])
-            if expires.tzinfo is None:
-                expires = expires.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) > expires:
-                session["user_id"] = user["id"]
-                session.permanent  = True
-                return redirect(url_for("auth.trial_ended"))
-        except Exception:
-            pass
+    if not has_passkey:
+        flash("Passkey verification is required for login. If this account has no passkey yet, use recovery or contact support.", "error")
+        log_event("login_missing_passkey", user["id"], f"ip={ip}", severity="warn")
+        return render_template("login.html", passkey_required=False), 403
 
-    session["user_id"] = user["id"]
-    session.permanent  = True
+    session.clear()
+    session["pending_login_user_id"] = int(user["id"])
+    session["pending_login_account_hint"] = f"{account_stored[:4]}••••{account_stored[-4:]}"
+    session.permanent = True
 
-    log_event("login_success", user["id"])
-    return redirect(url_for("dashboard.dashboard"))
+    log_event("login_passkey_required", user["id"])
+    return render_template(
+        "login.html",
+        passkey_required=True,
+        account_hint=session["pending_login_account_hint"],
+    )
 
 
 @auth_bp.route("/recover", methods=["GET", "POST"])
