@@ -164,10 +164,10 @@ def cleanup_privacy_retention():
             conn.execute(
                 """
                 DELETE FROM config_download_tokens
-                WHERE used = 1
+                WHERE (used = 1 AND created_at < DATETIME('now', ?))
                    OR expires_at < DATETIME('now', ?)
                 """,
-                (f"-{token_hours} hours",),
+                (f"-{token_hours} hours", f"-{token_hours} hours"),
             )
 
         conn.commit()
