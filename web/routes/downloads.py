@@ -77,18 +77,6 @@ def _db():
     return central_get_db()
 
 
-def _ensure_device_configs_table(conn: sqlite3.Connection) -> None:
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS device_configs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            device_id INTEGER UNIQUE,
-            public_key TEXT,
-            config TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (device_id) REFERENCES devices (id)
-        )
-    """)
-
 
 def _get_user(user_id: int):
     with _db() as conn:
@@ -223,7 +211,6 @@ def download_config(device_id: int):
 
     # Upsert into device_configs for UI
     with _db() as conn:
-        _ensure_device_configs_table(conn)
         existing = conn.execute(
             "SELECT id FROM device_configs WHERE device_id = ?",
             (device_id,)
@@ -340,18 +327,6 @@ def _mint_config_token(user_id: int, device_id: int, minutes: int = 10) -> str:
     token = secrets.token_urlsafe(32)
     exp = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
     with _db() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS config_download_tokens (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                device_id INTEGER NOT NULL,
-                token TEXT NOT NULL,
-                expires_at TIMESTAMP NOT NULL,
-                used INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )
-        """)
         conn.execute(
             "INSERT INTO config_download_tokens (user_id, device_id, token, expires_at) VALUES (?,?,?,?)",
             (user_id, device_id, token, exp),
@@ -398,7 +373,6 @@ def download_config_by_token(token: str):
 
     # Upsert locally and mark token used
     with _db() as conn:
-        _ensure_device_configs_table(conn)
         existing = conn.execute(
             "SELECT id FROM device_configs WHERE device_id = ?",
             (device_id,)

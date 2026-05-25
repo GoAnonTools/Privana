@@ -85,6 +85,17 @@ CREATE TABLE IF NOT EXISTS webauthn_challenges (
   expires_at  TEXT
 );
 
+
+CREATE TABLE IF NOT EXISTS config_download_tokens (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id  INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  token      TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used       INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_number ON users(account_number);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_recovery_hash ON users(recovery_hash);
 CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
@@ -93,6 +104,8 @@ CREATE INDEX IF NOT EXISTS ix_devices_user ON devices(user_id);
 CREATE INDEX IF NOT EXISTS ix_sec_ip ON security_events(ip);
 CREATE INDEX IF NOT EXISTS ix_sec_time ON security_events(created_at);
 CREATE INDEX IF NOT EXISTS ix_sec_event_time ON security_events(event_type, created_at);
+CREATE INDEX IF NOT EXISTS ix_config_download_tokens_token ON config_download_tokens(token);
+CREATE INDEX IF NOT EXISTS ix_config_download_tokens_expiry ON config_download_tokens(expires_at);
 
 """
 
