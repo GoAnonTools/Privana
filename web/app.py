@@ -69,6 +69,52 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "True").lower() != "false"
 
+
+# --------------------------------------------------------------------------------------
+# Session IP change monitoring
+# --------------------------------------------------------------------------------------
+def _client_ip() -> str:
+    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return forwarded or request.remote_addr or "unknown"
+
+
+@app.before_request
+def _monitor_session_ip_changes():
+    """
+    Log session IP changes without blocking the user.
+
+    Strict IP binding can break mobile users, VPN switching, and CGNAT users, so
+    this first-stage mitigation records suspicious movement for review instead
+    of invalidating sessions automatically.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+
+    current_ip = _client_ip()
+    original_ip = session.get("session_ip")
+
+    if not original_ip:
+        session["session_ip"] = current_ip
+        return None
+
+    if original_ip != current_ip:
+        session["session_ip"] = current_ip
+
+        try:
+            from web.routes.auth import log_event
+            log_event(
+                "session_ip_changed",
+                int(user_id),
+                f"from={original_ip} to={current_ip}",
+                severity="warn",
+            )
+        except Exception:
+            app.logger.exception("Failed to log session IP change")
+
+    return None
+
+
 # --------------------------------------------------------------------------------------
 # Security headers / CSP
 # --------------------------------------------------------------------------------------
