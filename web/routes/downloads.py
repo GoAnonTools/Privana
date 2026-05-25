@@ -18,6 +18,7 @@ from flask import (
 )
 from web.utils.guards import require_passkey_for_sensitive_action
 from rate_limit import limiter
+from web.crypto import encrypt_text
 from web.db import get_db as central_get_db
 
 
@@ -228,12 +229,12 @@ def download_config(device_id: int):
         if existing:
             conn.execute(
                 "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
-                (pub_key, cfg_text, device_id)
+                (pub_key, encrypt_text(cfg_text), device_id)
             )
         else:
             conn.execute(
                 "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
-                (device_id, pub_key, cfg_text)
+                (device_id, pub_key, encrypt_text(cfg_text))
             )
         conn.commit()
 
@@ -408,12 +409,12 @@ def download_config_by_token(token: str):
         if existing:
             conn.execute(
                 "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
-                (payload.get("public_key"), cfg_text, device_id)
+                (payload.get("public_key"), encrypt_text(cfg_text), device_id)
             )
         else:
             conn.execute(
                 "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
-                (device_id, payload.get("public_key"), cfg_text)
+                (device_id, payload.get("public_key"), encrypt_text(cfg_text))
             )
         conn.execute("UPDATE config_download_tokens SET used = 1 WHERE id = ?", (row["id"],))
         conn.commit()

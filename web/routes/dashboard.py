@@ -25,6 +25,7 @@ from web.utils.api_client import (
     sg_stats,
 )
 from web.db import get_db
+from web.crypto import encrypt_text, decrypt_text
 from web.utils.guards import (
     user_has_passkey,
     require_passkey_for_sensitive_action,
@@ -383,6 +384,9 @@ def toggle_protection():
             if not cfg:
                 return jsonify({"success": False, "message": "No device configuration found"}), 400
 
+            cfg = dict(cfg)
+            cfg["config"] = decrypt_text(cfg["config"])
+
             # Save config temporarily (same behavior as your code)
             config_path = os.path.join(os.path.expanduser("~"), ".privana", "privana.conf")
             fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
@@ -613,12 +617,12 @@ PersistentKeepalive = 25
     if existing:
         conn.execute(
             "UPDATE device_configs SET public_key=?, assigned_ip=?, config=?, created_at=datetime('now') WHERE device_id=?",
-            (public_key, assigned_ip, config_template, device_id),
+            (public_key, assigned_ip, encrypt_text(config_template), device_id),
         )
     else:
         conn.execute(
             "INSERT INTO device_configs (device_id, public_key, assigned_ip, config) VALUES (?,?,?,?)",
-            (device_id, public_key, assigned_ip, config_template),
+            (device_id, public_key, assigned_ip, encrypt_text(config_template)),
         )
     conn.execute(
         "UPDATE devices SET has_config=1, config_created_at=datetime('now') WHERE id=?",
@@ -774,6 +778,9 @@ def qr_token_config(token):
     if not row or not row["config"]:
         flash("Config not found. Generate it first.", "error")
         return redirect(url_for('dashboard.dashboard'))
+
+    row = dict(row)
+    row["config"] = decrypt_text(row["config"])
 
     # Serve as a file download; mobile OS will offer “Open in WireGuard”
     resp = make_response(row["config"])
