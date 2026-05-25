@@ -199,20 +199,17 @@ def _after(resp):
 # -----------------------------------------------------------------------------
 @app.route("/health", methods=["GET", "OPTIONS"])
 def health():
+    """
+    Public liveness endpoint.
+
+    Keep this intentionally generic. Do not expose local filesystem paths,
+    WireGuard installation details, or administrator status without helper-token
+    authentication.
+    """
     if request.method == "OPTIONS":
         return with_cors(make_response("", 204))
-    wg_gui, wg_cli = wireguard_paths()
-    return with_cors(
-        jsonify(
-            {
-                "ok": True,
-                "admin": is_admin(),
-                "wireguard_exe": wg_gui,
-                "wg_exe": wg_cli,
-                "hint": "Run this helper as Administrator to install/start/stop tunnels.",
-            }
-        )
-    )
+
+    return with_cors(jsonify({"ok": True}))
 
 
 @app.route("/status", methods=["GET", "OPTIONS"])
