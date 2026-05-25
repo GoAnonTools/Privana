@@ -445,7 +445,12 @@ def login_options():
             credentials=credentials,
             user_verification="required",
         )
-        session["webauthn_login_state"] = state
+        session["webauthn_login_state_id"] = _store_webauthn_state(
+            int(pending_user_id),
+            "login",
+            state,
+        )
+        session.pop("webauthn_login_state", None)  # cleanup legacy client-side state
         return jsonify(options_to_json(options))
 
     except Exception:
@@ -460,7 +465,10 @@ def login_options():
 def login_verify():
     try:
         pending_user_id = session.get("pending_login_user_id")
-        state = session.get("webauthn_login_state")
+        state_id = session.pop("webauthn_login_state_id", None)
+        state = _pop_webauthn_state(int(pending_user_id), "login", state_id) if pending_user_id else None
+        session.pop("webauthn_login_state", None)  # cleanup legacy client-side state
+
         if not pending_user_id or not state:
             return jsonify({"ok": False, "error": "Bad login state"}), 400
 
@@ -512,6 +520,7 @@ def login_verify():
 
         session.pop("pending_login_user_id", None)
         session.pop("pending_login_account_hint", None)
+        session.pop("webauthn_login_state_id", None)
         session.pop("webauthn_login_state", None)
         session["user_id"] = int(pending_user_id)
         session["has_passkey"] = True
