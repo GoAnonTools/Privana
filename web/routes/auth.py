@@ -163,24 +163,17 @@ def hash_secret(value: str) -> str:
 
 def verify_secret(value: str, stored_hash: str) -> bool:
     """
-    Verify recovery code.
+    Verify recovery code using Werkzeug password hashes only.
 
-    Supports:
-    - new Werkzeug password hashes
-    - old legacy SHA-256 hashes for migration/dev compatibility
+    Legacy raw SHA-256 recovery hashes are intentionally not accepted.
     """
     value = value.strip()
     stored_hash = stored_hash or ""
 
     try:
-        if check_password_hash(stored_hash, value):
-            return True
+        return check_password_hash(stored_hash, value)
     except Exception:
-        pass
-
-    # Legacy compatibility: old SHA-256 recovery hashes were 64 hex chars.
-    legacy_sha256 = hashlib.sha256(value.encode()).hexdigest()
-    return hmac.compare_digest(stored_hash, legacy_sha256)
+        return False
 
 # -----------------------------------------------------------------------------
 # Plan helpers
