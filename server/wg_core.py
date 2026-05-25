@@ -1,6 +1,7 @@
 # server/wg_core.py
 from __future__ import annotations
 import os, sqlite3, subprocess, ipaddress, json
+import logging
 from pathlib import Path
 from datetime import datetime
 
