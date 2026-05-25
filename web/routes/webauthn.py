@@ -1,6 +1,6 @@
 # web/routes/webauthn.py
 from flask import Blueprint, request, jsonify, session
-import base64, hashlib, sqlite3, os, time
+import base64, hashlib, sqlite3, os, time, secrets, pickle
 from datetime import datetime, timezone, timedelta
 from web.routes.auth import TRIAL_DAYS
 
@@ -17,6 +17,7 @@ from fido2.webauthn import (
 # ---------- Config ----------
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
 PASSKEY_RESET_FRESH_SECONDS = int(os.getenv("PASSKEY_RESET_FRESH_SECONDS", "300"))
+WEBAUTHN_REGISTER_STATE_TTL_SECONDS = int(os.getenv("WEBAUTHN_REGISTER_STATE_TTL_SECONDS", "300"))
 
 RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost").strip()
 RP_NAME = "Privana"
@@ -92,6 +93,81 @@ def options_to_json(options):
     }
     return out
 
+
+def _store_webauthn_state(user_id: int, kind: str, state) -> str:
+    """
+    Store WebAuthn state server-side and return an opaque state id.
+
+    Flask's default session is a signed client-side cookie, so the full FIDO2
+    state must not be stored directly in session.
+    """
+    state_id = secrets.token_urlsafe(32)
+    encoded_state = base64.b64encode(pickle.dumps(state)).decode("ascii")
+    now = datetime.now(timezone.utc)
+    expires = (now + timedelta(seconds=WEBAUTHN_REGISTER_STATE_TTL_SECONDS)).isoformat()
+
+    conn = get_db()
+    try:
+        conn.execute(
+            "DELETE FROM webauthn_challenges WHERE expires_at IS NOT NULL AND expires_at <= ?",
+            (now.isoformat(),),
+        )
+        conn.execute(
+            """
+            INSERT INTO webauthn_challenges (
+                user_id,
+                kind,
+                challenge,
+                expires_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (user_id, f"{kind}:{state_id}", encoded_state, expires),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return state_id
+
+
+def _pop_webauthn_state(user_id: int, kind: str, state_id: str):
+    """Load and delete a server-side WebAuthn state if it is still valid."""
+    if not state_id:
+        return None
+
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT id, challenge
+            FROM webauthn_challenges
+            WHERE user_id = ?
+              AND kind = ?
+              AND (expires_at IS NULL OR expires_at > ?)
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id, f"{kind}:{state_id}", now),
+        ).fetchone()
+
+        conn.execute(
+            "DELETE FROM webauthn_challenges WHERE expires_at IS NOT NULL AND expires_at <= ?",
+            (now,),
+        )
+
+        if not row:
+            conn.commit()
+            return None
+
+        conn.execute("DELETE FROM webauthn_challenges WHERE id = ?", (row["id"],))
+        conn.commit()
+
+        return pickle.loads(base64.b64decode(row["challenge"]))
+    finally:
+        conn.close()
+
 # =========================================================
 # Registration (Create Passkey)
 # =========================================================
@@ -142,7 +218,11 @@ def register_options():
             credentials=exclude,
             user_verification="required",
         )
-        session["webauthn_register_state"] = state
+        session["webauthn_register_state_id"] = _store_webauthn_state(
+            int(user_id),
+            "register",
+            state,
+        )
 
         data = options_to_json(options)
         exts = data.get("extensions") or {}
@@ -169,7 +249,10 @@ def register_verify():
     import sqlite3, traceback
     try:
         user_id = session.get("user_id")
-        state   = session.get("webauthn_register_state")
+        state_id = session.pop("webauthn_register_state_id", None)
+        state = _pop_webauthn_state(int(user_id), "register", state_id) if user_id else None
+        session.pop("webauthn_register_state", None)  # cleanup legacy client-side state
+
         if not user_id or not state:
             return jsonify({"error": "Bad state"}), 400
 
