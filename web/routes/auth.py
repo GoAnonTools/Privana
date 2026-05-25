@@ -430,7 +430,7 @@ def recover():
     return redirect(url_for("auth.reveal"))
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
     if "user_id" in session:
         log_event("logout", session["user_id"])
