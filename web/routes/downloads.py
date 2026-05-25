@@ -439,6 +439,20 @@ $tmp = Join-Path $env:TEMP "$tunnelName.conf"
 $wgExe = Join-Path $env:ProgramFiles "WireGuard\\wireguard.exe"
 Write-Host "Downloading Privana settings..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri "{cfg_url}" -OutFile $tmp
+
+$configText = Get-Content -Raw -Path $tmp
+if ($configText -notmatch '\[Interface\]' -or $configText -notmatch '\[Peer\]') {{
+  Remove-Item -Force $tmp -ErrorAction SilentlyContinue
+  throw "Downloaded Privana config is invalid."
+}}
+$blockedDirectives = @('PostUp', 'PostDown', 'PreUp', 'PreDown', 'Table')
+foreach ($directive in $blockedDirectives) {{
+  if ($configText -match "(?im)^\s*$directive\s*=") {{
+    Remove-Item -Force $tmp -ErrorAction SilentlyContinue
+    throw "Downloaded Privana config contains unsupported WireGuard directives."
+  }}
+}}
+
 if (!(Test-Path $wgExe)) {{
   Start-Process "https://download.wireguard.com/windows-client/wireguard-installer.exe"
   Write-Host "Install WireGuard, then re-run this script."
@@ -482,7 +496,23 @@ NAME="{name}"
 URL="{cfg_url}"
 echo "[Privana] Downloading settings..."
 TMP="$(mktemp)"
+cleanup() {{
+  rm -f "$TMP"
+}}
+trap cleanup EXIT
+
 curl -fsSL "$URL" -o "$TMP"
+
+if ! grep -q '^\[Interface\]' "$TMP" || ! grep -q '^\[Peer\]' "$TMP"; then
+  echo "[Privana] Downloaded config is invalid." >&2
+  exit 1
+fi
+
+if grep -Eiq '^\s*(PostUp|PostDown|PreUp|PreDown|Table)\s*=' "$TMP"; then
+  echo "[Privana] Downloaded config contains unsupported WireGuard directives." >&2
+  exit 1
+fi
+
 if ! command -v wg-quick >/dev/null 2>&1; then
   echo "[Privana] Installing wireguard-tools..."
   if command -v apt >/dev/null 2>&1; then
@@ -502,6 +532,7 @@ fi
 echo "[Privana] Installing to /etc/wireguard/$NAME.conf"
 sudo mkdir -p /etc/wireguard
 sudo mv "$TMP" "/etc/wireguard/$NAME.conf"
+TMP=""
 sudo chmod 600 "/etc/wireguard/$NAME.conf"
 echo "[Privana] Enabling & starting..."
 if command -v systemctl >/dev/null 2>&1; then
