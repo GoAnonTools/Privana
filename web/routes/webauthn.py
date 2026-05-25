@@ -1,7 +1,7 @@
 # web/routes/webauthn.py
 from flask import Blueprint, request, jsonify, session
 import logging
-import base64, hashlib, sqlite3, os, time, secrets, pickle
+import base64, hashlib, sqlite3, os, time, secrets, json
 from datetime import datetime, timezone, timedelta
 from web.routes.auth import TRIAL_DAYS, log_event
 
@@ -106,10 +106,10 @@ def _store_webauthn_state(user_id: int, kind: str, state) -> str:
     state must not be stored directly in session.
     """
     state_id = secrets.token_urlsafe(32)
-    # FIDO2 state may contain complex python-fido2 objects, so we still serialize
-    # it, but never store raw pickle in SQLite. The DB value is AES-GCM
-    # authenticated ciphertext; tampering fails before pickle.loads() is reached.
-    encoded_state = encrypt_text(base64.b64encode(pickle.dumps(state)).decode("ascii"))
+    # FIDO2 state is JSON-safe for the supported python-fido2 flows
+    # ({challenge, user_verification}). Store it as AES-GCM authenticated JSON,
+    # avoiding pickle deserialization entirely.
+    encoded_state = encrypt_text(json.dumps(state, separators=(",", ":"), sort_keys=True))
     now = datetime.now(timezone.utc)
     expires = (now + timedelta(seconds=WEBAUTHN_REGISTER_STATE_TTL_SECONDS)).isoformat()
 
@@ -172,7 +172,12 @@ def _pop_webauthn_state(user_id: int, kind: str, state_id: str):
         conn.commit()
 
         encoded_state = decrypt_text(row["challenge"])
-        return pickle.loads(base64.b64decode(encoded_state))
+        state = json.loads(encoded_state)
+
+        if not isinstance(state, dict):
+            raise ValueError("Invalid WebAuthn state payload")
+
+        return state
     finally:
         conn.close()
 
