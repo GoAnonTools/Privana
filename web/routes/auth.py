@@ -13,7 +13,6 @@ import hmac
 from rate_limit import limiter
 from web.utils.api_client import sg_status
 
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
 TRIAL_DAYS  = 7
 
 # -----------------------------------------------------------------------------
@@ -471,12 +470,9 @@ def admin_health():
     user = conn.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
     conn.close()
 
-    if not user or not ADMIN_EMAIL:
-        return jsonify({"ok": False, "error": "forbidden"}), 403
-
     # Admin identified by account number stored in env (no email anymore)
     admin_account = normalise_account_number(os.getenv("ADMIN_ACCOUNT", ""))
-    if user["account_number"] != admin_account:
+    if not user or not admin_account or user["account_number"] != admin_account:
         return jsonify({"ok": False, "error": "forbidden"}), 403
 
     db_ok, db_err = True, None
