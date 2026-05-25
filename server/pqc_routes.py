@@ -15,11 +15,15 @@ This module is registered in api.py with:
     app.register_blueprint(pqc_bp)
 """
 
+import base64
+import hashlib
 import os
 import secrets
 import sqlite3
 import time
 from pathlib import Path
+
+from Crypto.Cipher import AES
 
 from flask import Blueprint, jsonify, request
 from kyber_py.kyber import Kyber768
@@ -38,6 +42,57 @@ PQC_SESSION_DB_PATH = Path(
     os.getenv("PQC_SESSION_DB_PATH", str(ROOT_DIR / "server" / "pqc_sessions.db"))
 )
 _SESSION_TTL = int(os.getenv("PQC_SESSION_TTL", "3600"))  # 1 hour
+_PQC_SESSION_ENC_KEY_ENV = "PQC_SESSION_ENC_KEY"
+
+
+def _get_session_encryption_key() -> bytes:
+    """
+    Return a 32-byte AES key for encrypting PQC session secrets at rest.
+
+    Production should set PQC_SESSION_ENC_KEY to either:
+    - a 64-character hex string, or
+    - a base64-encoded 32-byte value.
+
+    Development falls back to a deterministic local-only key so tests and local
+    workflows do not break, but production refuses to run without a real key.
+    """
+    raw = (os.getenv(_PQC_SESSION_ENC_KEY_ENV) or "").strip()
+
+    if raw:
+        try:
+            if len(raw) == 64:
+                key = bytes.fromhex(raw)
+            else:
+                key = base64.b64decode(raw, validate=True)
+        except Exception as exc:
+            raise RuntimeError(
+                f"{_PQC_SESSION_ENC_KEY_ENV} must be 32 bytes as hex or base64."
+            ) from exc
+
+        if len(key) != 32:
+            raise RuntimeError(f"{_PQC_SESSION_ENC_KEY_ENV} must decode to 32 bytes.")
+
+        return key
+
+    if os.getenv("ENVIRONMENT", "development").strip().lower() == "production":
+        raise RuntimeError(f"{_PQC_SESSION_ENC_KEY_ENV} is required in production.")
+
+    # Development/test fallback only. This is intentionally deterministic so
+    # local smoke tests can store/retrieve sessions without extra setup.
+    return hashlib.sha256(b"privana-dev-only-pqc-session-key").digest()
+
+
+def _encrypt_session_secret(shared_secret: bytes) -> tuple[bytes, bytes, bytes]:
+    """Encrypt a PQC shared secret using AES-256-GCM."""
+    cipher = AES.new(_get_session_encryption_key(), AES.MODE_GCM)
+    ciphertext, tag = cipher.encrypt_and_digest(shared_secret)
+    return cipher.nonce, tag, ciphertext
+
+
+def _decrypt_session_secret(nonce: bytes, tag: bytes, ciphertext: bytes) -> bytes:
+    """Decrypt and authenticate a stored PQC shared secret."""
+    cipher = AES.new(_get_session_encryption_key(), AES.MODE_GCM, nonce=nonce)
+    return cipher.decrypt_and_verify(ciphertext, tag)
 
 
 def _pqc_db() -> sqlite3.Connection:
@@ -52,7 +107,9 @@ def _pqc_db() -> sqlite3.Connection:
         """
         CREATE TABLE IF NOT EXISTS pqc_sessions (
             session_id TEXT PRIMARY KEY,
-            shared_secret BLOB NOT NULL,
+            encrypted_secret BLOB NOT NULL,
+            nonce BLOB NOT NULL,
+            tag BLOB NOT NULL,
             created_at INTEGER NOT NULL,
             expires_at INTEGER NOT NULL
         )
@@ -81,9 +138,10 @@ def _purge_expired(now: int | None = None) -> None:
 
 
 def _store_session(session_id: str, shared_secret: bytes) -> None:
-    """Persist a PQC shared secret with an expiry timestamp."""
+    """Persist an encrypted PQC shared secret with an expiry timestamp."""
     now = int(time.time())
     expires_at = now + _SESSION_TTL
+    nonce, tag, encrypted_secret = _encrypt_session_secret(shared_secret)
 
     conn = _pqc_db()
     try:
@@ -91,13 +149,22 @@ def _store_session(session_id: str, shared_secret: bytes) -> None:
             """
             INSERT INTO pqc_sessions (
                 session_id,
-                shared_secret,
+                encrypted_secret,
+                nonce,
+                tag,
                 created_at,
                 expires_at
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (session_id, sqlite3.Binary(shared_secret), now, expires_at),
+            (
+                session_id,
+                sqlite3.Binary(encrypted_secret),
+                sqlite3.Binary(nonce),
+                sqlite3.Binary(tag),
+                now,
+                expires_at,
+            ),
         )
         conn.commit()
     finally:
@@ -116,7 +183,7 @@ def get_session_secret(session_id: str) -> bytes | None:
         conn.execute("DELETE FROM pqc_sessions WHERE expires_at <= ?", (now,))
         row = conn.execute(
             """
-            SELECT shared_secret
+            SELECT encrypted_secret, nonce, tag
             FROM pqc_sessions
             WHERE session_id = ?
               AND expires_at > ?
@@ -128,7 +195,11 @@ def get_session_secret(session_id: str) -> bytes | None:
         if row is None:
             return None
 
-        return bytes(row["shared_secret"])
+        return _decrypt_session_secret(
+            bytes(row["nonce"]),
+            bytes(row["tag"]),
+            bytes(row["encrypted_secret"]),
+        )
     finally:
         conn.close()
 
