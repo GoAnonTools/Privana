@@ -101,7 +101,6 @@ CREATE TABLE IF NOT EXISTS config_download_tokens (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_number ON users(account_number);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_recovery_hash ON users(recovery_hash);
 CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
-CREATE INDEX IF NOT EXISTS ix_users_account ON users(account_number);
 CREATE INDEX IF NOT EXISTS ix_devices_user ON devices(user_id);
 CREATE INDEX IF NOT EXISTS ix_sec_ip ON security_events(ip);
 CREATE INDEX IF NOT EXISTS ix_sec_time ON security_events(created_at);
