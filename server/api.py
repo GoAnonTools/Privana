@@ -30,11 +30,8 @@ app.config.from_object(config.get_config())
 app.config["API_SECRET"] = os.getenv("API_SECRET", app.config.get("API_SECRET", ""))
 app.config["ENVIRONMENT"] = os.getenv("ENVIRONMENT", app.config.get("ENVIRONMENT", "development"))
 
-# Debug banner (don’t print full secret)
+# Debug banner is logged after api_log is configured; never print secrets to stdout.
 sec = app.config.get("API_SECRET", "")
-print("🔍 Flask app config loaded:")
-print("   Environment:", app.config.get("ENVIRONMENT"))
-print("   API_SECRET configured:", bool(sec))
 
 
 # -------------------------------------------------------------------
@@ -63,6 +60,12 @@ fh = logging.FileHandler(LOG_DIR / "security.log", encoding="utf-8")
 fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
 if not api_log.handlers:
     api_log.addHandler(fh)
+
+api_log.info(
+    "Flask app config loaded environment=%s api_secret_configured=%s",
+    app.config.get("ENVIRONMENT"),
+    bool(sec),
+)
 
 # -------------------------------------------------------------------
 # Replay protection (nonce cache)
@@ -140,9 +143,9 @@ try:
         from wireguard import WireGuardManager
 
     wg_manager = WireGuardManager()
-    print("✅ WireGuard manager initialized successfully")
+    api_log.info("WireGuard manager initialized successfully")
 except Exception as e:
-    print(f"❌ Failed to initialize WireGuard manager: {e}")
+    api_log.exception("Failed to initialize WireGuard manager")
     wg_manager = None
 
 
@@ -221,16 +224,16 @@ def auth_required(f):
             hashlib.sha256
         ).hexdigest()
 
-        # DEBUG (optional)
+        # DEBUG (optional). Do not print to stdout.
         if os.getenv("HMAC_DEBUG", "").lower() == "true":
-            print(
-                "HMAC debug:",
-                "method=", method,
-                "path=", path,
-                "len(body)=", len(body),
-                "nonce=", nonce[:8],
-                "expected=", expected_sig[:16],
-                "got=", (auth_header or "")[:16],
+            api_log.debug(
+                "HMAC debug method=%s path=%s len_body=%s nonce=%s expected_prefix=%s got_prefix=%s",
+                method,
+                path,
+                len(body),
+                nonce[:8],
+                expected_sig[:16],
+                (auth_header or "")[:16],
             )
 
         if not hmac.compare_digest(auth_header, expected_sig):
@@ -498,9 +501,9 @@ try:
     else:
         raise RuntimeError("PQC endpoint was not registered as expected.")
 
-    print("✅ PQC blueprint registered and protected (/api/pqc/init)")
+    api_log.info("PQC blueprint registered and protected")
 except Exception as e:
-    print(f"❌ Failed to register PQC blueprint: {e}")
+    api_log.exception("Failed to register PQC blueprint")
 
 # -------------------------------------------------------------------
 # Main
