@@ -36,8 +36,11 @@ def _key() -> bytes:
 
         return key
 
-    if os.getenv("ENVIRONMENT", "development").strip().lower() == "production":
-        raise RuntimeError(f"{_ENV_KEY} is required in production.")
+    environment = os.getenv("ENVIRONMENT", "development").strip().lower()
+    if environment != "development":
+        raise RuntimeError(
+            f"{_ENV_KEY} is required when ENVIRONMENT is not development."
+        )
 
     return hashlib.sha256(b"privana-dev-only-web-config-key").digest()
 

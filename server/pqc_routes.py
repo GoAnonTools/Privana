@@ -79,10 +79,13 @@ def _get_session_encryption_key() -> bytes:
 
         return key
 
-    if os.getenv("ENVIRONMENT", "development").strip().lower() == "production":
-        raise RuntimeError(f"{_PQC_SESSION_ENC_KEY_ENV} is required in production.")
+    environment = os.getenv("ENVIRONMENT", "development").strip().lower()
+    if environment != "development":
+        raise RuntimeError(
+            f"{_PQC_SESSION_ENC_KEY_ENV} is required when ENVIRONMENT is not development."
+        )
 
-    # Development/test fallback only. This is intentionally deterministic so
+    # Development fallback only. This is intentionally deterministic so
     # local smoke tests can store/retrieve sessions without extra setup.
     return hashlib.sha256(b"privana-dev-only-pqc-session-key").digest()
 
