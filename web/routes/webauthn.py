@@ -32,6 +32,7 @@ if ENVIRONMENT == "production":
 
 from web.db import DB_PATH, get_db
 from rate_limit import limiter
+from web.crypto import encrypt_text, decrypt_text
 
 
 # ---------- Tables ----------
@@ -105,7 +106,10 @@ def _store_webauthn_state(user_id: int, kind: str, state) -> str:
     state must not be stored directly in session.
     """
     state_id = secrets.token_urlsafe(32)
-    encoded_state = base64.b64encode(pickle.dumps(state)).decode("ascii")
+    # FIDO2 state may contain complex python-fido2 objects, so we still serialize
+    # it, but never store raw pickle in SQLite. The DB value is AES-GCM
+    # authenticated ciphertext; tampering fails before pickle.loads() is reached.
+    encoded_state = encrypt_text(base64.b64encode(pickle.dumps(state)).decode("ascii"))
     now = datetime.now(timezone.utc)
     expires = (now + timedelta(seconds=WEBAUTHN_REGISTER_STATE_TTL_SECONDS)).isoformat()
 
@@ -167,7 +171,8 @@ def _pop_webauthn_state(user_id: int, kind: str, state_id: str):
         conn.execute("DELETE FROM webauthn_challenges WHERE id = ?", (row["id"],))
         conn.commit()
 
-        return pickle.loads(base64.b64decode(row["challenge"]))
+        encoded_state = decrypt_text(row["challenge"])
+        return pickle.loads(base64.b64decode(encoded_state))
     finally:
         conn.close()
 
