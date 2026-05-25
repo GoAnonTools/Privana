@@ -247,7 +247,9 @@ auth_bp = Blueprint("auth", __name__)
 @limiter.limit("5 per minute", methods=["POST"])
 def signup():
     if request.method == "POST":
-        plan = (request.form.get("plan") or request.args.get("plan") or "trial").lower()
+        # Signup can only create trial accounts. Paid plans must be assigned
+        # after verified payment, never from user-controlled form/query input.
+        plan = "trial"
 
         # Generate account number + recovery code
         account_number  = generate_account_number()
@@ -280,7 +282,7 @@ def signup():
 
         return redirect(url_for("auth.reveal"))
 
-    plan = request.args.get("plan", "trial")
+    plan = "trial"
     return render_template("signup.html", plan=plan)
 
 
