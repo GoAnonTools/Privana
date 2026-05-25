@@ -47,7 +47,33 @@ CREATE TABLE IF NOT EXISTS device_configs (
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- WebAuthn authenticators are handled in web/routes/auth.py and web/routes/webauthn.py
+-- WebAuthn authenticators
+CREATE TABLE IF NOT EXISTS authenticators (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id            INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  credential_id      BLOB UNIQUE NOT NULL,
+  credential_id_hash TEXT UNIQUE,
+  public_key         BLOB NOT NULL,
+  sign_count         INTEGER NOT NULL DEFAULT 0,
+  aaguid             TEXT,
+  first_seen_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS security_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_type TEXT NOT NULL,
+  user_id    INTEGER,
+  details    TEXT,
+  ip         TEXT,
+  severity   TEXT NOT NULL DEFAULT 'info',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS suspicious_ips (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  ip       TEXT UNIQUE NOT NULL,
+  noted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 
 CREATE TABLE IF NOT EXISTS webauthn_challenges (
@@ -62,6 +88,11 @@ CREATE TABLE IF NOT EXISTS webauthn_challenges (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_number ON users(account_number);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_recovery_hash ON users(recovery_hash);
 CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
+CREATE INDEX IF NOT EXISTS ix_users_account ON users(account_number);
+CREATE INDEX IF NOT EXISTS ix_devices_user ON devices(user_id);
+CREATE INDEX IF NOT EXISTS ix_sec_ip ON security_events(ip);
+CREATE INDEX IF NOT EXISTS ix_sec_time ON security_events(created_at);
+CREATE INDEX IF NOT EXISTS ix_sec_event_time ON security_events(event_type, created_at);
 
 """
 
