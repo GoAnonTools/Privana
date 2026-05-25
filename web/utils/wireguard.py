@@ -1,3 +1,5 @@
+import logging
+import os
 import subprocess
 import stat
 import re
@@ -8,6 +10,9 @@ import base64
 from datetime import datetime
 import qrcode
 import io
+
+
+log = logging.getLogger("privana.web.wireguard")
 
 
 _DANGEROUS_WG_DIRECTIVES = re.compile(
@@ -63,9 +68,8 @@ def generate_wireguard_keys():
             "WireGuard tools are required to generate valid keys. Install wireguard-tools."
         ) from exc
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"WireGuard key generation failed: {exc.stderr or exc}"
-        ) from exc
+        log.exception("WireGuard key generation command failed")
+        raise RuntimeError("WireGuard key generation failed.") from exc
 
 def generate_wireguard_config(user_id, device_name, private_key, server_public_key, server_endpoint):
     """Generate a complete WireGuard configuration for a device"""
@@ -112,10 +116,12 @@ def toggle_wireguard_protection(config_path, enable=True):
             # Stop WireGuard
             subprocess.run(['wg-quick', 'down', 'privana'], check=True)
             return True, "Protection disabled"
-    except subprocess.CalledProcessError as e:
-        return False, f"Failed to toggle protection: {str(e)}"
-    except Exception as e:
-        return False, f"Error: {str(e)}"
+    except subprocess.CalledProcessError:
+        log.exception("WireGuard toggle command failed")
+        return False, "Failed to toggle WireGuard protection."
+    except Exception:
+        log.exception("Unexpected WireGuard toggle error")
+        return False, "WireGuard protection could not be toggled."
     
 def generate_platform_config(user_id, device_name, private_key, server_public_key, server_endpoint, platform):
     """Generate platform-specific WireGuard configuration"""
