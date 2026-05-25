@@ -1,198 +1,213 @@
 """
-Tests for protection module
-
-Unit tests for the core protection functionality.
+Tests for the current Privana protection implementation.
 """
 
-import unittest
-from unittest.mock import Mock, patch
-import sys
 import os
+import stat
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import Mock, mock_open, patch
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from app.core.protection import ProtectionManager
-
-
-class TestProtectionManager(unittest.TestCase):
-    """Test cases for ProtectionManager class."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.protection_manager = ProtectionManager()
-    
-    def test_init(self):
-        """Test ProtectionManager initialization."""
-        self.assertIsNotNone(self.protection_manager)
-        self.assertFalse(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 0)
-    
-    def test_enable_protection_level_1(self):
-        """Test enabling protection level 1."""
-        result = self.protection_manager.enable_protection(level=1)
-        
-        self.assertTrue(result)
-        self.assertTrue(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 1)
-    
-    def test_enable_protection_level_2(self):
-        """Test enabling protection level 2."""
-        result = self.protection_manager.enable_protection(level=2)
-        
-        self.assertTrue(result)
-        self.assertTrue(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 2)
-    
-    def test_enable_protection_level_3(self):
-        """Test enabling protection level 3."""
-        result = self.protection_manager.enable_protection(level=3)
-        
-        self.assertTrue(result)
-        self.assertTrue(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 3)
-    
-    def test_enable_protection_invalid_level(self):
-        """Test enabling protection with invalid level."""
-        # Test level too low
-        result = self.protection_manager.enable_protection(level=0)
-        self.assertFalse(result)
-        
-        # Test level too high
-        result = self.protection_manager.enable_protection(level=4)
-        self.assertFalse(result)
-        
-        # Protection should remain inactive
-        self.assertFalse(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 0)
-    
-    def test_disable_protection(self):
-        """Test disabling protection."""
-        # First enable protection
-        self.protection_manager.enable_protection(level=2)
-        self.assertTrue(self.protection_manager.is_active)
-        
-        # Then disable it
-        result = self.protection_manager.disable_protection()
-        self.assertTrue(result)
-        self.assertFalse(self.protection_manager.is_active)
-        self.assertEqual(self.protection_manager.protection_level, 0)
-    
-    def test_get_status_inactive(self):
-        """Test getting status when protection is inactive."""
-        status = self.protection_manager.get_status()
-        
-        expected_status = {
-            'active': False,
-            'level': 0,
-            'features': [],
-            'metrics': {
-                'uptime': 0,
-                'blocked_requests': 0,
-                'encrypted_data': 0,
-                'anonymized_connections': 0
-            }
-        }
-        
-        self.assertEqual(status, expected_status)
-    
-    def test_get_status_active_level_1(self):
-        """Test getting status when protection level 1 is active."""
-        self.protection_manager.enable_protection(level=1)
-        status = self.protection_manager.get_status()
-        
-        self.assertTrue(status['active'])
-        self.assertEqual(status['level'], 1)
-        self.assertIn('network_filtering', status['features'])
-        self.assertIn('basic_encryption', status['features'])
-    
-    def test_get_status_active_level_3(self):
-        """Test getting status when protection level 3 is active."""
-        self.protection_manager.enable_protection(level=3)
-        status = self.protection_manager.get_status()
-        
-        self.assertTrue(status['active'])
-        self.assertEqual(status['level'], 3)
-        expected_features = [
-            'network_filtering', 'basic_encryption',
-            'traffic_obfuscation', 'advanced_encryption',
-            'full_anonymization', 'post_quantum_crypto', 'qrng'
-        ]
-        
-        for feature in expected_features:
-            self.assertIn(feature, status['features'])
-    
-    @patch('app.core.protection.ProtectionManager._enable_basic_protection')
-    def test_enable_basic_protection_called(self, mock_basic):
-        """Test that basic protection is called for all levels."""
-        self.protection_manager.enable_protection(level=1)
-        mock_basic.assert_called_once()
-    
-    @patch('app.core.protection.ProtectionManager._enable_advanced_protection')
-    def test_enable_advanced_protection_called(self, mock_advanced):
-        """Test that advanced protection is called for levels 2+."""
-        self.protection_manager.enable_protection(level=2)
-        mock_advanced.assert_called_once()
-        
-        # Reset mock and test level 1 doesn't call it
-        mock_advanced.reset_mock()
-        self.protection_manager.enable_protection(level=1)
-        mock_advanced.assert_not_called()
-    
-    @patch('app.core.protection.ProtectionManager._enable_maximum_protection')
-    def test_enable_maximum_protection_called(self, mock_maximum):
-        """Test that maximum protection is called for level 3."""
-        self.protection_manager.enable_protection(level=3)
-        mock_maximum.assert_called_once()
-        
-        # Reset mock and test level 2 doesn't call it
-        mock_maximum.reset_mock()
-        self.protection_manager.enable_protection(level=2)
-        mock_maximum.assert_not_called()
-    
-    @patch('app.core.protection.ProtectionManager._cleanup_protection_components')
-    def test_cleanup_called_on_disable(self, mock_cleanup):
-        """Test that cleanup is called when disabling protection."""
-        self.protection_manager.enable_protection(level=2)
-        self.protection_manager.disable_protection()
-        mock_cleanup.assert_called_once()
+from app.core.protection import (
+    PrivanaProtection,
+    ProtectionError,
+    sanitize_wg_config,
+    secure_write_config,
+)
 
 
-class TestProtectionManagerIntegration(unittest.TestCase):
-    """Integration tests for ProtectionManager."""
-    
-    def test_enable_disable_cycle(self):
-        """Test enabling and disabling protection multiple times."""
-        pm = ProtectionManager()
-        
-        # Test multiple enable/disable cycles
-        for level in [1, 2, 3, 2, 1]:
-            result = pm.enable_protection(level=level)
-            self.assertTrue(result)
-            self.assertTrue(pm.is_active)
-            self.assertEqual(pm.protection_level, level)
-            
-            result = pm.disable_protection()
-            self.assertTrue(result)
-            self.assertFalse(pm.is_active)
-            self.assertEqual(pm.protection_level, 0)
-    
-    def test_upgrade_protection_level(self):
-        """Test upgrading protection level without disabling first."""
-        pm = ProtectionManager()
-        
-        # Start with level 1
-        pm.enable_protection(level=1)
-        self.assertEqual(pm.protection_level, 1)
-        
-        # Upgrade to level 2
-        pm.enable_protection(level=2)
-        self.assertEqual(pm.protection_level, 2)
-        
-        # Upgrade to level 3
-        pm.enable_protection(level=3)
-        self.assertEqual(pm.protection_level, 3)
+VALID_WG_CONFIG = """
+[Interface]
+PrivateKey = PLACEHOLDER
+Address = 10.8.0.2/32
+
+[Peer]
+PublicKey = server-public-key
+Endpoint = vpn.example.test:51820
+AllowedIPs = 0.0.0.0/0
+"""
 
 
-if __name__ == '__main__':
+class TestWireGuardConfigSanitization(unittest.TestCase):
+    def test_sanitize_accepts_valid_config(self):
+        result = sanitize_wg_config(VALID_WG_CONFIG)
+
+        self.assertIn("[Interface]", result)
+        self.assertIn("[Peer]", result)
+        self.assertIn("AllowedIPs", result)
+
+    def test_sanitize_rejects_empty_config(self):
+        with self.assertRaises(ProtectionError):
+            sanitize_wg_config("")
+
+    def test_sanitize_rejects_missing_required_sections(self):
+        with self.assertRaises(ProtectionError):
+            sanitize_wg_config("[Interface]\nPrivateKey = PLACEHOLDER\n")
+
+    def test_sanitize_comments_dangerous_directives(self):
+        unsafe = """
+[Interface]
+PrivateKey = PLACEHOLDER
+Address = 10.8.0.2/32
+PostUp = rm -rf /
+PreDown = echo unsafe
+Table = off
+
+[Peer]
+PublicKey = server-public-key
+Endpoint = vpn.example.test:51820
+AllowedIPs = 0.0.0.0/0
+"""
+        result = sanitize_wg_config(unsafe)
+
+        self.assertIn("# REMOVED FOR SECURITY: PostUp =", result)
+        self.assertIn("# REMOVED FOR SECURITY: PreDown =", result)
+        self.assertIn("# REMOVED FOR SECURITY: Table =", result)
+        self.assertNotIn("\nPostUp =", result)
+        self.assertNotIn("\nPreDown =", result)
+        self.assertNotIn("\nTable =", result)
+
+
+class TestSecureWriteConfig(unittest.TestCase):
+    def test_secure_write_config_writes_owner_only_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "nested" / "privana.conf"
+
+            secure_write_config(str(path), VALID_WG_CONFIG)
+
+            self.assertTrue(path.exists())
+            self.assertEqual(path.read_text(encoding="utf-8"), VALID_WG_CONFIG)
+
+            mode = stat.S_IMODE(path.stat().st_mode)
+            self.assertEqual(mode, 0o600)
+
+
+class TestPrivanaProtection(unittest.TestCase):
+    def test_init_defaults(self):
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana-test")
+
+        self.assertEqual(protection.config_path, "/tmp/privana-test.conf")
+        self.assertEqual(protection.interface_name, "privana-test")
+        self.assertIsNotNone(protection.api_client)
+        self.assertIsNotNone(protection.qrng_client)
+        self.assertIsNotNone(protection.pqc_client)
+
+    @patch("app.core.protection.subprocess.run")
+    @patch("app.core.protection.secure_write_config")
+    @patch("builtins.open", new_callable=mock_open, read_data=VALID_WG_CONFIG)
+    def test_connect_fetches_sanitizes_writes_and_starts_wg(
+        self,
+        mock_file,
+        mock_secure_write,
+        mock_run,
+    ):
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+
+        protection.qrng_client = Mock()
+        protection.qrng_client.get_random_data.return_value = b"q" * 32
+
+        protection.pqc_client = Mock()
+        protection.pqc_client.key_exchange.return_value = (b"s" * 32, "session-id")
+
+        protection.api_client = Mock()
+        protection.api_client.get_wg_config.return_value = VALID_WG_CONFIG
+
+        protection.connect()
+
+        protection.qrng_client.get_random_data.assert_called_once_with(32)
+        protection.pqc_client.key_exchange.assert_called_once_with(b"q" * 32)
+        protection.api_client.get_wg_config.assert_called_once_with(b"s" * 32, "session-id")
+
+        self.assertGreaterEqual(mock_secure_write.call_count, 1)
+        first_write_path, first_write_config = mock_secure_write.call_args_list[0].args
+        self.assertEqual(first_write_path, "/tmp/privana-test.conf")
+        self.assertIn("[Interface]", first_write_config)
+        self.assertIn("[Peer]", first_write_config)
+
+        mock_file.assert_called_with("/tmp/privana-test.conf", "r", encoding="utf-8")
+        mock_run.assert_called_once_with(
+            ["wg-quick", "up", "/tmp/privana-test.conf"],
+            check=True,
+            timeout=30,
+        )
+
+    @patch("app.core.protection.os.remove")
+    @patch("app.core.protection.subprocess.run")
+    @patch("app.core.protection.secure_write_config")
+    @patch("builtins.open", new_callable=mock_open, read_data=VALID_WG_CONFIG)
+    def test_connect_removes_config_if_wg_start_fails(
+        self,
+        mock_file,
+        mock_secure_write,
+        mock_run,
+        mock_remove,
+    ):
+        mock_run.side_effect = RuntimeError("wg failed")
+
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+        protection.qrng_client = Mock()
+        protection.qrng_client.get_random_data.return_value = b"q" * 32
+        protection.pqc_client = Mock()
+        protection.pqc_client.key_exchange.return_value = (b"s" * 32, "session-id")
+        protection.api_client = Mock()
+        protection.api_client.get_wg_config.return_value = VALID_WG_CONFIG
+
+        with self.assertRaises(ProtectionError):
+            protection.connect()
+
+        mock_remove.assert_called_once_with("/tmp/privana-test.conf")
+
+    @patch("app.core.protection.subprocess.run")
+    def test_is_connected_true_when_wg_show_returns_output(self, mock_run):
+        mock_run.return_value = Mock(returncode=0, stdout="interface: privana\n")
+
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana")
+        self.assertTrue(protection.is_connected())
+
+        mock_run.assert_called_once_with(
+            ["wg", "show", "privana"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+    @patch("app.core.protection.subprocess.run")
+    def test_is_connected_false_when_wg_show_fails(self, mock_run):
+        mock_run.return_value = Mock(returncode=1, stdout="")
+
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana")
+        self.assertFalse(protection.is_connected())
+
+    @patch.object(PrivanaProtection, "is_connected", return_value=False)
+    @patch("app.core.protection.subprocess.run")
+    def test_disconnect_runs_wg_quick_down(self, mock_run, mock_is_connected):
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+
+        protection.disconnect()
+
+        mock_run.assert_called_once_with(
+            ["wg-quick", "down", "/tmp/privana-test.conf"],
+            check=True,
+            timeout=30,
+        )
+        mock_is_connected.assert_called_once()
+
+    @patch("app.core.protection.subprocess.run")
+    def test_disconnect_raises_on_wg_quick_failure(self, mock_run):
+        import subprocess
+
+        mock_run.side_effect = subprocess.CalledProcessError(1, ["wg-quick", "down"])
+
+        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+
+        with self.assertRaises(ProtectionError):
+            protection.disconnect()
+
+
+if __name__ == "__main__":
     unittest.main()
