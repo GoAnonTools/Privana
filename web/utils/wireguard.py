@@ -62,7 +62,7 @@ def secure_write_file(path: str, content: str) -> None:
     try:
         os.chmod(path, 0o600)
     except Exception:
-        pass
+        log.warning("Could not chmod WireGuard config to 0600: %s", path, exc_info=True)
 
 
 def generate_wireguard_keys():
