@@ -7,7 +7,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "click>=8.1.7",
-        "requests>=2.31.0",
+        "requests>=2.32.0",
     ],
     entry_points={
         "console_scripts": [

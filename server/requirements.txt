@@ -1,7 +1,7 @@
-Flask==2.3.3
-Werkzeug==2.3.7
+Flask>=3.0.0
+Werkzeug>=3.0.0
 python-dotenv>=1.0.0
-requests>=2.31.0
+requests>=2.32.0
 kyber-py>=1.2.0
 pycryptodome>=3.23.0
 dilithium-py>=1.4.0
