@@ -11,6 +11,7 @@ Install: pip install kyber-py dilithium-py pycryptodome
 """
 
 import os
+import threading
 import logging
 import time
 import hashlib
@@ -18,12 +19,16 @@ import struct
 from typing import Optional
 
 from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import HKDF
+from Crypto.Hash import SHA256
 from Crypto.Random import get_random_bytes
 
 from kyber_py.kyber import Kyber768
 from dilithium_py.dilithium import Dilithium3
 
 log = logging.getLogger("privana.pqc")
+
+_KYBER_DRBG_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -39,7 +44,8 @@ class _QRNGAdapter:
         try:
             from .qrng import QRNGClient
             self._client = QRNGClient()
-        except Exception:
+        except Exception as exc:
+            log.warning("QRNGClient unavailable in PQC adapter; fallback policy will apply. reason=%s", exc)
             self._client = None
 
     def generate_quantum_key(self, length: int = 32) -> bytes:
@@ -88,6 +94,8 @@ class PostQuantumCrypto:
 
     def __init__(self):
         self.qrng = _QRNGAdapter()
+        # Compatibility placeholder for older tests/API expectations.
+        # Not used for cryptographic key caching.
         self._key_cache: dict = {}
 
     # ------------------------------------------------------------------
@@ -102,6 +110,19 @@ class PostQuantumCrypto:
         """Generate a Dilithium-3 keypair. Returns (public_key, private_key)."""
         return Dilithium3.keygen()
 
+
+    def _allow_test_key_embedding(self) -> bool:
+        """
+        Key-embedding mode is only allowed for tests/backward compatibility.
+
+        Production code must pass an explicit 32-byte AES key.
+        """
+        return (
+            os.getenv("PRIVANA_ALLOW_TEST_KEY_EMBEDDING", "false").lower() == "true"
+            or os.getenv("ENVIRONMENT", "").lower() == "test"
+            or "PYTEST_CURRENT_TEST" in os.environ
+        )
+
     # ------------------------------------------------------------------
     # AES-256-GCM helpers
     # ------------------------------------------------------------------
@@ -109,7 +130,7 @@ class PostQuantumCrypto:
     def _aes_encrypt(self, data: bytes, key: bytes) -> bytes:
         """Wire format: [ nonce (12 B) | tag (16 B) | ciphertext ]"""
         if len(key) != 32:
-            key = hashlib.sha256(key).digest()
+            raise ValueError("AES-256-GCM key must be exactly 32 bytes.")
         nonce = get_random_bytes(12)
         cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
         ciphertext, tag = cipher.encrypt_and_digest(data)
@@ -117,7 +138,9 @@ class PostQuantumCrypto:
 
     def _aes_decrypt(self, blob: bytes, key: bytes) -> bytes:
         if len(key) != 32:
-            key = hashlib.sha256(key).digest()
+            raise ValueError("AES-256-GCM key must be exactly 32 bytes.")
+        if len(blob) < 28:
+            raise ValueError("Ciphertext too short.")
         nonce      = blob[:12]
         tag        = blob[12:28]
         ciphertext = blob[28:]
@@ -131,9 +154,13 @@ class PostQuantumCrypto:
     def encrypt(self, data: bytes, key: Optional[bytes] = None) -> bytes:
         """
         Encrypt data with AES-256-GCM.
-        Without a key, generates one and prepends it (for testing only).
+
+        Production callers must provide a 32-byte key. The legacy no-key mode
+        embeds the key in the ciphertext and is only allowed in tests.
         """
         if key is None:
+            if not self._allow_test_key_embedding():
+                raise ValueError("encrypt(key=None) is disabled outside tests.")
             key = self.qrng.generate_quantum_key(32)
             blob = self._aes_encrypt(data, key)
             return struct.pack(">H", len(key)) + key + blob
@@ -141,7 +168,13 @@ class PostQuantumCrypto:
 
     def decrypt(self, ciphertext: bytes, key: Optional[bytes] = None) -> bytes:
         if key is None:
+            if not self._allow_test_key_embedding():
+                raise ValueError("decrypt(key=None) is disabled outside tests.")
+            if len(ciphertext) < 2:
+                raise ValueError("Ciphertext too short.")
             key_len = struct.unpack(">H", ciphertext[:2])[0]
+            if key_len != 32 or len(ciphertext) < 2 + key_len + 28:
+                raise ValueError("Invalid embedded-key ciphertext.")
             key = ciphertext[2:2 + key_len]
             blob = ciphertext[2 + key_len:]
             return self._aes_decrypt(blob, key)
@@ -205,7 +238,7 @@ class PostQuantumCrypto:
     ) -> bool:
         try:
             return Dilithium3.verify(public_key, message, signature)
-        except Exception:
+        except ValueError:
             return False
 
     # ------------------------------------------------------------------
@@ -300,25 +333,28 @@ class PQCClient:
         """
         import requests
 
-        # Seed the DRBG with client_randomness XOR fresh OS entropy so QRNG
-        # entropy contributes without replacing OS-level randomness.
+        # Derive a 48-byte Kyber DRBG seed with HKDF, using explicit context.
         os_entropy = os.urandom(48)
-        seed = hashlib.sha256(client_randomness + os_entropy).digest()
-        # Extend seed to 48 bytes (kyber-py DRBG requirement)
-        seed48 = hashlib.sha512(seed).digest()[:48]
-        Kyber768.set_drbg_seed(seed48)
+        seed48 = HKDF(
+            master=client_randomness + os_entropy,
+            key_len=48,
+            salt=os_entropy,
+            hashmod=SHA256,
+            context=b"Privana PQCClient Kyber768 ephemeral keygen v1",
+        )
 
-        # Step 1: generate ephemeral client keypair
-        client_pub, client_priv = Kyber768.keygen()
-
-        # Reset DRBG to OS randomness immediately after keygen
-        Kyber768.set_drbg_seed(os.urandom(48))
+        # kyber-py uses global DRBG state; serialize seed/keygen/reset to avoid races.
+        with _KYBER_DRBG_LOCK:
+            Kyber768.set_drbg_seed(seed48)
+            client_pub, client_priv = Kyber768.keygen()
+            Kyber768.set_drbg_seed(os.urandom(48))
 
         # Step 2: send client public key → server encapsulates
         response = requests.post(
             self._base_url + self.KEM_INIT_PATH,
             json={"client_public_key": client_pub.hex()},
             timeout=15,
+            verify=True,
         )
         response.raise_for_status()
         body = response.json()

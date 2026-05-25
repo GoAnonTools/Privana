@@ -1,45 +1,131 @@
 # src/app/core/protection.py
 
-import subprocess
 import os
+import re
+import stat
+import subprocess
+from pathlib import Path
+
 from .api_client import PrivanaAPIClient
 from .qrng import QRNGClient
 from .pqc import PQCClient
 
 
+DANGEROUS_WG_DIRECTIVES = re.compile(
+    r"^\s*(PostUp|PostDown|PreUp|PreDown|Table)\s*=",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+class ProtectionError(RuntimeError):
+    pass
+
+
+def sanitize_wg_config(config_text: str) -> str:
+    """
+    Remove WireGuard directives that wg-quick may execute or use for unsafe routing changes.
+    """
+    if not config_text:
+        raise ProtectionError("Empty WireGuard configuration received.")
+
+    sanitized = DANGEROUS_WG_DIRECTIVES.sub(
+        lambda m: "# REMOVED FOR SECURITY: " + m.group(0).strip(),
+        config_text,
+    )
+
+    if "[Interface]" not in sanitized or "[Peer]" not in sanitized:
+        raise ProtectionError("Invalid WireGuard configuration: missing required sections.")
+
+    return sanitized
+
+
+def secure_write_config(path: str, content: str) -> None:
+    """
+    Write WireGuard config with owner-only permissions.
+    """
+    target = Path(path).expanduser()
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    fd = os.open(
+        str(target),
+        os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+        stat.S_IRUSR | stat.S_IWUSR,
+    )
+    try:
+        os.write(fd, content.encode("utf-8"))
+    finally:
+        os.close(fd)
+
+    try:
+        os.chmod(str(target), 0o600)
+    except Exception:
+        pass
+
+
 class PrivanaProtection:
-    def __init__(self, config_path=None):
-        self.config_path = config_path or os.path.expanduser("~/.privana.conf")
-        self.api_client  = PrivanaAPIClient()
+    def __init__(self, config_path=None, interface_name: str = "privana"):
+        self.config_path = config_path or os.path.expanduser("~/.privana/privana.conf")
+        self.interface_name = interface_name
+        self.api_client = PrivanaAPIClient()
         self.qrng_client = QRNGClient()
-        self.pqc_client  = PQCClient()
+        self.pqc_client = PQCClient()
 
     def connect(self):
-        # Step 1: Get quantum-random entropy for the KEM seed
-        qrng_data = self.qrng_client.get_random_data(32)
+        config_written = False
 
-        # Step 2: Perform the Kyber-768 KEM handshake with the server.
-        #   - Client generates an ephemeral keypair seeded with qrng_data
-        #   - Server encapsulates under the client public key → kem_ciphertext
-        #   - Client decapsulates → both sides hold the same shared_secret
-        #   - session_id is the server's opaque handle for this session
-        shared_secret, session_id = self.pqc_client.key_exchange(qrng_data)
+        try:
+            # Step 1: Get quantum-random entropy for the KEM seed.
+            qrng_data = self.qrng_client.get_random_data(32)
 
-        # Step 3: Fetch WireGuard config; authenticate with session_id.
-        #   The shared_secret can additionally be used to derive a MAC key
-        #   for the config request, binding the WG session to the KEM handshake.
-        wg_config = self.api_client.get_wg_config(shared_secret, session_id)
+            # Step 2: Perform the Kyber-768 KEM handshake with the server.
+            shared_secret, session_id = self.pqc_client.key_exchange(qrng_data)
 
-        # Step 4: Save config
-        with open(self.config_path, "w") as f:
-            f.write(wg_config)
+            # Step 3: Fetch WireGuard config using PQC-bound API auth.
+            wg_config = self.api_client.get_wg_config(shared_secret, session_id)
 
-        # Step 5: Bring up WireGuard
-        subprocess.run(["wg-quick", "up", self.config_path], check=True)
+            # Step 4: Validate/sanitize config before writing.
+            safe_config = sanitize_wg_config(wg_config)
+            secure_write_config(self.config_path, safe_config)
+            config_written = True
+
+            # Step 5: Defense-in-depth: re-read exact file before wg-quick executes it.
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                on_disk = f.read()
+
+            sanitized_on_disk = sanitize_wg_config(on_disk)
+            if sanitized_on_disk != on_disk:
+                secure_write_config(self.config_path, sanitized_on_disk)
+
+            subprocess.run(["wg-quick", "up", self.config_path], check=True, timeout=30)
+
+        except Exception as exc:
+            # Cleanup if config was written but the tunnel failed to start.
+            if config_written:
+                try:
+                    os.remove(self.config_path)
+                except FileNotFoundError:
+                    pass
+                except Exception:
+                    pass
+            raise ProtectionError(f"Failed to enable Privana protection: {exc}") from exc
 
     def disconnect(self):
-        subprocess.run(["wg-quick", "down", self.config_path], check=True)
+        try:
+            subprocess.run(["wg-quick", "down", self.config_path], check=True, timeout=30)
+        except subprocess.CalledProcessError as exc:
+            raise ProtectionError("Failed to disable Privana protection.") from exc
+
+        if self.is_connected():
+            raise ProtectionError("WireGuard still appears to be connected after disconnect.")
 
     def is_connected(self):
-        result = subprocess.run(["wg", "show"], capture_output=True, text=True)
-        return result.returncode == 0 and "privana" in result.stdout
+        try:
+            result = subprocess.run(
+                ["wg", "show", self.interface_name],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            return result.returncode == 0 and bool(result.stdout.strip())
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return False

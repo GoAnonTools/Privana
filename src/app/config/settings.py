@@ -8,8 +8,59 @@ including environment variables, defaults, and configuration validation.
 import os
 import json
 import logging
+import threading
 from typing import Dict, Any, Optional
 from pathlib import Path
+
+
+SENSITIVE_KEY_PARTS = ("secret", "token", "password", "key", "credential")
+
+ALLOWED_CONFIG_KEYS = {
+    "app_name",
+    "version",
+    "debug",
+    "log_level",
+    "api_base_url",
+    "api_timeout",
+    "api_retries",
+    "encryption_algorithm",
+    "key_derivation_iterations",
+    "quantum_entropy_enabled",
+    "pqc_enabled",
+    "default_protection_level",
+    "max_protection_level",
+    "auto_enable_protection",
+    "network_timeout",
+    "dns_servers",
+    "check_endpoints",
+    "log_file",
+    "log_max_size",
+    "log_backup_count",
+    "gui_theme",
+    "gui_width",
+    "gui_height",
+    "gui_resizable",
+    "cli_colors",
+    "cli_verbose",
+    "qrng_backend",
+    "qrng_shots",
+    "qrng_cache_size",
+    "thread_pool_size",
+    "connection_pool_size",
+    "cache_enabled",
+    "cache_ttl",
+    "telemetry_enabled",
+    "analytics_enabled",
+    "crash_reporting",
+}
+
+def _is_sensitive_key(key: str) -> bool:
+    lowered = key.lower()
+    return any(part in lowered for part in SENSITIVE_KEY_PARTS)
+
+def _safe_log_value(key: str, value):
+    return "***" if _is_sensitive_key(key) else value
+
 
 
 class Settings:
@@ -121,7 +172,6 @@ class Settings:
         config_paths = [
             os.path.expanduser('~/.privana/config.json'),
             '/etc/privana/config.json',
-            './config.json'
         ]
         
         for config_path in config_paths:
@@ -130,11 +180,36 @@ class Settings:
                     with open(config_path, 'r') as f:
                         file_settings = json.load(f)
                     
-                    self._settings.update(file_settings)
-                    self.logger.info(f"Loaded configuration from {config_path}")
+                    applied = 0
+                    ignored = 0
+
+                    if not isinstance(file_settings, dict):
+                        raise ValueError("Configuration file must contain a JSON object.")
+
+                    for key, value in file_settings.items():
+                        if key not in ALLOWED_CONFIG_KEYS:
+                            ignored += 1
+                            self.logger.warning("Ignored unknown config key from %s: %s", config_path, key)
+                            continue
+
+                        current = self._settings.get(key)
+                        if current is not None and not isinstance(value, type(current)):
+                            ignored += 1
+                            self.logger.warning("Ignored invalid type for config key from %s: %s", config_path, key)
+                            continue
+
+                        self._settings[key] = value
+                        applied += 1
+
+                    self.logger.info(
+                        "Loaded configuration from %s; applied=%s ignored=%s",
+                        config_path,
+                        applied,
+                        ignored,
+                    )
                     break
                     
-                except (json.JSONDecodeError, IOError) as e:
+                except (json.JSONDecodeError, IOError, ValueError) as e:
                     self.logger.error(f"Failed to load config from {config_path}: {str(e)}")
     
     def get(self, key: str, default: Any = None) -> Any:
@@ -158,8 +233,13 @@ class Settings:
             key: Setting key
             value: Setting value
         """
+        if key not in ALLOWED_CONFIG_KEYS:
+            raise KeyError(f"Unknown setting: {key}")
+        current = self._settings.get(key)
+        if current is not None and not isinstance(value, type(current)):
+            raise TypeError(f"Invalid type for setting: {key}")
         self._settings[key] = value
-        self.logger.debug(f"Set setting {key} = {value}")
+        self.logger.debug("Set setting %s = %s", key, _safe_log_value(key, value))
     
     def update(self, settings: Dict[str, Any]):
         """
@@ -168,8 +248,11 @@ class Settings:
         Args:
             settings: Dictionary of settings to update
         """
-        self._settings.update(settings)
-        self.logger.debug(f"Updated {len(settings)} settings")
+        applied = 0
+        for key, value in settings.items():
+            self.set(key, value)
+            applied += 1
+        self.logger.debug("Updated %s settings", applied)
     
     def get_all(self) -> Dict[str, Any]:
         """
@@ -249,6 +332,7 @@ class Settings:
 
 # Global settings instance
 _settings = None
+_settings_lock = threading.Lock()
 
 
 def get_settings() -> Settings:
@@ -260,7 +344,9 @@ def get_settings() -> Settings:
     """
     global _settings
     if _settings is None:
-        _settings = Settings()
+        with _settings_lock:
+            if _settings is None:
+                _settings = Settings()
     return _settings
 
 

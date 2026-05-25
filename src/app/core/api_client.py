@@ -6,12 +6,20 @@ import time
 import requests
 
 
+class PrivanaAPIError(RuntimeError):
+    """Raised when Privana API communication fails."""
+
+
 class PrivanaAPIClient:
-    def __init__(self, base_url="https://api.privana.pro"):
+    def __init__(self, base_url="https://api.privana.pro", user_agent: str | None = None):
         self.base_url = base_url.rstrip("/")
+        self.timeout = float(os.getenv("PRIVANA_API_TIMEOUT", "15"))
+        self.verify_tls = os.getenv("PRIVANA_API_VERIFY_TLS", "true").lower() != "false"
+        self.user_agent = user_agent or os.getenv("PRIVANA_USER_AGENT", "Privana Client")
+
         self.headers = {
             "Content-Type": "application/json",
-            "User-Agent": "Privana/1.0",
+            "User-Agent": self.user_agent,
         }
 
     def _build_auth_headers(
@@ -25,8 +33,16 @@ class PrivanaAPIClient:
         """
         Build HMAC auth headers using the PQC-derived shared secret.
 
-        The shared secret itself is never sent over the wire.
+        Replay protection note:
+        - Client sends timestamp + nonce.
+        - Server must enforce timestamp skew limits and nonce de-duplication.
+        - The client never reuses a nonce because it is generated with OS entropy per request.
         """
+        if len(shared_secret) != 32:
+            raise ValueError("PQC shared secret must be exactly 32 bytes.")
+        if not session_id:
+            raise ValueError("PQC session_id is required.")
+
         ts = str(int(time.time()))
         nonce = os.urandom(32).hex()
         body_json = json.dumps(body or {}, separators=(",", ":"), sort_keys=True)
@@ -59,19 +75,25 @@ class PrivanaAPIClient:
         endpoint = f"{self.base_url}{path}"
         payload = {
             "client_info": {
-                "os": "linux",
-                "version": "1.0",
+                "os": os.getenv("PRIVANA_CLIENT_OS", "linux"),
+                "version": os.getenv("PRIVANA_CLIENT_VERSION", "1.0"),
             }
         }
 
         headers = self._headers_for(shared_secret, session_id, "POST", path, payload)
 
         try:
-            response = requests.post(endpoint, headers=headers, json=payload, timeout=15)
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                json=payload,
+                timeout=self.timeout,
+                verify=self.verify_tls,
+            )
             response.raise_for_status()
             return response.json().get("config", "")
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to get WireGuard config: {str(e)}")
+            raise PrivanaAPIError("Failed to get WireGuard config.") from e
 
     def check_status(self, shared_secret: bytes, session_id: str):
         """Check VPN connection status using PQC-HMAC auth."""
@@ -82,8 +104,13 @@ class PrivanaAPIClient:
         headers = self._headers_for(shared_secret, session_id, "GET", path, payload)
 
         try:
-            response = requests.get(endpoint, headers=headers, timeout=15)
+            response = requests.get(
+                endpoint,
+                headers=headers,
+                timeout=self.timeout,
+                verify=self.verify_tls,
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to check status: {str(e)}")
+            raise PrivanaAPIError("Failed to check status.") from e
