@@ -171,6 +171,27 @@ PersistentKeepalive = 25
         "config": conf,
     }
 
+
+def _upsert_device_config(conn, device_id: int, public_key: str | None, config_text: str) -> None:
+    """Insert or update an encrypted WireGuard config for a device."""
+    encrypted_config = encrypt_text(config_text)
+    existing = conn.execute(
+        "SELECT id FROM device_configs WHERE device_id = ?",
+        (device_id,)
+    ).fetchone()
+
+    if existing:
+        conn.execute(
+            "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
+            (public_key, encrypted_config, device_id)
+        )
+    else:
+        conn.execute(
+            "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
+            (device_id, public_key, encrypted_config)
+        )
+
+
 # -----------------------------------------------------------------------------
 # 1) One-click config (generates + downloads client .conf)
 # -----------------------------------------------------------------------------
@@ -222,20 +243,7 @@ def download_config(device_id: int):
 
     # Upsert into device_configs for UI
     with _db() as conn:
-        existing = conn.execute(
-            "SELECT id FROM device_configs WHERE device_id = ?",
-            (device_id,)
-        ).fetchone()
-        if existing:
-            conn.execute(
-                "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
-                (pub_key, encrypt_text(cfg_text), device_id)
-            )
-        else:
-            conn.execute(
-                "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
-                (device_id, pub_key, encrypt_text(cfg_text))
-            )
+        _upsert_device_config(conn, device_id, pub_key, cfg_text)
         conn.commit()
 
     fname = f"Privana-{device_name}-{device_id}.conf"
@@ -403,20 +411,7 @@ def download_config_by_token(token: str):
 
     # Upsert locally and mark token used
     with _db() as conn:
-        existing = conn.execute(
-            "SELECT id FROM device_configs WHERE device_id = ?",
-            (device_id,)
-        ).fetchone()
-        if existing:
-            conn.execute(
-                "UPDATE device_configs SET public_key = ?, config = ?, created_at = CURRENT_TIMESTAMP WHERE device_id = ?",
-                (payload.get("public_key"), encrypt_text(cfg_text), device_id)
-            )
-        else:
-            conn.execute(
-                "INSERT INTO device_configs (device_id, public_key, config) VALUES (?, ?, ?)",
-                (device_id, payload.get("public_key"), encrypt_text(cfg_text))
-            )
+        _upsert_device_config(conn, device_id, payload.get("public_key"), cfg_text)
         conn.execute("UPDATE config_download_tokens SET used = 1 WHERE id = ?", (row["id"],))
         conn.commit()
 
