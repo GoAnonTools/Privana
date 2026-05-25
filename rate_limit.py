@@ -2,7 +2,24 @@
 import os
 import warnings
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask import request
+
+
+def _rate_limit_client_ip() -> str:
+    """
+    Rate-limit key function.
+
+    By default, use request.remote_addr only. X-Forwarded-For is trusted only
+    when TRUST_PROXY_HEADERS=true and the app is deployed behind a trusted
+    reverse proxy that strips/rebuilds forwarded headers.
+    """
+    trust_proxy = os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true"
+    if trust_proxy:
+        forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+    return request.remote_addr or "unknown"
+
 
 _STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
 _ENV = os.getenv("ENVIRONMENT", "development").lower()
@@ -19,7 +36,7 @@ if _STORAGE_URI == "memory://" and _ENV == "production":
     )
 
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=_rate_limit_client_ip,
     default_limits=[],       # per-route limits defined explicitly on each route
     storage_uri=_STORAGE_URI,
 )

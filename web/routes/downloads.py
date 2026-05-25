@@ -77,8 +77,19 @@ TRIAL_DAYS = 7
 
 
 def _client_ip() -> str:
-    forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
-    return forwarded or request.remote_addr or "unknown"
+    """
+    Return the client IP.
+
+    Do not trust X-Forwarded-For by default because clients can spoof it.
+    Enable TRUST_PROXY_HEADERS=true only behind a trusted reverse proxy that
+    strips/rebuilds forwarded headers.
+    """
+    trust_proxy = os.getenv("TRUST_PROXY_HEADERS", "false").lower() == "true"
+    if trust_proxy:
+        forwarded = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+    return request.remote_addr or "unknown"
 
 
 def _db():    return central_get_db()
