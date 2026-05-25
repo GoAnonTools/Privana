@@ -123,42 +123,19 @@ def add_peer(public_key: str, user_id: int, device_id: int|None = None):
 
 def issue_config(user_id: int, device_id: int):
     """
-    Generate a new client keypair, allocate IP, add peer to wg0, return client .conf.
+    Deprecated compatibility stub.
+
+    Server-side WireGuard private-key generation is intentionally disabled.
+    Privana's security model requires client/browser-side key generation so the
+    private key never leaves the user's device. Use add_peer(public_key, ...)
+    followed by a client-side config template with PrivateKey = PLACEHOLDER.
     """
-    priv, pub, err = _gen_keypair()
-    if err: return {"success": False, "message": err}
+    return {
+        "success": False,
+        "message": (
+            "server-side config issuing is disabled; generate the WireGuard "
+            "private key client-side and register only the public key"
+        ),
+        "deprecated": True,
+    }
 
-    server_pub = _server_public_key()
-    if not server_pub:
-        return {"success": False, "message": "server public key not found. Ensure wg0 is up or place /etc/wireguard/server_public.key"}
-
-    with _db() as conn:
-        _ensure_tables(conn)
-        ip = _allocate_ip(conn, device_id)
-        if not ip:
-            return {"success": False, "message": "no free IPs in WG_CIDR"}
-        # add peer
-        code, out, err2 = _wg(["set", WG_IFACE, "peer", pub, "allowed-ips", f"{ip}/32"])
-        if code != 0:
-            return {"success": False, "message": f"wg set failed: {err2 or out}"}
-        _wg(["setconf", WG_IFACE, f"/etc/wireguard/{WG_IFACE}.conf"])  # best-effort persist
-
-        conn.execute("""
-          INSERT INTO peer_allocations (device_id, user_id, public_key, ip_addr)
-          VALUES (?,?,?,?)
-          ON CONFLICT(device_id) DO UPDATE SET public_key=excluded.public_key, ip_addr=excluded.ip_addr
-        """, (device_id, user_id, pub, ip))
-        conn.commit()
-
-    conf = f"""[Interface]
-PrivateKey = {priv}
-Address = {ip}/32
-DNS = {WG_DNS}
-
-[Peer]
-PublicKey = {server_pub}
-Endpoint = {WG_HOST}:{WG_PORT}
-AllowedIPs = {WG_ALLOWED}
-PersistentKeepalive = 25
-"""
-    return {"success": True, "public_key": pub, "config": conf, "ip": ip, "endpoint": f"{WG_HOST}:{WG_PORT}"}
