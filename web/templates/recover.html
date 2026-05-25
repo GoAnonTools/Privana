@@ -30,6 +30,20 @@
 
         <form method="POST" action="{{ url_for('auth.recover') }}" class="space-y-4">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="recovery_account_number" class="block text-sm font-bold text-slate-800 mb-1 dark:text-slate-100">Account Number</label>
+                <input
+                    type="text"
+                    id="recovery_account_number"
+                    name="account_number"
+                    placeholder="1234 5678 9012 3456"
+                    maxlength="19"
+                    autocomplete="off"
+                    inputmode="numeric"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                    required
+                />
+            </div>
             <div>
                 <label for="recovery_code"
                     class="block text-sm font-bold text-slate-800 mb-1 dark:text-slate-100">Recovery Code</label>

@@ -108,7 +108,7 @@ class PrivanaMainWindow:
                 # Check endpoint integrity before connecting
                 checker = EndpointChecker()
                 if not checker.check():
-                    self.root.after(0, self.set_error_state, "Endpoint integrity check failed")
+                    self.root.after(0, self.set_error_state, "Unsupported operating system for Privana")
                     return
                 
                 # Connect if not connected

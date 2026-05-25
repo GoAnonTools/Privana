@@ -1,5 +1,7 @@
 import subprocess
 import os
+import stat
+import re
 import json
 import sqlite3
 import ipaddress
@@ -7,6 +9,42 @@ from datetime import datetime
 import hashlib
 import threading
 import config
+
+# WireGuard base64 public key format: 43 chars plus "="
+_WG_PUBKEY_RE = re.compile(r"^[A-Za-z0-9+/]{43}=$")
+
+# wg-quick executes these directives as shell commands / routing changes.
+_DANGEROUS_WG_DIRECTIVES = re.compile(
+    r"^\s*(PostUp|PostDown|PreUp|PreDown|Table)\s*=",
+    re.MULTILINE | re.IGNORECASE
+)
+
+def validate_wg_public_key(key: str) -> str:
+    key = (key or "").strip()
+    if not _WG_PUBKEY_RE.fullmatch(key):
+        raise ValueError("Invalid WireGuard public key format.")
+    return key
+
+def sanitize_wg_config(config_text: str) -> str:
+    if not config_text:
+        return config_text
+    return _DANGEROUS_WG_DIRECTIVES.sub(
+        lambda m: "# REMOVED FOR SECURITY: " + m.group(0).strip(),
+        config_text,
+    )
+
+def secure_write_file(path: str, content: str) -> None:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
+    try:
+        os.write(fd, content.encode("utf-8"))
+    finally:
+        os.close(fd)
+    try:
+        os.chmod(path, 0o600)
+    except Exception:
+        pass
+
 
 
 class WireGuardManager:
@@ -144,12 +182,12 @@ class WireGuardManager:
     # ---------------------------
     # Config files / interface mgmt
     # ---------------------------
-    def generate_config(self):
+    def generate_config(self, include_private_key=False):
         """Generate the WireGuard configuration file for the server interface"""
         cfg = f"""[Interface]
 Address = {self.config.WG_ADDRESS}
 ListenPort = {self.config.PORT}
-PrivateKey = {self.config.WG_PRIVATE_KEY}
+PrivateKey = {self.config.WG_PRIVATE_KEY if include_private_key else '[REDACTED - server-side only]'}
 """
         return cfg
 
@@ -159,8 +197,8 @@ PrivateKey = {self.config.WG_PRIVATE_KEY}
             config_path = os.path.join(os.path.expanduser("~"), f"{self.config.WG_INTERFACE}.conf")
 
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        with open(config_path, "w") as f:
-            f.write(self.generate_config())
+        config_content = sanitize_wg_config(self.generate_config(include_private_key=True))
+        secure_write_file(config_path, config_content)
         return config_path
 
     def start_interface(self):

@@ -7,7 +7,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import (
     Flask, send_from_directory, render_template, abort,
-    request, session, url_for, flash, jsonify, redirect
+    request, session, url_for, flash, jsonify, redirect, g
 )
 
 # --------------------------------------------------------------------------------------
@@ -68,6 +68,65 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = os.getenv("SESSION_COOKIE_SECURE", "True").lower() != "false"
+
+# --------------------------------------------------------------------------------------
+# Security headers / CSP
+# --------------------------------------------------------------------------------------
+def _generate_csp_nonce() -> str:
+    return secrets.token_urlsafe(24)
+
+
+@app.before_request
+def _set_csp_nonce():
+    """
+    Generate CSP nonce before templates render.
+
+    Do not generate this in after_request: templates need the nonce during rendering.
+    """
+    g.csp_nonce = _generate_csp_nonce()
+
+
+def _csp_nonce() -> str:
+    return getattr(g, "csp_nonce", "")
+
+
+app.jinja_env.globals["csp_nonce"] = _csp_nonce
+
+
+@app.after_request
+def _add_security_headers(response):
+    nonce = getattr(g, "csp_nonce", "")
+
+    # Phase 1 CSP:
+    # - script-src allows local scripts + per-request inline script nonces.
+    # - style-src keeps unsafe-inline temporarily because current templates use inline CSS.
+    #   We can tighten this later after moving inline CSS to static files.
+    csp = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' http://127.0.0.1:51821 http://localhost:51821; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "base-uri 'self'; "
+        "upgrade-insecure-requests"
+    )
+
+    response.headers["Content-Security-Policy"] = csp
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+
+    if ENVIRONMENT == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+
+    return response
+
+
 # --------------------------------------------------------------------------------------
 # Rate limiter
 # --------------------------------------------------------------------------------------

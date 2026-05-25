@@ -1,40 +1,47 @@
-import os
+import logging
 import platform
-import hashlib
+
+
+log = logging.getLogger("privana.endpoint_check")
+
 
 class EndpointChecker:
+    """
+    Endpoint integrity checks are currently not implemented.
+
+    Previous versions compared SHA-256(platform string) to a hardcoded value.
+    That was not a real integrity/attestation mechanism and could give users
+    false confidence. Until real attestation exists, this checker only verifies
+    basic OS support and reports integrity attestation as unavailable.
+    """
+
     def __init__(self):
-        self.os_info = platform.system() + " " + platform.release()
-        # This is a placeholder; in reality, we would compute a hash of critical system files/processes
-        self.expected_hash = "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-    
-    def check(self):
-        """Check if the endpoint is compromised"""
-        # Step 1: Check OS
-        if not self._check_os():
+        self.os_info = f"{platform.system()} {platform.release()}"
+
+    def check(self) -> bool:
+        """
+        Return True only for basic OS support.
+
+        This is intentionally NOT a security attestation. It must not be shown
+        to users as proof that the endpoint is uncompromised.
+        """
+        supported = self._check_os()
+        if not supported:
+            log.warning("Unsupported OS for Privana endpoint. os_info=%s", self.os_info)
             return False
-        
-        # Step 2: Check for root privileges (on Linux/macOS)
-        if platform.system() != "Windows" and os.geteuid() != 0:
-            # We might require root for WireGuard, so this could be a problem
-            # But for security, we might want to avoid running as root
-            # This is a design decision
-            pass
-        
-        # Step 3: Compute hash of critical system state
-        current_hash = self._compute_system_hash()
-        
-        # Step 4: Compare with expected hash
-        return current_hash == self.expected_hash
-    
-    def _check_os(self):
-        """Check if the OS is supported"""
-        supported_os = ["Linux", "Darwin", "Windows"]
+
+        log.info("Endpoint integrity attestation unavailable; only OS support checked.")
+        return True
+
+    def status(self) -> dict:
+        """Machine-readable status for UI/debugging."""
+        return {
+            "supported_os": self._check_os(),
+            "os_info": self.os_info,
+            "integrity_attestation": "unavailable",
+            "security_claim": "none",
+        }
+
+    def _check_os(self) -> bool:
+        supported_os = {"Linux", "Darwin", "Windows"}
         return platform.system() in supported_os
-    
-    def _compute_system_hash(self):
-        """Compute a hash of the current system state"""
-        # This is a simplified version
-        # In reality, we would check running processes, kernel modules, etc.
-        data = self.os_info.encode()
-        return hashlib.sha256(data).hexdigest()

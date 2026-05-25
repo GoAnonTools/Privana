@@ -904,7 +904,7 @@
     </footer>
   </main>
 
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     const CSRF_TOKEN = "{{ csrf_token() }}";
     document.getElementById('year').textContent = new Date().getFullYear();
     lucide.createIcons();
@@ -1139,7 +1139,6 @@
     // ===== Helper integration (auto-setup on Windows) =====
     (function () {
       const HELPER_ORIGIN = "http://127.0.0.1:51821";
-      const HELPER_TOKEN = "{{ helper_token }}";
       let helperOK = false;
 
       function timeoutFetch(url, opts = {}, ms = 1500) {
@@ -1164,9 +1163,7 @@
         const r = await fetch(HELPER_ORIGIN + path, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'X-Privana-Helper-Token': HELPER_TOKEN
-          },
+            'Content-Type': 'application/json',},
           body: JSON.stringify(body || {})
         });
         const j = await r.json().catch(() => ({}));
@@ -1221,9 +1218,7 @@
             const deviceId = Number(firstCard.getAttribute('data-device-id'));
             const tunnelName = `Privana-${deviceId}`;
             const st = await fetch(HELPER_ORIGIN + '/status?name=' + encodeURIComponent(tunnelName), {
-              headers: {
-                'X-Privana-Helper-Token': HELPER_TOKEN
-              }
+              headers: {}
             }).then(r => r.json()).catch(() => ({ state: 'unknown' }));
             if (st.state !== 'running') await helperPost('/connect', { name: tunnelName });
             else await helperPost('/disconnect', { name: tunnelName });

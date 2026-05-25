@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Theme ASAP (persisted via localStorage, default = light) -->
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     (function () {
       const saved = localStorage.getItem('theme'); // 'light' | 'dark' | null
       if (saved === 'dark') document.documentElement.classList.add('dark');
@@ -23,7 +23,7 @@
   <meta name="theme-color" content="#06b6d4">
 
   <!-- Tailwind (CDN) + your site CSS -->
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     tailwind = window.tailwind || {};
     tailwind.config = { darkMode: 'class' };
   </script>
@@ -154,7 +154,7 @@
   </footer>
 
   <!-- Icons + Theme toggle -->
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     document.getElementById('year').textContent = new Date().getFullYear();
     try { lucide.createIcons(); } catch (_) { }
 

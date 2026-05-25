@@ -291,10 +291,7 @@ def register_verify():
         pub_key = _pick_pk(pub_key)
 
         if not (isinstance(cred_id, (bytes, bytearray)) and isinstance(pub_key, (bytes, bytearray))):
-            return jsonify({
-                "error": "register_verify_failed",
-                "detail": "Could not extract credential_id/public_key as bytes."
-            }), 500
+            return jsonify({"error": "register_verify_failed"}), 500
 
         cred_hash = sha256_hex(cred_id)
 
@@ -302,16 +299,28 @@ def register_verify():
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("SELECT id FROM authenticators WHERE credential_id_hash = ?", (cred_hash,))
+        cur.execute(
+            "SELECT id, user_id FROM authenticators WHERE credential_id_hash = ?",
+            (cred_hash,)
+        )
         existing = cur.fetchone()
         now = datetime.now(timezone.utc).isoformat()
 
         if existing:
+            existing_user_id = int(existing["user_id"])
+
+            # SECURITY: never allow a passkey credential to be reassigned
+            # from one account to another.
+            if existing_user_id != int(user_id):
+                conn.close()
+                return jsonify({"error": "credential_already_registered"}), 409
+
+            # Same user registering the same credential again: update harmless fields only.
             cur.execute("""
                 UPDATE authenticators
-                   SET user_id = ?, public_key = ?, sign_count = ?, aaguid = ?, first_seen_at = COALESCE(first_seen_at, ?)
-                 WHERE id = ?
-            """, (user_id, sqlite3.Binary(pub_key), int(sign_count), aaguid, now, existing["id"]))
+                SET public_key = ?, sign_count = ?, aaguid = ?, first_seen_at = COALESCE(first_seen_at, ?)
+                WHERE id = ?
+            """, (sqlite3.Binary(pub_key), int(sign_count), aaguid, now, existing["id"]))
         else:
             cur.execute("""
                 INSERT INTO authenticators

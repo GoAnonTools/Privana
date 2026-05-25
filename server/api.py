@@ -36,6 +36,22 @@ print("🔍 Flask app config loaded:")
 print("   Environment:", app.config.get("ENVIRONMENT"))
 print("   API_SECRET set:", bool(sec), "| first8:", (sec[:8] if sec else "None"))
 
+
+# -------------------------------------------------------------------
+# API security headers
+# -------------------------------------------------------------------
+@app.after_request
+def _add_api_security_headers(response):
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if app.config.get("ENVIRONMENT") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    return response
+
+
 # -------------------------------------------------------------------
 # Simple file logger for security/auth failures (server/logs/security.log)
 # -------------------------------------------------------------------
@@ -382,7 +398,7 @@ def get_server_config():
     if not wg_manager:
         return jsonify({"success": False, "message": "WireGuard manager not available"})
     try:
-        return jsonify({"success": True, "config": wg_manager.generate_config()})
+        return jsonify({"success": True, "config": wg_manager.generate_config(include_private_key=False)})
     except Exception as e:
         return jsonify({"success": False, "message": f"Error: {str(e)}"})
 

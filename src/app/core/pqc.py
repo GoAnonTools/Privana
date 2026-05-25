@@ -11,6 +11,7 @@ Install: pip install kyber-py dilithium-py pycryptodome
 """
 
 import os
+import logging
 import time
 import hashlib
 import struct
@@ -21,6 +22,8 @@ from Crypto.Random import get_random_bytes
 
 from kyber_py.kyber import Kyber768
 from dilithium_py.dilithium import Dilithium3
+
+log = logging.getLogger("privana.pqc")
 
 
 # ---------------------------------------------------------------------------
@@ -43,8 +46,15 @@ class _QRNGAdapter:
         if self._client is not None:
             try:
                 return self._client.get_random_data(length)
-            except Exception:
-                pass
+            except Exception as exc:
+                log.warning("QRNGClient failed inside PQC adapter; considering fallback. reason=%s", exc)
+
+        allow_fallback = os.getenv("PRIVANA_QRNG_ALLOW_FALLBACK", "true").lower() == "true"
+        log.warning("Using os.urandom fallback for PQC QRNG adapter. length=%s", length)
+
+        if not allow_fallback:
+            raise RuntimeError("QRNG unavailable and PRIVANA_QRNG_ALLOW_FALLBACK=false")
+
         return os.urandom(length)
 
     def get_random_data(self, length: int = 32) -> bytes:

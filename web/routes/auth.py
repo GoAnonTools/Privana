@@ -446,21 +446,29 @@ def recover():
     if request.method == "GET":
         return render_template("recover.html")
 
+    raw_account = (request.form.get("account_number") or "").strip()
+    account_stored = normalise_account_number(raw_account)
     recovery_input = (request.form.get("recovery_code") or "").strip().upper().replace(" ", "")
+
+    if len(account_stored) != 16 or not account_stored.isdigit():
+        flash("Please enter your 16-digit account number.", "error")
+        return redirect(url_for("auth.login"))
+
+    if not recovery_input:
+        flash("Please enter your recovery code.", "error")
+        return redirect(url_for("auth.login"))
+
     conn = get_db()
-    users = conn.execute("SELECT * FROM users WHERE recovery_hash IS NOT NULL").fetchall()
+    user = conn.execute(
+        "SELECT * FROM users WHERE account_number = ? AND recovery_hash IS NOT NULL",
+        (account_stored,),
+    ).fetchone()
 
-    user = None
-    for candidate in users:
-        if verify_secret(recovery_input, candidate["recovery_hash"]):
-            user = candidate
-            break
-
-    if not user:
+    if not user or not verify_secret(recovery_input, user["recovery_hash"]):
         conn.close()
-        flash("Recovery code not found. Please check and try again.", "error")
-        log_event("recovery_failed", None, severity="warn")
-        return render_template("recover.html"), 404
+        flash("Invalid account number or recovery code.", "error")
+        log_event("recovery_failed", None, f"account={account_stored[:4]}xxxx", severity="warn")
+        return redirect(url_for("auth.login"))
 
     # Invalidate the old account number + old recovery code immediately
     new_account_number = generate_account_number()

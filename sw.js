@@ -23,6 +23,10 @@ self.addEventListener('install', (event) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+      .catch((err) => {
+        console.error('Service worker precache failed:', err);
+        throw err;
+      })
   );
 });
 

@@ -25,12 +25,18 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// Install: pre-cache public shell (don’t fail install if one entry 404s)
+// Install: pre-cache public shell.
+// Security: do not silently ignore cache failures. If precache fails,
+// abort install so a broken/compromised shell is not installed silently.
 self.addEventListener('install', (evt) => {
   evt.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    try { await cache.addAll(PRECACHE); }
-    catch (e) { /* ignore during dev so install still succeeds */ }
+    try {
+      await cache.addAll(PRECACHE);
+    } catch (e) {
+      console.error('Privana service worker precache failed:', e);
+      throw e;
+    }
   })());
   self.skipWaiting();
 });

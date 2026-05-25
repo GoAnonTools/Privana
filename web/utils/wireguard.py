@@ -1,4 +1,5 @@
 import subprocess
+import stat
 import re
 import json
 from markupsafe import escape
@@ -7,6 +8,33 @@ import base64
 from datetime import datetime
 import qrcode
 import io
+
+
+_DANGEROUS_WG_DIRECTIVES = re.compile(
+    r"^\s*(PostUp|PostDown|PreUp|PreDown|Table)\s*=",
+    re.MULTILINE | re.IGNORECASE
+)
+
+def sanitize_wg_config(config_text: str) -> str:
+    if not config_text:
+        return config_text
+    return _DANGEROUS_WG_DIRECTIVES.sub(
+        lambda m: "# REMOVED FOR SECURITY: " + m.group(0).strip(),
+        config_text,
+    )
+
+def secure_write_file(path: str, content: str) -> None:
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
+    try:
+        os.write(fd, content.encode("utf-8"))
+    finally:
+        os.close(fd)
+    try:
+        os.chmod(path, 0o600)
+    except Exception:
+        pass
+
 
 def generate_wireguard_keys():
     """Generate a real WireGuard keypair using wg. Never generate fake fallback keys."""
@@ -45,7 +73,7 @@ def generate_wireguard_config(user_id, device_name, private_key, server_public_k
     ip_address = f"10.0.{(user_id % 256)}.{uuid.uuid4().bytes[0] % 254 + 1}/32"
     
     config = f'''[Interface]
-PrivateKey = {private_key}
+PrivateKey = PLACEHOLDER
 Address = {ip_address}
 DNS = 1.1.1.1, 1.0.0.1
 
@@ -72,6 +100,12 @@ def toggle_wireguard_protection(config_path, enable=True):
     try:
         if enable:
             # Start WireGuard
+            if os.path.exists(config_path):
+                with open(config_path, "r", encoding="utf-8") as f:
+                    cfg = f.read()
+                sanitized = sanitize_wg_config(cfg)
+                if sanitized != cfg:
+                    secure_write_file(config_path, sanitized)
             subprocess.run(['wg-quick', 'up', config_path], check=True)
             return True, "Protection enabled"
         else:
@@ -92,7 +126,7 @@ def generate_platform_config(user_id, device_name, private_key, server_public_ke
     if platform in ['windows', 'linux', 'mac']:
         # Standard INI format for desktop platforms
         config = f'''[Interface]
-PrivateKey = {private_key}
+PrivateKey = PLACEHOLDER
 Address = {ip_address}
 DNS = 1.1.1.1, 1.0.0.1
 
@@ -186,7 +220,7 @@ PersistentKeepalive = 25
     else:
         # Fallback to standard format
         config = f'''[Interface]
-PrivateKey = {private_key}
+PrivateKey = PLACEHOLDER
 Address = {ip_address}
 DNS = 1.1.1.1, 1.0.0.1
 

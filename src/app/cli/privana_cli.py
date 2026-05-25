@@ -16,7 +16,7 @@ def connect(config):
     # Check endpoint integrity
     checker = EndpointChecker()
     if not checker.check():
-        click.echo("Endpoint integrity check failed. Aborting connection.")
+        click.echo("Unsupported operating system for Privana. Aborting connection.")
         return
     
     # Initialize protection

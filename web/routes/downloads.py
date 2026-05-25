@@ -18,6 +18,24 @@ from flask import (
 )
 from web.utils.guards import require_passkey_for_sensitive_action
 
+
+def public_app_url() -> str:
+    """
+    Return the trusted public app URL.
+
+    Security: never build bootstrap URLs from request.host_url, because Host
+    can be attacker-controlled and those URLs are interpolated into scripts.
+    """
+    base = (os.getenv("PUBLIC_APP_URL") or "").strip().rstrip("/")
+    if not base:
+        # Local-dev fallback only. Production must set PUBLIC_APP_URL.
+        if os.getenv("ENVIRONMENT", "development").lower() == "production":
+            raise RuntimeError("PUBLIC_APP_URL must be set in production.")
+        base = "http://127.0.0.1:5000"
+    if not (base.startswith("https://") or base.startswith("http://127.0.0.1") or base.startswith("http://localhost")):
+        raise RuntimeError("PUBLIC_APP_URL must be https:// in production-like environments.")
+    return base
+
 # Local or remote depending on your API_MODE wiring
 # sg_issue_config removed - use manual registration flow if not in stub mode
 
@@ -251,7 +269,9 @@ def download_wireguard(platform: str):
 
     # Proxy the binary (Windows/macOS)
     try:
-        r = requests.get(upstream, stream=True, timeout=TIMEOUT, allow_redirects=True)
+        r = requests.get(upstream, stream=True, timeout=TIMEOUT, allow_redirects=False)
+        if 300 <= r.status_code < 400:
+            return jsonify({"ok": False, "error": "upstream redirect blocked"}), 502
     except requests.RequestException:
         return "Upstream unavailable. Please try again later.", 502
 
@@ -285,9 +305,13 @@ def download_meta(platform: str):
 
     # HEAD first; fall back to GET if needed
     try:
-        r = requests.head(url, allow_redirects=True, timeout=TIMEOUT)
+        r = requests.head(url, allow_redirects=False, timeout=TIMEOUT)
+        if 300 <= r.status_code < 400:
+            return jsonify({"ok": True, "type": "redirect_blocked", "url": url})
         if r.status_code >= 400:
-            r = requests.get(url, allow_redirects=True, timeout=TIMEOUT, stream=False)
+            r = requests.get(url, allow_redirects=False, timeout=TIMEOUT, stream=False)
+            if 300 <= r.status_code < 400:
+                return jsonify({"ok": True, "type": "redirect_blocked", "url": url})
     except requests.RequestException:
         filename = _filename_from_upstream(url, {})
         return jsonify({
@@ -423,7 +447,7 @@ def bootstrap_windows(device_id: int):
         abort(404)
 
     token = _mint_config_token(user_id, device_id, minutes=10)
-    cfg_url = request.host_url.rstrip("/") + url_for("downloads.download_config_by_token", token=token)
+    cfg_url = public_app_url() + url_for("downloads.download_config_by_token", token=token)
     tunnel_name = f"Privana-{device_id}"
 
     ps = f"""#Requires -Version 5
@@ -474,7 +498,7 @@ def bootstrap_linux(device_id: int):
         abort(404)
 
     token = _mint_config_token(user_id, device_id, minutes=10)
-    cfg_url = request.host_url.rstrip("/") + url_for("downloads.download_config_by_token", token=token)
+    cfg_url = public_app_url() + url_for("downloads.download_config_by_token", token=token)
     name = f"privana-{device_id}"
 
     sh = f"""#!/usr/bin/env bash

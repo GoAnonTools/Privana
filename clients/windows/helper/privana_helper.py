@@ -36,8 +36,11 @@ DEFAULT_ALLOWED = "http://127.0.0.1:5000,http://localhost:5000"
 ALLOWED_ORIGINS = {
     o.strip()
     for o in os.getenv("PRIVANA_ALLOWED_ORIGINS", DEFAULT_ALLOWED).split(",")
-    if o.strip()
+    if o.strip() and o.strip() != "*"
 }
+
+if "*" in os.getenv("PRIVANA_ALLOWED_ORIGINS", ""):
+    log.warning("Wildcard CORS origin '*' is not allowed and has been ignored.")
 
 logging.basicConfig(
     level=os.environ.get("PRIVANA_HELPER_LOGLEVEL", "INFO"),
@@ -160,7 +163,7 @@ def wg_uninstall_tunnel(wireguard_exe: str, name: str) -> Tuple[int, str, str]:
 # -----------------------------------------------------------------------------
 def with_cors(resp):
     origin = request.headers.get("Origin", "")
-    if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
+    if origin in ALLOWED_ORIGINS:
         resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Vary"] = "Origin"
     resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
@@ -262,8 +265,15 @@ def import_config():
 
     # Write/overwrite file on disk
     try:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(config_text)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            os.write(fd, config_text.encode("utf-8"))
+        finally:
+            os.close(fd)
+        try:
+            os.chmod(path, 0o600)
+        except Exception:
+            pass
     except Exception as e:
         return with_cors(jsonify({"ok": False, "error": f"write failed: {e}"})), 500
 

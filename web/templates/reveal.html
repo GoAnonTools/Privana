@@ -72,7 +72,7 @@
     </div>
 </main>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     function copyText(elementId, btn) {
         const text = document.getElementById(elementId).innerText.trim();
         navigator.clipboard.writeText(text).then(() => {

@@ -19,7 +19,7 @@
   <meta name="msapplication-TileColor" content="#06b6d4">
   <meta name="theme-color" content="#06b6d4">
 
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     (function () {
       const saved = localStorage.getItem('theme');
       if (saved === 'dark') document.documentElement.classList.add('dark');
@@ -28,7 +28,7 @@
 
   <!-- Tailwind + site CSS + Lucide -->
   <script src="{{ url_for('static', filename='vendor/tailwindcss.js') }}"></script>
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -345,7 +345,7 @@
     </div>
   </footer>
 
-  <script>
+  <script nonce="{{ csp_nonce() }}">
     // Header scroll shadow
     const hdr = document.getElementById('site-header');
     window.addEventListener('scroll', () => {

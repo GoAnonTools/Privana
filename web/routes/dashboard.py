@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 import sqlite3
 import os
+import stat
 import re
 from markupsafe import escape
 from datetime import datetime, timezone
@@ -29,6 +30,24 @@ from web.utils.guards import (
     require_passkey_for_sensitive_action_json
 )
 
+
+
+
+def public_app_url() -> str:
+    """
+    Return trusted public app URL for QR/config links.
+
+    Security: do not rely on request.host_url or url_for(..., _external=True)
+    because Host can be attacker-controlled.
+    """
+    base = (os.getenv("PUBLIC_APP_URL") or "").strip().rstrip("/")
+    if not base:
+        if os.getenv("ENVIRONMENT", "development").lower() == "production":
+            raise RuntimeError("PUBLIC_APP_URL must be set in production.")
+        base = "http://127.0.0.1:5000"
+    if not (base.startswith("https://") or base.startswith("http://127.0.0.1") or base.startswith("http://localhost")):
+        raise RuntimeError("PUBLIC_APP_URL must be https:// in production-like environments.")
+    return base
 
 
 # Blueprint
@@ -343,7 +362,6 @@ def dashboard():
         TRIAL_DAYS=TRIAL_DAYS,
         has_passkey=has_passkey,
         wireguard_downloads=wireguard_downloads,
-        helper_token=os.getenv("PRIVANA_HELPER_TOKEN", ""),
     )
 
 # ---- Protection toggle (support both old and new URLs) ----
@@ -384,8 +402,16 @@ def toggle_protection():
 
             # Save config temporarily (same behavior as your code)
             config_path = os.path.join(os.path.expanduser("~"), "privana.conf")
-            with open(config_path, "w") as f:
-                f.write(cfg[0])
+            fd = os.open(config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
+            try:
+                os.write(fd, config.encode("utf-8"))
+            finally:
+                os.close(fd)
+
+            try:
+                os.chmod(config_path, 0o600)
+            except Exception:
+                pass
 
             success, message = toggle_wireguard_protection(config_path, enable=True)
             status = "protected"
@@ -647,7 +673,7 @@ def show_qr(device_id):
     token = s.dumps({"u": user_id, "d": device_id})
 
     # Absolute URL the phone will open to fetch the config
-    cfg_url = url_for('dashboard.qr_token_config', token=token, _external=True)
+    cfg_url = public_app_url() + url_for('dashboard.qr_token_config', token=token)
 
     # Make a compact QR for that URL
     import qrcode, io, base64
