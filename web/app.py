@@ -222,7 +222,7 @@ app.jinja_env.globals["csrf_token"] = _csrf_token
 @app.errorhandler(429)
 def _handle_ratelimit(e):
     try:
-        from web.routes.auth import log_event, _client_ip  # lazy import to avoid cycles
+        from web.routes.auth import log_event  # lazy import to avoid cycles
         log_event("rate_limited", session.get("user_id"), f"path={request.path}", severity="warn")
     except Exception:
         app.logger.exception("Failed to log rate-limit event")
