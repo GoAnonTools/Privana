@@ -17,7 +17,7 @@ from fido2.webauthn import (
 
 # ---------- Config ----------
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
-PASSKEY_RESET_FRESH_SECONDS = int(os.getenv("PASSKEY_RESET_FRESH_SECONDS", "300"))
+PASSKEY_RESET_FRESH_SECONDS = int(os.getenv("PASSKEY_RESET_FRESH_SECONDS", "60"))
 WEBAUTHN_REGISTER_STATE_TTL_SECONDS = int(os.getenv("WEBAUTHN_REGISTER_STATE_TTL_SECONDS", "300"))
 
 RP_ID = os.getenv("WEBAUTHN_RP_ID", "localhost").strip()
