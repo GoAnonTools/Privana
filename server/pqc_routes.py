@@ -31,6 +31,8 @@ from kyber_py.kyber import Kyber768
 
 pqc_bp = Blueprint("pqc", __name__)
 
+KYBER768_PUBLIC_KEY_BYTES = 1184
+
 log = logging.getLogger("privana.server.pqc")
 
 # ---------------------------------------------------------------------------
@@ -231,6 +233,12 @@ def pqc_init():
         client_pub = bytes.fromhex(client_pub_hex)
     except ValueError:
         return jsonify({"success": False, "message": "Invalid hex in client_public_key"}), 400
+
+    if len(client_pub) != KYBER768_PUBLIC_KEY_BYTES:
+        return jsonify({
+            "success": False,
+            "message": "Invalid client_public_key length",
+        }), 400
 
     try:
         shared_secret, kem_ct = Kyber768.encaps(client_pub)
