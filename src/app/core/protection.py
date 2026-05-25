@@ -39,11 +39,33 @@ def sanitize_wg_config(config_text: str) -> str:
     return sanitized
 
 
+def validate_wg_config_path(config_path: str) -> str:
+    """
+    Resolve and validate a WireGuard config path before writing or passing it to wg-quick.
+
+    Only ~/.privana/*.conf is allowed. This prevents accidental execution of
+    attacker-controlled paths or unexpected files through wg-quick.
+    """
+    if not config_path:
+        raise ProtectionError("Missing WireGuard configuration path.")
+
+    base_dir = (Path.home() / ".privana").resolve()
+    target = Path(config_path).expanduser().resolve(strict=False)
+
+    if target.suffix != ".conf":
+        raise ProtectionError("WireGuard configuration path must end with .conf.")
+
+    if target.parent != base_dir:
+        raise ProtectionError("WireGuard configuration path must be inside ~/.privana.")
+
+    return str(target)
+
+
 def secure_write_config(path: str, content: str) -> None:
     """
     Write WireGuard config with owner-only permissions.
     """
-    target = Path(path).expanduser()
+    target = Path(validate_wg_config_path(path))
     target.parent.mkdir(parents=True, exist_ok=True)
 
     fd = os.open(
@@ -64,7 +86,9 @@ def secure_write_config(path: str, content: str) -> None:
 
 class PrivanaProtection:
     def __init__(self, config_path=None, interface_name: str = "privana"):
-        self.config_path = config_path or os.path.expanduser("~/.privana/privana.conf")
+        self.config_path = validate_wg_config_path(
+            config_path or os.path.expanduser("~/.privana/privana.conf")
+        )
         self.interface_name = interface_name
         self.api_client = PrivanaAPIClient()
         self.qrng_client = QRNGClient()

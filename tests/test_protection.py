@@ -18,6 +18,7 @@ from app.core.protection import (
     ProtectionError,
     sanitize_wg_config,
     secure_write_config,
+    validate_wg_config_path,
 )
 
 
@@ -31,6 +32,10 @@ PublicKey = server-public-key
 Endpoint = vpn.example.test:51820
 AllowedIPs = 0.0.0.0/0
 """
+
+
+def _test_config_path(home: Path, name: str = "privana-test.conf") -> str:
+    return str(home / ".privana" / name)
 
 
 class TestWireGuardConfigSanitization(unittest.TestCase):
@@ -76,9 +81,11 @@ AllowedIPs = 0.0.0.0/0
 class TestSecureWriteConfig(unittest.TestCase):
     def test_secure_write_config_writes_owner_only_file(self):
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "nested" / "privana.conf"
+            home = Path(tmp)
+            path = home / ".privana" / "privana.conf"
 
-            secure_write_config(str(path), VALID_WG_CONFIG)
+            with patch("app.core.protection.Path.home", return_value=home):
+                secure_write_config(str(path), VALID_WG_CONFIG)
 
             self.assertTrue(path.exists())
             self.assertEqual(path.read_text(encoding="utf-8"), VALID_WG_CONFIG)
@@ -86,12 +93,26 @@ class TestSecureWriteConfig(unittest.TestCase):
             mode = stat.S_IMODE(path.stat().st_mode)
             self.assertEqual(mode, 0o600)
 
+    def test_validate_wg_config_path_rejects_unsafe_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+
+            with patch("app.core.protection.Path.home", return_value=home):
+                with self.assertRaises(ProtectionError):
+                    validate_wg_config_path("/tmp/privana-test.conf")
+
+                with self.assertRaises(ProtectionError):
+                    validate_wg_config_path(str(home / ".privana" / "not-a-conf.txt"))
+
+                safe_path = home / ".privana" / "privana.conf"
+                self.assertEqual(validate_wg_config_path(str(safe_path)), str(safe_path.resolve()))
+
 
 class TestPrivanaProtection(unittest.TestCase):
     def test_init_defaults(self):
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana-test")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()), interface_name="privana-test")
 
-        self.assertEqual(protection.config_path, "/tmp/privana-test.conf")
+        self.assertEqual(protection.config_path, _test_config_path(Path.home()))
         self.assertEqual(protection.interface_name, "privana-test")
         self.assertIsNotNone(protection.api_client)
         self.assertIsNotNone(protection.qrng_client)
@@ -106,7 +127,7 @@ class TestPrivanaProtection(unittest.TestCase):
         mock_secure_write,
         mock_run,
     ):
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()))
 
         protection.qrng_client = Mock()
         protection.qrng_client.get_random_data.return_value = b"q" * 32
@@ -125,13 +146,13 @@ class TestPrivanaProtection(unittest.TestCase):
 
         self.assertGreaterEqual(mock_secure_write.call_count, 1)
         first_write_path, first_write_config = mock_secure_write.call_args_list[0].args
-        self.assertEqual(first_write_path, "/tmp/privana-test.conf")
+        self.assertEqual(first_write_path, _test_config_path(Path.home()))
         self.assertIn("[Interface]", first_write_config)
         self.assertIn("[Peer]", first_write_config)
 
-        mock_file.assert_called_with("/tmp/privana-test.conf", "r", encoding="utf-8")
+        mock_file.assert_called_with(_test_config_path(Path.home()), "r", encoding="utf-8")
         mock_run.assert_called_once_with(
-            ["wg-quick", "up", "/tmp/privana-test.conf"],
+            ["wg-quick", "up", _test_config_path(Path.home())],
             check=True,
             timeout=30,
         )
@@ -149,7 +170,7 @@ class TestPrivanaProtection(unittest.TestCase):
     ):
         mock_run.side_effect = RuntimeError("wg failed")
 
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()))
         protection.qrng_client = Mock()
         protection.qrng_client.get_random_data.return_value = b"q" * 32
         protection.pqc_client = Mock()
@@ -160,13 +181,13 @@ class TestPrivanaProtection(unittest.TestCase):
         with self.assertRaises(ProtectionError):
             protection.connect()
 
-        mock_remove.assert_called_once_with("/tmp/privana-test.conf")
+        mock_remove.assert_called_once_with(_test_config_path(Path.home()))
 
     @patch("app.core.protection.subprocess.run")
     def test_is_connected_true_when_wg_show_returns_output(self, mock_run):
         mock_run.return_value = Mock(returncode=0, stdout="interface: privana\n")
 
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()), interface_name="privana")
         self.assertTrue(protection.is_connected())
 
         mock_run.assert_called_once_with(
@@ -180,18 +201,18 @@ class TestPrivanaProtection(unittest.TestCase):
     def test_is_connected_false_when_wg_show_fails(self, mock_run):
         mock_run.return_value = Mock(returncode=1, stdout="")
 
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf", interface_name="privana")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()), interface_name="privana")
         self.assertFalse(protection.is_connected())
 
     @patch.object(PrivanaProtection, "is_connected", return_value=False)
     @patch("app.core.protection.subprocess.run")
     def test_disconnect_runs_wg_quick_down(self, mock_run, mock_is_connected):
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()))
 
         protection.disconnect()
 
         mock_run.assert_called_once_with(
-            ["wg-quick", "down", "/tmp/privana-test.conf"],
+            ["wg-quick", "down", _test_config_path(Path.home())],
             check=True,
             timeout=30,
         )
@@ -203,7 +224,7 @@ class TestPrivanaProtection(unittest.TestCase):
 
         mock_run.side_effect = subprocess.CalledProcessError(1, ["wg-quick", "down"])
 
-        protection = PrivanaProtection(config_path="/tmp/privana-test.conf")
+        protection = PrivanaProtection(config_path=_test_config_path(Path.home()))
 
         with self.assertRaises(ProtectionError):
             protection.disconnect()
