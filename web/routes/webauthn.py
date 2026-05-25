@@ -1,5 +1,6 @@
 # web/routes/webauthn.py
 from flask import Blueprint, request, jsonify, session
+import logging
 import base64, hashlib, sqlite3, os, time, secrets, pickle
 from datetime import datetime, timezone, timedelta
 from web.routes.auth import TRIAL_DAYS
@@ -40,6 +41,8 @@ rp = PublicKeyCredentialRpEntity(id=RP_ID, name=RP_NAME)
 fido_server = Fido2Server(rp, attestation="none")
 
 webauthn_bp = Blueprint("webauthn", __name__, url_prefix="/webauthn")
+
+log = logging.getLogger("privana.web.webauthn")
 
 # ---------- helpers ----------
 def b64url(x: bytes) -> str:
@@ -519,7 +522,7 @@ def login_verify():
                 if datetime.now(timezone.utc) > expires:
                     redirect_url = "/auth/trial-ended"
             except Exception:
-                pass
+                log.exception("Failed to evaluate trial expiry during passkey login")
 
         return jsonify({"ok": True, "redirect": redirect_url})
 
