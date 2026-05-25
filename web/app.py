@@ -225,7 +225,7 @@ def _handle_ratelimit(e):
         from web.routes.auth import log_event, _client_ip  # lazy import to avoid cycles
         log_event("rate_limited", session.get("user_id"), f"path={request.path}", severity="warn")
     except Exception:
-        pass
+        app.logger.exception("Failed to log rate-limit event")
 
     if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
         return jsonify({"success": False, "message": "Rate limit exceeded"}), 429
