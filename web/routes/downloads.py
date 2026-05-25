@@ -466,13 +466,13 @@ Write-Host "Downloading Privana settings..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri "{cfg_url}" -OutFile $tmp
 
 $configText = Get-Content -Raw -Path $tmp
-if ($configText -notmatch '\[Interface\]' -or $configText -notmatch '\[Peer\]') {{
+if ($configText -notmatch '\\[Interface\\]' -or $configText -notmatch '\\[Peer\\]') {{
   Remove-Item -Force $tmp -ErrorAction SilentlyContinue
   throw "Downloaded Privana config is invalid."
 }}
 $blockedDirectives = @('PostUp', 'PostDown', 'PreUp', 'PreDown', 'Table')
 foreach ($directive in $blockedDirectives) {{
-  if ($configText -match "(?im)^\s*$directive\s*=") {{
+  if ($configText -match "(?im)^\\s*$directive\\s*=") {{
     Remove-Item -Force $tmp -ErrorAction SilentlyContinue
     throw "Downloaded Privana config contains unsupported WireGuard directives."
   }}
@@ -528,12 +528,12 @@ trap cleanup EXIT
 
 curl -fsSL "$URL" -o "$TMP"
 
-if ! grep -q '^\[Interface\]' "$TMP" || ! grep -q '^\[Peer\]' "$TMP"; then
+if ! grep -q '^\\[Interface\\]' "$TMP" || ! grep -q '^\\[Peer\\]' "$TMP"; then
   echo "[Privana] Downloaded config is invalid." >&2
   exit 1
 fi
 
-if grep -Eiq '^\s*(PostUp|PostDown|PreUp|PreDown|Table)\s*=' "$TMP"; then
+if grep -Eiq '^\\s*(PostUp|PostDown|PreUp|PreDown|Table)\\s*=' "$TMP"; then
   echo "[Privana] Downloaded config contains unsupported WireGuard directives." >&2
   exit 1
 fi
